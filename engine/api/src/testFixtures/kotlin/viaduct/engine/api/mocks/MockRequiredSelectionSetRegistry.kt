@@ -113,14 +113,16 @@ class MockRequiredSelectionSetRegistry(
             fun fieldCheckerEntry(
                 coord: Coordinate,
                 selectionsString: String,
-                variablesResolvers: List<VariablesResolver> = emptyList()
-            ): Builder = add(FieldCheckerEntry(coord, coord.first, selectionsString, variablesResolvers))
+                variablesResolvers: List<VariablesResolver> = emptyList(),
+                selectionsType: String = coord.first
+            ): Builder = add(FieldCheckerEntry(coord, selectionsType, selectionsString, variablesResolvers))
 
             fun typeCheckerEntry(
                 typeName: String,
                 selectionsString: String,
-                variablesResolvers: List<VariablesResolver> = emptyList()
-            ): Builder = add(TypeCheckerEntry(typeName, typeName, selectionsString, variablesResolvers))
+                variablesResolvers: List<VariablesResolver> = emptyList(),
+                selectionsType: String = typeName
+            ): Builder = add(TypeCheckerEntry(typeName, selectionsType, selectionsString, variablesResolvers))
 
             fun build(): MockRequiredSelectionSetRegistry = MockRequiredSelectionSetRegistry(entries)
         }

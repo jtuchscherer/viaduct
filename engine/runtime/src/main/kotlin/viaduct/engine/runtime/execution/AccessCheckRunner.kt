@@ -73,7 +73,7 @@ class AccessCheckRunner(
             ?: return Value.nullValue
 
         // fetch the selection sets of any child plans for this type
-        val fieldTypeChildPlans = field.fieldTypeChildPlans[objectEngineResult.graphQLObjectType] ?: emptyList()
+        val fieldTypeChildPlans = field.fieldTypeChildPlans[objectEngineResult.graphQLObjectType]?.value ?: emptyList()
         if (fieldTypeChildPlans.isNotEmpty()) {
             fieldTypeChildPlans.forEach { childPlan ->
                 parameters.launchOnRootScope {
