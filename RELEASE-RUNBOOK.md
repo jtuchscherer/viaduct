@@ -156,7 +156,7 @@ During Monday's Viaduct team meeting, we will pick the release manager for the w
 > PR process.  Be sure to sync your fork to the public repo before performing this step. It takes at least a couple of
 > hours to get through this. So, either start Tuesday or early on Wednesday.
 
-> Note: Prefix your PR and commit with `Chore: ` to be compliant with our conventional commit message
+> Note: Prefix your PR and commit with `chore: ` to be compliant with our conventional commit message
 
 Prior to the Wednesday Viaduct team meeting, you will create a PR in the OSS repo (but from your personal fork) that bumps the version on the main branch from `0.X.0-SNAPSHOT` to `0.(X+1).0-SNAPSHOT`. This is done by editing the `VERSION` file and then running:
 
