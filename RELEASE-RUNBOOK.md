@@ -343,7 +343,7 @@ We do this with a copybara script. For each demoapp run:
 
 
 ```bash
-mkdir .github/copybara
+mkdir -p .github/copybara
 cp ~/repos/treehouse/projects/viaduct/oss/.github/copybara/copy.bara.sky .github/copybara/copy.bara.sky
 
 for i in cli-starter ktor-starter starwars; do
