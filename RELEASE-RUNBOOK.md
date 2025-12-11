@@ -5,17 +5,17 @@
 The release process is straight forward. Assume the most recent published release was `0.5.0`, which means the `VERSION` on the main branch will be `0.6.0-SNAPSHOT`. Each of these steps will be described in detail, but in broad strokes:
 
 * At release time, open a PR that bumps the version on the main branch to the the `SNAPSHOT` for the _next_ release. In our example this would be `0.7.0-SNAPSHOT`.
-  
+
 * When this version bump is merged, the SHA just before it becomes the branch point for the next release (for `0.6.0`) in our example. A release branch created from that branch point, and the `VERSION` in that branch loses `-SNAPSHOT` (e.g., `0.6.0-SNAPSHOT` becomes `0.6.0` in the release branch).
-  
+
 * A script is run to generate the changelog for the release. The output of this script often requires slight editing for clarity and consistency. The changelog is reviewed by the team.
 
 * The release branch is validated. This is an important but somewhat tedious step.
 
 * Assuming all is well with the release branch, its artifacts are then published to the Maven Central and the Gradle Plugin Portal.
-  
+
 * Next, the "standalone" copies of the demo apps (in https://github.com/viaduct-graphql) are updated to match the release. This step has been fagile, so more validation is required to assure correctness.
-  
+
 * Finally, the release is published on the [Viaduct Releases](https://github.com/airbnb/viaduct/releases) page (don't forget this step!).
 
 
@@ -138,6 +138,9 @@ gh repo set-default airbnb/viaduct
 
 **Why this is useful:** When you run commands like `gh workflow run` or `gh release list`, they'll automatically use `airbnb/viaduct` instead of requiring `--repo airbnb/viaduct` every time.
 
+> Note: Some changes will be pushed to your fork of the OSS repo and some will go straight to the OSS repo. You can
+> either use the same local clone and switch the remote appropriately with
+> `git remote set-url origin git@github.com:YOUR_GH_USERNAME/viaduct.git` or you can have two separate local clones.
 
 ## Detailed Release Process
 
@@ -149,7 +152,13 @@ During Monday's Viaduct team meeting, we will pick the release manager for the w
 
 ### 2) Bump version in main branch
 
-Prior to the Wednesday Viaduct team meeting, you will create a PR that bumps the version on the main branch from `0.X.0-SNAPSHOT` to `0.(X+1).0-SNAPSHOT`. This is done by editing the `VERSION` file and then running:
+> Note: This step should be done in your personal fork of the public repo, and the PR submitted through the standard
+> PR process.  Be sure to sync your fork to the public repo before performing this step. It takes at least a couple of
+> hours to get through this. So, either start Tuesday or early on Wednesday.
+
+> Note: Prefix your PR and commit with `Chore: ` to be compliant with our conventional commit message
+
+Prior to the Wednesday Viaduct team meeting, you will create a PR in the OSS repo (but from your personal fork) that bumps the version on the main branch from `0.X.0-SNAPSHOT` to `0.(X+1).0-SNAPSHOT`. This is done by editing the `VERSION` file and then running:
 
 ```bash
 ./gradlew syncDemoAppVersions
@@ -163,11 +172,11 @@ git diff .
 
 You should see that the `VERSION` file has changed a the project root and the `gradle.properties` files have changed for each of the demo apps.
 
-(This step should be done in your personal fork of the public repo, and the PR submitted through the standard PR process.  Be sure to sync your fork to the public repo before performing this step.)
-
 ### 3) Make release branch
 
 Once this PR is approved and merged, create a branch off the SHA just before the version bump. This branch should be named `release/v0.X.0`. In this branch, edit the `VERSION` file to contain `0.X.0` and then run:
+
+> Note: Make sure that the branch name contains the `v` before the version or subsequent steps might break.
 
 ```bash
 ./gradlew syncDemoAppVersions
@@ -252,7 +261,7 @@ Prior to the Wednesday team meeting, you should generate and review the changelo
 
 #### 6a) Generate changelog
 
-Assuming you're releasing `0.7.0`:
+Assuming you're releasing `v0.7.0`:
 
 ```bash
 cd ~/repos/viaduct-public    # Or wherever your public viaduct clone is
@@ -304,6 +313,9 @@ gh workflow run ".github/workflows/release.yml" \
 
 **Don't mix up `previous_release_version` and `release_version`**
 
+> Note: If the above command fails and it is appropriate, you can use the `-f skip_check=true` flag to avoid failures
+> because of detekt rule violations.
+
 This workflow will:
 
   - Package release artifacts using Gradle.
@@ -319,7 +331,7 @@ Log in to [Sonatype Maven Central](https://plugins.gradle.org/u/viaduct-maintain
 ### 10) Publish and verify standalone apps
 
 Once the artifacts are published, we need to update the standalone copies of the standalone apps to agree with the new release.
- 
+
   - `starwars` → `viaduct-graphql/starwars`
   - `cli-starter` → `viaduct-graphql/cli-starter`
   - `ktor-starter` → `viaduct-graphql/ktor-starter`
@@ -328,7 +340,12 @@ Once the artifacts are published, we need to update the standalone copies of the
 
 We do this with a copybara script. For each demoapp run:
 
+
+
 ```bash
+mkdir .github/copybara
+cp ~/repos/treehouse/projects/viaduct/oss/.github/copybara/copy.bara.sky .github/copybara/copy.bara.sky
+
 for i in cli-starter ktor-starter starwars; do
   tools/copybara/run migrate \
     .github/copybara/copy.bara.sky \
