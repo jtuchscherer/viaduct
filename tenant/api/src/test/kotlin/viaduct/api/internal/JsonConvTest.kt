@@ -1,6 +1,6 @@
 @file:Suppress("ForbiddenImport")
 
-package viaduct.mapping.graphql
+package viaduct.api.internal
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.Scalars
@@ -15,7 +15,6 @@ import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.take
-import io.kotest.property.exhaustive.enum
 import io.kotest.property.forAll
 import java.time.Instant
 import java.time.LocalDate
@@ -31,8 +30,12 @@ import viaduct.arbitrary.common.flatten
 import viaduct.arbitrary.graphql.GenInterfaceStubsIfNeeded
 import viaduct.arbitrary.graphql.TypenameValueWeight
 import viaduct.arbitrary.graphql.graphQLSchema
+import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.mocks.mkRawSelectionSet
 import viaduct.engine.api.mocks.mkSchema
+import viaduct.engine.api.select.SelectionsParser
+import viaduct.mapping.graphql.IR
 import viaduct.mapping.test.ir
 import viaduct.mapping.test.objectIR
 
@@ -247,7 +250,7 @@ class JsonConvTest : KotestPropertyBase() {
         val conv = JsonConv(emptySchema, type)
 
         // converts non-null values
-        // assertEquals(IR.Value.Number(1), conv("1"))
+        assertEquals(IR.Value.Number(1), conv("1"))
 
         // throws on null values
         assertThrows<IllegalArgumentException> { conv("null") }
@@ -296,7 +299,7 @@ class JsonConvTest : KotestPropertyBase() {
             val type = schema.schema.getType("Input")!!
 
             Arb.enum<JsonConv.AddJsonTypenameField>().forAll { addJsonTypenameField ->
-                val conv = JsonConv(schema, type, addJsonTypenameField)
+                val conv = JsonConv(schema, type, null, addJsonTypenameField)
 
                 val ir = IR.Value.Object("Input", emptyMap())
                 val str = conv.invert(ir)
@@ -393,7 +396,7 @@ class JsonConvTest : KotestPropertyBase() {
             val type = schema.schema.getType("Obj")!!
 
             Arb.enum<JsonConv.AddJsonTypenameField>().forAll { addJsonTypenameField ->
-                val conv = JsonConv(schema, type, addJsonTypenameField)
+                val conv = JsonConv(schema, type, null, addJsonTypenameField)
 
                 val ir = IR.Value.Object("Obj", emptyMap())
                 val str = conv.invert(ir)
@@ -405,6 +408,96 @@ class JsonConvTest : KotestPropertyBase() {
                 }
             }
         }
+
+    @Test
+    fun `output objects with selections -- does not conv unselected fields`() {
+        Fixture("type Obj { x:Int, y:Int }") {
+            val conv = JsonConv(
+                schema,
+                graphQLType("Obj"),
+                mkRawSelectionSet("Obj", "x"),
+                JsonConv.AddJsonTypenameField.Never
+            )
+
+            // "y" is not selected
+            assertEquals(
+                IR.Value.Object("Obj", "x" to IR.Value.Number(1)),
+                conv("""{"x":1,"y":1}""")
+            )
+            assertThrows<IllegalArgumentException> {
+                conv.invert(IR.Value.Object("Obj", mapOf("y" to IR.Value.Number(1))))
+            }
+        }
+    }
+
+    @Test
+    fun `output objects with selections -- convs aliased fields`() {
+        Fixture("type Obj { x:Int }") {
+            val conv = JsonConv(
+                schema,
+                graphQLType("Obj"),
+                mkRawSelectionSet("Obj", "a:x, b:x"),
+                JsonConv.AddJsonTypenameField.Never
+            )
+
+            // x is selected multiple times, with aliases "a" and "b"
+            assertRoundtrip(
+                conv,
+                """{"a":1,"b":2}""",
+                IR.Value.Object(
+                    "Obj",
+                    "a" to IR.Value.Number(1),
+                    "b" to IR.Value.Number(2)
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `output objects with selections -- the same type can be selected multiple times with different selections`() {
+        Fixture("type Obj { x:Int, obj:Obj }") {
+            val conv = JsonConv(
+                schema,
+                graphQLType("Obj"),
+                mkRawSelectionSet("Obj", "a:x, obj { b:x }"),
+                JsonConv.AddJsonTypenameField.Never
+            )
+
+            assertRoundtrip(
+                conv,
+                """{"a":1,"obj":{"b":2}}""",
+                IR.Value.Object(
+                    "Obj",
+                    "a" to IR.Value.Number(1),
+                    "obj" to IR.Value.Object(
+                        "Obj",
+                        "b" to IR.Value.Number(2)
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `output obj with selections -- a field can be selected multiple times`() {
+        Fixture("type Obj { x:Int }") {
+            val conv = JsonConv(
+                schema,
+                graphQLType("Obj"),
+                mkRawSelectionSet("Obj", "a:x, b:x"),
+                JsonConv.AddJsonTypenameField.Never
+            )
+            assertRoundtrip(
+                conv,
+                """{"a":1,"b":2}""",
+                IR.Value.Object(
+                    "Obj",
+                    "a" to IR.Value.Number(1),
+                    "b" to IR.Value.Number(2),
+                )
+            )
+        }
+    }
 
     @Test
     fun `unions`() {
@@ -446,6 +539,27 @@ class JsonConvTest : KotestPropertyBase() {
     }
 
     @Test
+    fun `unions with selections -- simple`() {
+        Fixture(
+            """
+                type A { x:Int }
+                union U = A
+            """.trimIndent()
+        ) {
+            val conv = JsonConv(
+                schema,
+                graphQLType("U"),
+                mkRawSelectionSet("U", "... on A { a:x }")
+            )
+            assertRoundtrip(
+                conv,
+                """{"a":1,"__typename":"A"}""",
+                IR.Value.Object("A", "a" to IR.Value.Number(1))
+            )
+        }
+    }
+
+    @Test
     fun `interfaces`() {
         val schema = mkSchema(
             """
@@ -480,6 +594,27 @@ class JsonConvTest : KotestPropertyBase() {
 
         assertThrows<IllegalArgumentException> {
             conv("""{"x":1}""")
+        }
+    }
+
+    @Test
+    fun `interfaces with selections -- simple`() {
+        Fixture(
+            """
+                type A implements I { x:Int }
+                interface I { x:Int }
+            """.trimIndent()
+        ) {
+            val conv = JsonConv(
+                schema,
+                graphQLType("I"),
+                mkRawSelectionSet("I", "... on A { a:x }")
+            )
+            assertRoundtrip(
+                conv,
+                """{"a":1,"__typename":"A"}""",
+                IR.Value.Object("A", "a" to IR.Value.Number(1))
+            )
         }
     }
 
@@ -547,4 +682,25 @@ class JsonConvTest : KotestPropertyBase() {
                 ir == roundtripper(ir)
             }
         }
+
+    private class Fixture(sdl: String, fn: Fixture.() -> Unit) {
+        val schema = mkSchema(sdl)
+
+        init {
+            fn(this)
+        }
+
+        fun graphQLType(name: String): GraphQLType = schema.schema.getType(name)!!
+
+        fun mkRawSelectionSet(
+            selectionsType: String,
+            selections: String,
+            variables: Map<String, Any?> = emptyMap()
+        ): RawSelectionSet =
+            mkRawSelectionSet(
+                SelectionsParser.parse(selectionsType, selections),
+                schema,
+                variables
+            )
+    }
 }

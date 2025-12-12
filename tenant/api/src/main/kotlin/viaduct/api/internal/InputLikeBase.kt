@@ -37,7 +37,7 @@ abstract class InputLikeBase : InputLike {
             )
 
             val irValue: IR.Value = if (isPresent(fieldName)) {
-                val conv = EngineValueConv(context.schema, fieldDefinition.type)
+                val conv = EngineValueConv(context.schema, fieldDefinition.type, null)
                 conv(inputData[fieldName])
             } else if (fieldDefinition.hasSetDefaultValue()) {
                 require(fieldDefinition.inputFieldDefaultValue.isLiteral) {
@@ -80,7 +80,7 @@ abstract class InputLikeBase : InputLike {
             val field = requireNotNull(graphQLInputObjectType.getField(fieldName)) {
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             }
-            val conv = GRTConv(context, field) andThen EngineValueConv(context.schema, field.type).inverse()
+            val conv = GRTConv(context, field) andThen EngineValueConv(context.schema, field.type, null).inverse()
             inputData.put(fieldName, conv(value))
         }
 

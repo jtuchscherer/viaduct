@@ -20,9 +20,7 @@ object IR : Domain<IR.Value.Object> {
 
     sealed interface Value {
         /** A representation of a GraphQL boolean value */
-        @JvmInline value class Boolean(
-            val value: kotlin.Boolean
-        ) : Value
+        @JvmInline value class Boolean(val value: kotlin.Boolean) : Value
 
         /**
          * A representation of a GraphQL numeric value.
@@ -33,9 +31,7 @@ object IR : Domain<IR.Value.Object> {
          * without loss of precision, though mapping through IR between 2 different domains may
          * cause precision to be lost.
          */
-        @JvmInline value class Number(
-            val value: kotlin.Number
-        ) : Value {
+        @JvmInline value class Number(val value: kotlin.Number) : Value {
             /** render this [Number] as an 8-bit Byte, between -128 and 127 */
             val byte: Byte get() = value.toByte()
 
@@ -68,22 +64,18 @@ object IR : Domain<IR.Value.Object> {
          * This representation is suitable for values of String, ID, and JSON
          * scalar types.
          */
-        @JvmInline value class String(
-            val value: kotlin.String
-        ) : Value
+        @JvmInline value class String(val value: kotlin.String) : Value
 
         /** A representation of a GraphQL list value */
-        @JvmInline value class List(
-            val value: kotlin.collections.List<Value>
-        ) : Value
+        @JvmInline value class List(val value: kotlin.collections.List<Value>) : Value {
+            constructor(vararg values: Value) : this(values.toList())
+        }
 
         /**
          * A representation of a GraphQL temporal value.
          * This representation is suitable for values of the DateTime, Date, and Time types
          */
-        @JvmInline value class Time(
-            val value: TemporalAccessor
-        ) : Value {
+        @JvmInline value class Time(val value: TemporalAccessor) : Value {
             /** render this [Time] to an [Instant] */
             val instant: Instant get() = Instant.from(value)
 
@@ -113,9 +105,8 @@ object IR : Domain<IR.Value.Object> {
          *   will be interpreted as unset in the case of an input field, or unselected in
          *   the case of an output field.
          */
-        data class Object(
-            val name: kotlin.String,
-            val fields: Map<kotlin.String, Value>
-        ) : Value
+        data class Object(val name: kotlin.String, val fields: Map<kotlin.String, Value>) : Value {
+            constructor(name: kotlin.String, vararg fields: Pair<kotlin.String, Value>) : this(name, fields.toMap())
+        }
     }
 }

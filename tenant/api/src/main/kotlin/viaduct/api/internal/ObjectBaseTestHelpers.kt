@@ -18,3 +18,13 @@ object ObjectBaseTestHelpers {
         return builder
     }
 }
+
+/** @see [ObjectBaseTestHelpers.putWithAlias] */
+fun <T, Builder : ObjectBase.Builder<T>> Builder.putWithAlias(
+    name: String,
+    alias: String,
+    value: Any?
+): Builder {
+    put(name, value, alias)
+    return this
+}

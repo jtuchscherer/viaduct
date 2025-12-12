@@ -1,4 +1,4 @@
-package viaduct.mapping.graphql
+package viaduct.api.internal
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.schema.GraphQLCompositeType
@@ -12,7 +12,11 @@ import graphql.schema.GraphQLType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetTime
+import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ViaductSchema
+import viaduct.mapping.graphql.Conv
+import viaduct.mapping.graphql.ConvMemo
+import viaduct.mapping.graphql.IR
 
 /**
  * Factory methods for [Conv]s that map between Json and [IR] representations.
@@ -41,12 +45,21 @@ object JsonConv {
         Never
     }
 
-    /** create a [Conv] for the given [type] */
+    /**
+     * Create a [Conv] for the given [type]
+     * @param type the GraphQL type for which a [Conv] will be created
+     * @param selectionSet a possible projection of [type].
+     * The returned [Conv] will only be able to map the selections in [selectionSet].
+     * Any aliases used in [selectionSet] will be used as object keys in both the JSON and IR Values
+     */
     operator fun invoke(
         schema: ViaductSchema,
         type: GraphQLType,
+        selectionSet: RawSelectionSet? = null,
         addJsonTypenameField: AddJsonTypenameField = AddJsonTypenameField.Always
-    ): Conv<String, IR.Value> = Builder(schema, addJsonTypenameField).build(type)
+    ): Conv<String, IR.Value> =
+        Builder(schema, addJsonTypenameField)
+            .build(type, selectionSet)
 
     private fun json(inner: Conv<Any?, IR.Value>): Conv<String, IR.Value> =
         Conv(
@@ -64,23 +77,22 @@ object JsonConv {
 
     private fun obj(
         name: String,
-        fieldConvs: Map<String, Conv<Any?, IR.Value>>,
+        selectionConvs: Map<String, Conv<Any?, IR.Value>>,
         addJsonTypenameField: AddJsonTypenameField
     ): Conv<Map<String, Any?>, IR.Value.Object> =
         Conv(
             forward = {
-                val irFieldValues = it
-                    .toList()
-                    .mapNotNull { (k, v) ->
-                        val conv = fieldConvs[k] ?: return@mapNotNull null
-                        k to conv(v)
-                    }.toMap()
+                val irFieldValues = it.toList().mapNotNull { (sel, v) ->
+                    val conv = selectionConvs[sel] ?: return@mapNotNull null
+                    // val conv = fieldConvs[fieldName] ?: return@mapNotNull null
+                    sel to conv(v)
+                }.toMap()
                 IR.Value.Object(name, irFieldValues)
             },
             inverse = {
                 val result = it.fields.mapValues { (k, v) ->
-                    val fieldConv = requireNotNull(fieldConvs[k])
-                    fieldConv.invert(v)
+                    val conv = requireNotNull(selectionConvs[k])
+                    conv.invert(v)
                 }
                 when (addJsonTypenameField) {
                     AddJsonTypenameField.Always -> result + (__typename to name)
@@ -235,41 +247,43 @@ object JsonConv {
         )
 
     /** A builder that can recursively build a single conv */
-    private class Builder(
-        val schema: ViaductSchema,
-        val addJsonTypenameField: AddJsonTypenameField
-    ) {
+    private class Builder(val schema: ViaductSchema, val addJsonTypenameField: AddJsonTypenameField) {
         private val convMemo = ConvMemo()
 
-        fun build(type: GraphQLType): Conv<String, IR.Value> =
-            json(mk(type)).also {
+        fun build(
+            type: GraphQLType,
+            selectionSet: RawSelectionSet?
+        ): Conv<String, IR.Value> =
+            json(mk(type, selectionSet)).also {
                 convMemo.finalize()
             }
 
         private fun mk(
             type: GraphQLType,
+            selectionSet: RawSelectionSet?,
             isNullable: Boolean = true
         ): Conv<Any?, IR.Value> {
             val conv = when (type) {
                 is GraphQLNonNull -> {
                     // return early to bypass the additional wrapping in nullable
-                    return nonNullable(mk(type.wrappedType, isNullable = false))
+                    return nonNullable(mk(type.wrappedType, selectionSet, isNullable = false))
                 }
-                is GraphQLList -> list(mk(type.wrappedType))
-                is GraphQLObjectType ->
-                    convMemo.buildIfAbsent(type.name) {
-                        val fieldConvs: Map<String, Conv<Any?, IR.Value>> = type.fields
-                            .associate { f ->
-                                f.name to mk(f.type)
-                            } + (__typename to string.asAnyConv)
-                        obj(type.name, fieldConvs, addJsonTypenameField)
+                is GraphQLList -> list(mk(type.wrappedType, selectionSet))
+
+                is GraphQLObjectType -> {
+                    convMemo.memoizeIf(type.name, selectionSet == null) {
+                        val selectionConvs = mkSelectionConvs(schema, type, selectionSet, ::mk)
+                        obj(type.name, selectionConvs, addJsonTypenameField)
                     }
+                }
 
                 is GraphQLCompositeType ->
-                    convMemo.buildIfAbsent(type.name) {
+                    convMemo.memoizeIf(type.name, selectionSet == null) {
                         val concretes = schema.rels.possibleObjectTypes(type).associate { type ->
+                            val typedSelections = selectionSet?.selectionSetForType(type.name)
+
                             @Suppress("UNCHECKED_CAST")
-                            val concrete = mk(type) as Conv<Map<String, Any?>, IR.Value.Object>
+                            val concrete = mk(type, typedSelections) as Conv<Map<String, Any?>, IR.Value.Object>
                             type.name to concrete
                         }
                         abstract(type.name, concretes)
@@ -277,7 +291,7 @@ object JsonConv {
 
                 is GraphQLInputObjectType ->
                     convMemo.buildIfAbsent(type.name) {
-                        val fieldConvs = type.fields.associate { f -> f.name to mk(f.type) }
+                        val fieldConvs = type.fields.associate { f -> f.name to mk(f.type, null) }
                         obj(type.name, fieldConvs, addJsonTypenameField)
                     }
 
