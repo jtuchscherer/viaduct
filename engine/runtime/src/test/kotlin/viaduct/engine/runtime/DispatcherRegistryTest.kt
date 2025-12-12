@@ -41,6 +41,7 @@ import viaduct.engine.api.mocks.MockNodeUnbatchedResolverExecutor
 import viaduct.engine.api.mocks.MockTenantAPIBootstrapper
 import viaduct.engine.api.mocks.MockTenantModuleBootstrapper
 import viaduct.engine.api.mocks.Samples
+import viaduct.engine.api.mocks.assertRequiredSelectionSetListEquals
 import viaduct.engine.api.mocks.mkEngineObjectData
 import viaduct.engine.api.mocks.mkSchemaWithWiring
 import viaduct.engine.api.select.SelectionsParser
@@ -160,7 +161,7 @@ class DispatcherRegistryTest {
                 .printAstCompact(required[0].selections.toDocument())
                 .contains("fragment _ on TestType")
         )
-        assertEquals(required, dispatcherRegistry.getRequiredSelectionSetsForField("TestType", "parameterizedField", false))
+        assertRequiredSelectionSetListEquals(required, dispatcherRegistry.getRequiredSelectionSetsForField("TestType", "parameterizedField", false))
     }
 
     @Test

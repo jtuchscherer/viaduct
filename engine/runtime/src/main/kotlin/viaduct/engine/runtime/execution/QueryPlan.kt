@@ -108,6 +108,10 @@ data class QueryPlan(
      *
      * These selections have not been collected yet and may be subject to [Constraints]
      * that determine if/how they get collected.
+     *
+     * @param fieldTypeChildPlans Map from possible concrete field type to child plans. The value is lazily computed
+     *  because across executions of a single operation, polymorphic fields typically resolve to just one concrete
+     *  type and the other child plans will be unused.
      */
     data class Field(
         val resultKey: String,
@@ -424,7 +428,7 @@ private class QueryPlanBuilder(
             return emptyList()
         }
         return requiredSelectionSets.mapNotNull { rss ->
-            // Skip if we've already processed this RSS (by reference identity)
+            // Skip if we've already processed this RSS
             if (rss in seenRSSes) {
                 return@mapNotNull null
             }

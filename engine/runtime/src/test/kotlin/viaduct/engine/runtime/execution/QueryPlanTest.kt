@@ -545,8 +545,8 @@ class QueryPlanTest {
                 "y(a:\$vara)",
                 varResolvers
             )
-            .fieldResolverEntry("Query" to "z", "zz") // Included in z's child plans
-            .fieldCheckerEntry("Query" to "z", "x") // Now included, but x won't recurse (cycle broken)
+            .fieldResolverEntry("Query" to "z", "zz")
+            .fieldCheckerEntry("Query" to "z", "x")
             .build()
         Fixture("type Query { x:Int, y(a:Int):Int, z:Int zz:String}", reg) {
             val plan = buildPlan("{x}")

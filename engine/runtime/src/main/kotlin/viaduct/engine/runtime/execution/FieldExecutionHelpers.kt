@@ -359,8 +359,8 @@ object FieldExecutionHelpers {
         }
 
     /**
-     * Cache for variable definitions computed from RequiredSelectionSets. Uses weak keys for reference equality
-     * and automatic cleanup when new RequiredSelectionSets are created, e.g. during hotswap.
+     * Cache for variable definitions computed from RequiredSelectionSets. Uses weak keys for
+     * automatic cleanup when new RequiredSelectionSets are created, e.g. during hotswap.
      */
     private val rssVariableDefinitionsCache: Cache<RequiredSelectionSet, List<VariableDefinition>> =
         Caffeine.newBuilder()
