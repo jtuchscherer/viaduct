@@ -25,7 +25,7 @@ import viaduct.engine.api.SelectionSetVariable
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.api.select.SelectionsParser
-import viaduct.service.api.spi.Flags
+import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.ResolverErrorReporter
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault

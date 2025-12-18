@@ -105,30 +105,31 @@ public final class viaduct/service/api/spi/ErrorMetadata$Companion {
 	public final fun getEMPTY ()Lviaduct/service/api/spi/ErrorMetadata;
 }
 
-public abstract interface class viaduct/service/api/spi/Flag {
+public abstract interface class viaduct/service/api/spi/FlagManager {
+	public abstract fun isEnabled (Lviaduct/service/api/spi/FlagManager$Flag;)Z
+}
+
+public abstract interface class viaduct/service/api/spi/FlagManager$Flag {
 	public abstract fun getFlagName ()Ljava/lang/String;
 }
 
-public abstract interface class viaduct/service/api/spi/FlagManager {
-	public abstract fun isEnabled (Lviaduct/service/api/spi/Flag;)Z
+public final class viaduct/service/api/spi/FlagManager$Flags : java/lang/Enum, viaduct/service/api/spi/FlagManager$Flag {
+	public static final field DISABLE_QUERY_PLAN_CACHE Lviaduct/service/api/spi/FlagManager$Flags;
+	public static final field EXECUTE_ACCESS_CHECKS Lviaduct/service/api/spi/FlagManager$Flags;
+	public static final field KILLSWITCH_NON_BLOCKING_ENQUEUE_FLUSH Lviaduct/service/api/spi/FlagManager$Flags;
+	public fun getFlagName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lviaduct/service/api/spi/FlagManager$Flags;
+	public static fun values ()[Lviaduct/service/api/spi/FlagManager$Flags;
 }
 
 public final class viaduct/service/api/spi/FlagManager$default : viaduct/service/api/spi/FlagManager {
 	public static final field INSTANCE Lviaduct/service/api/spi/FlagManager$default;
-	public fun isEnabled (Lviaduct/service/api/spi/Flag;)Z
+	public fun isEnabled (Lviaduct/service/api/spi/FlagManager$Flag;)Z
 }
 
 public final class viaduct/service/api/spi/FlagManager$disabled : viaduct/service/api/spi/FlagManager {
 	public static final field INSTANCE Lviaduct/service/api/spi/FlagManager$disabled;
-	public fun isEnabled (Lviaduct/service/api/spi/Flag;)Z
-}
-
-public final class viaduct/service/api/spi/Flags : java/lang/Enum, viaduct/service/api/spi/Flag {
-	public static final field DISABLE_QUERY_PLAN_CACHE Lviaduct/service/api/spi/Flags;
-	public static final field EXECUTE_ACCESS_CHECKS Lviaduct/service/api/spi/Flags;
-	public fun getFlagName ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lviaduct/service/api/spi/Flags;
-	public static fun values ()[Lviaduct/service/api/spi/Flags;
+	public fun isEnabled (Lviaduct/service/api/spi/FlagManager$Flag;)Z
 }
 
 public abstract interface class viaduct/service/api/spi/GlobalIDCodec {

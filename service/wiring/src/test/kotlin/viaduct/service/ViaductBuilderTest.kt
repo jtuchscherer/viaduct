@@ -13,8 +13,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import org.junit.jupiter.api.Test
 import viaduct.engine.api.ViaductSchema
-import viaduct.service.api.spi.Flag
 import viaduct.service.api.spi.FlagManager
+import viaduct.service.api.spi.FlagManager.Flag
 import viaduct.service.api.spi.ResolverErrorBuilder
 import viaduct.service.api.spi.ResolverErrorReporter
 import viaduct.service.runtime.SchemaConfiguration

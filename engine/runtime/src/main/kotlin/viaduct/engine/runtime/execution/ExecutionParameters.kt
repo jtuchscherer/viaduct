@@ -34,7 +34,7 @@ import viaduct.engine.runtime.context.CompositeLocalContext
 import viaduct.engine.runtime.context.updateCompositeLocalContext
 import viaduct.engine.runtime.observability.ExecutionObservabilityContext
 import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.Flags
+import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.utils.slf4j.logger
 
 /**

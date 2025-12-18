@@ -18,7 +18,7 @@ import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
 import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.Flags
+import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.service.api.spi.GlobalIDCodec
 
 /**
