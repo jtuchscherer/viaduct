@@ -592,7 +592,9 @@ class ObjectBaseTest {
                     override val id = "O1:foo"
                 }
             )
-            assertEquals("O1:foo", o1.getId().toString())
+            val globalId = o1.getId()
+            assertEquals("O1", globalId.type.name)
+            assertEquals("foo", globalId.internalID)
             assertThrows<ViaductFrameworkException> { o1.get("thisFieldDoesNotExist", String::class) }
             assertInstanceOf(
                 UnsetSelectionException::class.java,

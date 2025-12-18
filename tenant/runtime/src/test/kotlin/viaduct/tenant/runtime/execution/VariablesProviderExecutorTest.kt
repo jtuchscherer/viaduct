@@ -36,7 +36,7 @@ class VariablesProviderExecutorTest {
 
     private val objectData = mkEngineObjectData(MockSchema.minimal.schema.queryType, emptyMap())
     private val reflectionLoader = MockReflectionLoader()
-    private val globalIDCodec = MockGlobalIDCodec()
+    private val globalIDCodec = MockGlobalIDCodec
 
     private inner class TestVariablesProviderContextFactory : VariablesProviderContextFactory {
         override fun createVariablesProviderContext(

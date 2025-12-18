@@ -57,7 +57,7 @@ private suspend fun Exerciser.exerciseBuilderRoundtrip(
     val builder = builderCtor.newInstance(
         MockInternalContext(
             schema,
-            MockGlobalIDCodec(),
+            MockGlobalIDCodec,
             reflectionLoaderForClassResolver(classResolver)
         ).executionContext
     )

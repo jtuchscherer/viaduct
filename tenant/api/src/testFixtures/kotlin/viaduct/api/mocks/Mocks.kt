@@ -7,7 +7,7 @@ import graphql.schema.idl.SchemaParser
 import kotlin.reflect.KClass
 import viaduct.api.context.ExecutionContext
 import viaduct.api.globalid.GlobalID
-import viaduct.api.globalid.GlobalIDCodec
+import viaduct.api.globalid.GlobalIDCodec as DeprecatedGlobalIDCodec
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.internal.select.SelectionsLoader
 import viaduct.api.reflect.Type
@@ -20,7 +20,8 @@ import viaduct.api.types.NodeObject
 import viaduct.api.types.Query
 import viaduct.graphql.schema.ViaductSchema
 import viaduct.graphql.schema.graphqljava.GJSchema
-import viaduct.tenant.runtime.globalid.GlobalIDCodecImpl
+import viaduct.service.api.spi.GlobalIDCodec
+import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 
 fun mkSchema(sdl: String): GraphQLSchema {
     val tdr = SchemaParser().parse(sdl)
@@ -47,7 +48,7 @@ val GraphQLSchema.viaduct: ViaductSchema
 
 // TODO: remove (https://app.asana.com/1/150975571430/task/1211628405683375?focus=true)
 @Suppress("UNCHECKED_CAST")
-class MockGlobalIDCodec : GlobalIDCodec {
+class MockDeprecatedGlobalIDCodec : DeprecatedGlobalIDCodec {
     override fun <T : NodeCompositeOutput> serialize(id: GlobalID<T>): String = "${id.type.name}:${id.internalID}"
 
     override fun <T : NodeCompositeOutput> deserialize(str: String): GlobalID<T> =
@@ -57,6 +58,23 @@ class MockGlobalIDCodec : GlobalIDCodec {
                 internalId
             ) as GlobalID<T>
         }
+}
+
+/**
+ * Mock implementation of service-level GlobalIDCodec for testing.
+ * Uses "TypeName:internalID" format for simple debugging.
+ */
+object MockGlobalIDCodec : GlobalIDCodec {
+    override fun serialize(
+        typeName: String,
+        localID: String
+    ): String = "$typeName:$localID"
+
+    override fun deserialize(globalID: String): Pair<String, String> {
+        val parts = globalID.split(":", limit = 2)
+        require(parts.size == 2) { "Invalid mock GlobalID format: $globalID" }
+        return parts[0] to parts[1]
+    }
 }
 
 // TODO: remove (https://app.asana.com/1/150975571430/task/1211628405683375?focus=true)
@@ -98,12 +116,7 @@ class MockReflectionLoaderImpl(vararg types: Type<*>) : ReflectionLoader {
  * @param internalId The internal ID string
  * @return A Base64-encoded GlobalID string
  */
-@Suppress("UNCHECKED_CAST")
-fun <T : NodeCompositeOutput> Type<T>.testGlobalId(internalId: String): String {
-    val globalIDCodec = GlobalIDCodecImpl(MockReflectionLoaderImpl())
-    val globalId = MockGlobalID(this as Type<NodeObject>, internalId)
-    return globalIDCodec.serialize(globalId)
-}
+fun <T : NodeCompositeOutput> Type<T>.testGlobalId(internalId: String): String = GlobalIDCodecDefault.serialize(this.name, internalId)
 
 @Suppress("UNCHECKED_CAST")
 data class MockSelectionsLoader<T : CompositeOutput>(val t: T) : SelectionsLoader<T> {

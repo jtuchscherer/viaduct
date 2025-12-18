@@ -55,7 +55,7 @@ class MocksTest {
                 val type = MockType.mkNodeObject(typeName)
                 val internalId = Arb.string().bind()
 
-                val codec = MockGlobalIDCodec()
+                val codec = MockDeprecatedGlobalIDCodec()
                 val id1 = MockGlobalID(type, internalId)
                 val serialized = codec.serialize(MockGlobalID(type, internalId))
                 val id2 = codec.deserialize<NodeObject>(serialized)

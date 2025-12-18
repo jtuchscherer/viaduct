@@ -44,7 +44,7 @@ class EODBuilderWrapperTest {
     )
 
     private val testObjectType = testSchema.getType("TestObject") as GraphQLObjectType
-    private val globalIDCodec = MockGlobalIDCodec()
+    private val globalIDCodec = MockGlobalIDCodec
 
     @Test
     fun `unwrapEnum handles Java enum instance`() {

@@ -156,7 +156,7 @@ abstract class ObjectBase(
             }
             return value
         } else if (baseFieldTypeClass == GlobalID::class) {
-            return context.globalIDCodec.deserialize<NodeObject>(value as String)
+            return context.deserializeGlobalID<NodeObject>(value as String)
         }
         return type.coercing.parseValue(value, GraphQLContext.getDefault(), Locale.getDefault()) ?: throw RuntimeException(
             "Failed to parse value $value for scalar type ${type.name}"

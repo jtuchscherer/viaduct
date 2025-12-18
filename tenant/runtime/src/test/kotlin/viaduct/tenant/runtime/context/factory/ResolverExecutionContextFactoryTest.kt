@@ -47,7 +47,7 @@ import viaduct.tenant.runtime.FakeQuery
  * - Variable resolution (tested in other tests)
  */
 class ResolverExecutionContextFactoryTest {
-    private val codec = MockGlobalIDCodec()
+    private val codec = MockGlobalIDCodec
 
     // Create mock reflection types for Query
     private val queryReflection = object : Type<Query> {
@@ -60,7 +60,12 @@ class ResolverExecutionContextFactoryTest {
         override val kcls = FakeMutation::class
     }
 
-    private val reflectionLoader = MockReflectionLoader(queryReflection, mutationReflection)
+    private val testNodeReflection = object : Type<TestNode> {
+        override val name = "TestNode"
+        override val kcls = TestNode::class
+    }
+
+    private val reflectionLoader = MockReflectionLoader(queryReflection, mutationReflection, testNodeReflection)
 
     private val schema = MockSchema.mk(
         """

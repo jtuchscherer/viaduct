@@ -1,7 +1,5 @@
 package viaduct.service.runtime.noderesolvers
 
-import java.net.URLDecoder
-import java.util.Base64
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.FieldResolverExecutor
@@ -11,6 +9,7 @@ import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.ViaductSchema
+import viaduct.service.api.spi.GlobalIDCodec
 
 /**
  * ViaductNodeResolverModuleBootstrapper is responsible for defining and bootstrapping system level Query.node/s field resolvers.
@@ -84,15 +83,17 @@ class ViaductQueryNodeResolverModuleBootstrapper : TenantModuleBootstrapper {
 
         /**
          * Resolves and validates a globalId via schema introspection.
-         * This is similar to GlobalIdCodeImpl's GRT based approach and could be consolidated as part of:
-         * https://app.asana.com/1/150975571430/project/1209554365854885/task/1211213956653747
          */
         private fun resolveNodeByGlobalId(
             globalId: Any?,
             context: EngineExecutionContext
         ): NodeReference {
             require(globalId is String) { "Expected GlobalID \"$globalId\" to be a string. This should never occur." }
-            val (typeName, _) = decodeGlobalIdString(globalId)
+            // TODO: EngineExecutionContext.globalIDCodec is typed as Any to avoid circular dependency.
+            //  This will be fixed in a future PR by making engine/api depend on service/api.
+            val codec = context.globalIDCodec as? GlobalIDCodec
+                ?: error("EngineExecutionContext.globalIDCodec must be a GlobalIDCodec, got: ${context.globalIDCodec::class}")
+            val (typeName, _) = codec.deserialize(globalId)
 
             val graphQLObjectType = context.fullSchema.schema.getObjectType(typeName)
             requireNotNull(graphQLObjectType) { "Expected GlobalId \"$globalId\" with type name '$typeName' to match a named object type in the schema" }
@@ -101,24 +102,6 @@ class ViaductQueryNodeResolverModuleBootstrapper : TenantModuleBootstrapper {
             require(implementsNode) { "Expected GlobalId \"$globalId\" with type name '$typeName' to match a named object type that extends the Node interface" }
 
             return context.createNodeReference(globalId, graphQLObjectType)
-        }
-
-        /**
-         * Logic for decoding the GlobalID string format.
-         * This is copied from GlobalIDCodecImpl and should be refactored as part of:
-         * https://app.asana.com/1/150975571430/project/1209554365854885/task/1211213956653747
-         */
-        private fun decodeGlobalIdString(globalIdString: String): Pair<String, String> {
-            val delimiter = ":"
-            val decodedStr = Base64.getDecoder().decode(globalIdString).decodeToString()
-            val parts = decodedStr.split(delimiter)
-            require(parts.size == 2) {
-                "Expected GlobalID \"$globalIdString\" to be a Base64-encoded string with the decoded format '<type name>$delimiter<internal ID>', " +
-                    "got decoded value $decodedStr"
-            }
-            val (typeName, id) = parts
-            val localId = URLDecoder.decode(id, "UTF-8")
-            return typeName to localId
         }
     }
 }

@@ -64,7 +64,7 @@ class RequiredselectionSetFactoryVariablesProviderTest {
 
     private fun mkFactory(): RequiredSelectionSetFactory =
         RequiredSelectionSetFactory(
-            MockGlobalIDCodec(),
+            MockGlobalIDCodec,
             mockReflectionLoader("viaduct.api.bootstrap.test.grts"),
         )
 
@@ -92,7 +92,7 @@ class RequiredselectionSetFactoryVariablesProviderTest {
         ): VariablesProviderContext<Arguments> {
             val ic = InternalContextImpl(
                 engineExecutionContext.fullSchema,
-                MockGlobalIDCodec(),
+                MockGlobalIDCodec,
                 mockReflectionLoader("viaduct.api.bootstrap.test.grts")
             )
             return VariablesProviderContextImpl(ic, requestContext, MockArguments())

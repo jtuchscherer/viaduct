@@ -308,7 +308,8 @@ class InputLikeBaseTest {
             .build()
 
         assertEquals(input.id, id)
-        assertEquals(input.id2, id2)
+        assertEquals(id2.type.name, input.id2.type.name)
+        assertEquals(id2.internalID, input.id2.internalID)
         assertEquals(
             mapOf(
                 "id" to id,

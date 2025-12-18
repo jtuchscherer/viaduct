@@ -23,6 +23,7 @@ dependencies {
     runtimeOnly(libs.viaduct.tenant.api)
 
     testImplementation(libs.viaduct.engine.api)
+    testImplementation(libs.viaduct.service.api)
     testImplementation(libs.viaduct.tenant.api)
     testImplementation(libs.viaduct.tenant.runtime)
     testImplementation(libs.io.mockk.dsl)

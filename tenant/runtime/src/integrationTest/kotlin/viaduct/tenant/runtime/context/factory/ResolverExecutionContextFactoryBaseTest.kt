@@ -24,7 +24,7 @@ import viaduct.tenant.runtime.globalid.User
  */
 class ResolverExecutionContextFactoryBaseTest {
     private val contextMocks = ContextMocks(GlobalIdFeatureAppTest.schema)
-    private val globalIDCodec = MockGlobalIDCodec()
+    private val globalIDCodec = MockGlobalIDCodec
     private val reflectionLoader = mockReflectionLoader("viaduct.tenant.runtime.globalid")
 
     @Suppress("UNCHECKED_CAST")

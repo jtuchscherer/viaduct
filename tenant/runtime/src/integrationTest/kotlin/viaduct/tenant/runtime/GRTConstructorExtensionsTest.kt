@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.api.ViaductTenantUsageException
 import viaduct.api.internal.ObjectBase
+import viaduct.api.mocks.MockGlobalIDCodec
 import viaduct.api.mocks.MockInternalContext
+import viaduct.api.mocks.MockReflectionLoader
 import viaduct.engine.api.UnsetSelectionException
 import viaduct.engine.api.mocks.mkEngineObjectData
 import viaduct.tenant.runtime.globalid.CreateUserInput
@@ -25,7 +27,11 @@ import viaduct.tenant.runtime.globalid.User
 // code-generated GRTs.
 class GRTConstructorExtensionsTest {
     val schema = GlobalIdFeatureAppTest.schema
-    val internalContext = MockInternalContext(GlobalIdFeatureAppTest.schema)
+    val internalContext = MockInternalContext(
+        GlobalIdFeatureAppTest.schema,
+        MockGlobalIDCodec,
+        MockReflectionLoader(User.Reflection)
+    )
     val userType = schema.schema.getObjectType("User")
     val emptyUserEOD = mkEngineObjectData(userType, emptyMap())
 
@@ -124,7 +130,8 @@ class GRTConstructorExtensionsTest {
             user.getId()
         }
         assertInstanceOf(globalId::class.java, globalId) // Ensure getId returns proper type
-        assertEquals("User:user123", globalId.toString())
+        assertEquals("User", globalId.type.name)
+        assertEquals("user123", globalId.internalID)
 
         val name = runBlocking {
             user.getName()
