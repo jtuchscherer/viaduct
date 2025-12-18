@@ -16,6 +16,8 @@ checker = "3.33.0"
 guice = "6.0.0"
 jackson = "2.17.3"
 javassist = "3.28.0-GA"
+ktor = "3.0.3"
+logback = "1.4.14"
 javax-inject = "1"
 jmh = "1.37"
 junit5 = "5.11.3"
@@ -112,6 +114,13 @@ javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inje
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
+ktor-serialization-jackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
 idea-gradle-plugin = { module = "org.jetbrains.gradle.plugin.idea-ext:org.jetbrains.gradle.plugin.idea-ext.gradle.plugin", version.ref = "idea-gradle-plugin" }
 
