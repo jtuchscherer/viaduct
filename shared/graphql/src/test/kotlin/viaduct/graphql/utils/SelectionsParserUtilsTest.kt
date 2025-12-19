@@ -20,6 +20,15 @@ class SelectionsParserUtilsTest {
     @Test
     fun `isShorthandForm returns false for fragment definitions`() {
         assertFalse(SelectionsParserUtils.isShorthandForm("fragment _ on User { id }"))
+        assertFalse(
+            SelectionsParserUtils.isShorthandForm(
+                """
+            # comment
+            fragment _ on User { id }
+            # comment
+                """.trimIndent()
+            )
+        )
         assertFalse(SelectionsParserUtils.isShorthandForm("\n fragment Main on User { id }"))
     }
 

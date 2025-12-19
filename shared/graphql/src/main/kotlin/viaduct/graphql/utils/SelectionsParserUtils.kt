@@ -10,12 +10,15 @@ object SelectionsParserUtils {
     /** Fragment name used for entry point fragments in selections strings */
     const val EntryPointFragmentName: String = "Main"
 
-    private val fragmentRegex = Regex("^\\s*fragment\\s+")
+    private val fragmentRegex = Regex("^\\s*fragment\\s+", RegexOption.MULTILINE)
 
     /**
      * Checks if a selections string is in shorthand form (field set) or longhand form (full fragment definition).
      * Shorthand form: "id name email"
      * Longhand form: "fragment Main on User { id name email }"
+     *
+     * Note: MULTILINE is needed so comments at the start of the string don't prevent matching
+     * "fragment" on subsequent lines.
      */
     fun isShorthandForm(s: String): Boolean = !s.contains(fragmentRegex)
 
