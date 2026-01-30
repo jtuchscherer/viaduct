@@ -22,10 +22,11 @@ import org.junit.jupiter.api.io.TempDir;
 import viaduct.codegen.km.ctdiff.ClassDiff;
 import viaduct.codegen.km.ctdiff.ClassFinder;
 import viaduct.codegen.km.ctdiff.JavaClassLoaderClassFinder;
+import viaduct.invariants.InvariantChecker;
 import viaduct.x.javaapi.codegen.JavaGRTsCodegen;
 
 /**
- * ClassDiff tests for generated enum classes, comparing them against manually built expected
+ * ClassDiff tests for generated input type classes, comparing them against manually built expected
  * classes.
  *
  * <p>The test flow:
@@ -38,25 +39,25 @@ import viaduct.x.javaapi.codegen.JavaGRTsCodegen;
  *   <li>Use ClassDiff with JavaClassLoaderClassFinder to compare generated vs expected classes
  * </ol>
  */
-class EnumClassDiffTest {
+class InputTypeClassDiffTest {
 
   private static final String GENERATED_PACKAGE = "viaduct.x.javaapi.codegen.exercise.generated";
   private static final String EXPECTED_PACKAGE = "viaduct.x.javaapi.codegen.exercise.grts";
-  private static final String SCHEMA_RESOURCE = "graphql/exerciser_enum_schema.graphqls";
+  private static final String SCHEMA_RESOURCE = "graphql/exerciser_input_schema.graphqls";
 
   @TempDir Path tempDir;
 
   private JavaGRTsCodegen codegen;
-  private viaduct.invariants.InvariantChecker diffs;
+  private InvariantChecker diffs;
 
   @BeforeEach
   void setUp() {
     codegen = new JavaGRTsCodegen();
-    diffs = new viaduct.invariants.InvariantChecker();
+    diffs = new InvariantChecker();
   }
 
   @Test
-  void exerciseAllEnums() throws Exception {
+  void exerciseAllInputs() throws Exception {
     // Step 1: Load schema from resources
     File schemaFile = extractSchemaToTempFile();
 
@@ -88,13 +89,13 @@ class EnumClassDiffTest {
     ClassFinder classFinder = new JavaClassLoaderClassFinder(generatedClassLoader);
     ClassDiff classDiff = new ClassDiff(EXPECTED_PACKAGE, GENERATED_PACKAGE, diffs, classFinder);
 
-    // Exercise all enums defined in the schema
-    List<String> enumNames =
-        List.of("SimpleEnum", "EnumWithDescription", "SingleValueEnum", "StatusEnum");
+    // Exercise all input types defined in the schema
+    List<String> inputNames =
+        List.of("SimpleInput", "InputWithDescription", "ComplexInput", "AllFieldTypesInput");
 
-    for (String enumName : enumNames) {
-      Class<?> expectedClass = Class.forName(EXPECTED_PACKAGE + "." + enumName);
-      Class<?> generatedClass = classFinder.find(GENERATED_PACKAGE + "." + enumName);
+    for (String inputName : inputNames) {
+      Class<?> expectedClass = Class.forName(EXPECTED_PACKAGE + "." + inputName);
+      Class<?> generatedClass = classFinder.find(GENERATED_PACKAGE + "." + inputName);
       classDiff.compare(expectedClass, generatedClass);
     }
 
@@ -112,26 +113,26 @@ class EnumClassDiffTest {
   }
 
   @Test
-  void exerciseSimpleEnum() throws Exception {
-    exerciseSingleEnum("SimpleEnum");
+  void exerciseSimpleInput() throws Exception {
+    exerciseSingleInput("SimpleInput");
   }
 
   @Test
-  void exerciseEnumWithDescription() throws Exception {
-    exerciseSingleEnum("EnumWithDescription");
+  void exerciseInputWithDescription() throws Exception {
+    exerciseSingleInput("InputWithDescription");
   }
 
   @Test
-  void exerciseSingleValueEnum() throws Exception {
-    exerciseSingleEnum("SingleValueEnum");
+  void exerciseComplexInput() throws Exception {
+    exerciseSingleInput("ComplexInput");
   }
 
   @Test
-  void exerciseStatusEnum() throws Exception {
-    exerciseSingleEnum("StatusEnum");
+  void exerciseAllFieldTypesInput() throws Exception {
+    exerciseSingleInput("AllFieldTypesInput");
   }
 
-  private void exerciseSingleEnum(String enumName) throws Exception {
+  private void exerciseSingleInput(String inputName) throws Exception {
     // Load schema from resources
     File schemaFile = extractSchemaToTempFile();
 
@@ -164,13 +165,13 @@ class EnumClassDiffTest {
     ClassDiff classDiff = new ClassDiff(EXPECTED_PACKAGE, GENERATED_PACKAGE, diffs, classFinder);
 
     // Load and compare classes
-    Class<?> expectedClass = Class.forName(EXPECTED_PACKAGE + "." + enumName);
-    Class<?> generatedClass = classFinder.find(GENERATED_PACKAGE + "." + enumName);
+    Class<?> expectedClass = Class.forName(EXPECTED_PACKAGE + "." + inputName);
+    Class<?> generatedClass = classFinder.find(GENERATED_PACKAGE + "." + inputName);
     classDiff.compare(expectedClass, generatedClass);
 
     // Report results
     if (!diffs.isEmpty()) {
-      StringBuilder result = new StringBuilder("Exerciser failures for " + enumName + ":\n");
+      StringBuilder result = new StringBuilder("Exerciser failures for " + inputName + ":\n");
       diffs.toMultilineString(result);
       System.err.println(result);
     }
@@ -178,7 +179,7 @@ class EnumClassDiffTest {
     assertThat(diffs.isEmpty())
         .withFailMessage(
             "Expected no failures for %s, but found:\n%s",
-            enumName, String.join("\n", diffs.toListOfErrors()))
+            inputName, String.join("\n", diffs.toListOfErrors()))
         .isTrue();
   }
 
@@ -219,8 +220,9 @@ class EnumClassDiffTest {
       Iterable<? extends JavaFileObject> compilationUnits =
           fileManager.getJavaFileObjectsFromFiles(javaFiles);
 
-      // Set compilation options
-      List<String> options = Arrays.asList("-d", outputDir.toString());
+      // Set compilation options - include classpath for GraphQLInput interface
+      String classpath = System.getProperty("java.class.path");
+      List<String> options = Arrays.asList("-d", outputDir.toString(), "-classpath", classpath);
 
       JavaCompiler.CompilationTask task =
           compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
