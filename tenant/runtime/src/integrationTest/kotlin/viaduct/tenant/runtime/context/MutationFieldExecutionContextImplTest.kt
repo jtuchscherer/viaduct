@@ -17,7 +17,7 @@ import viaduct.tenant.runtime.select.SelectTestFeatureAppTest
 class MutationFieldExecutionContextImplTest : ContextTestBase() {
     private val mutationObject = mockk<Mutation>()
 
-    private fun mk(): MutationFieldExecutionContextImpl {
+    private fun mk(): MutationFieldExecutionContextImpl<QueryType, Mutation> {
         val wrapper = createMockingWrapper(
             schema = SelectTestFeatureAppTest.schema,
             mutationMock = mutationObject

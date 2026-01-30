@@ -21,6 +21,7 @@ import viaduct.api.reflect.Type
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
+import viaduct.api.types.Mutation
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
@@ -42,18 +43,18 @@ import viaduct.tenant.runtime.toObjectGRT
 
 sealed class ResolverExecutionContextFactoryBase<R : CompositeOutput>(
     resolverBaseClass: Class<*>,
-    expectedContextInterface: Class<out ResolverExecutionContext>,
+    expectedContextInterface: Class<out ResolverExecutionContext<*>>,
     protected val resultType: Type<CompositeOutput>,
 ) {
     @Suppress("UNCHECKED_CAST")
-    private val wrapperContextCls: KClass<out ResolverExecutionContext> =
+    private val wrapperContextCls: KClass<out ResolverExecutionContext<*>> =
         resolverBaseClass.declaredClasses.firstOrNull {
             expectedContextInterface.isAssignableFrom(it)
-        }?.kotlin as? KClass<out ResolverExecutionContext>
+        }?.kotlin as? KClass<out ResolverExecutionContext<*>>
             ?: throw IllegalArgumentException("No nested Context class found in ${resolverBaseClass.name}")
 
     @Suppress("UNCHECKED_CAST")
-    protected fun <CTX : ResolverExecutionContext> wrap(ctx: CTX): CTX = wrapperContextCls.primaryConstructor!!.call(ctx) as CTX
+    protected fun <CTX : ResolverExecutionContext<*>> wrap(ctx: CTX): CTX = wrapperContextCls.primaryConstructor!!.call(ctx) as CTX
 
     private val toNonCompositeSelectionSet: ResolverExecutionContextFactoryBase<R>.(RawSelectionSet?) -> SelectionSet<R> = { sels ->
         require(sels == null) {
@@ -149,7 +150,7 @@ class FieldExecutionContextFactory internal constructor(
         val internalContext = InternalContextImpl(engineExecutionContext.fullSchema, globalIDCodec, reflectionLoader)
         val engineExecutionContextWrapper = EngineExecutionContextWrapperImpl(engineExecutionContext)
         val wrappedContext = when (expectedContextInterface) {
-            FieldExecutionContext::class.java -> FieldExecutionContextImpl(
+            FieldExecutionContext::class.java -> FieldExecutionContextImpl<Query>(
                 internalContext,
                 engineExecutionContextWrapper,
                 this.toSelectionSet(rawSelections),
@@ -162,7 +163,7 @@ class FieldExecutionContextFactory internal constructor(
                 objectCls,
                 queryCls,
             )
-            MutationFieldExecutionContext::class.java -> MutationFieldExecutionContextImpl(
+            MutationFieldExecutionContext::class.java -> MutationFieldExecutionContextImpl<Query, Mutation>(
                 internalContext,
                 engineExecutionContextWrapper,
                 this.toSelectionSet(rawSelections),

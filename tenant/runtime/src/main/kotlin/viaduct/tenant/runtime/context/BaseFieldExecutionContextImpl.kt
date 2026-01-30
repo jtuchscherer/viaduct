@@ -27,20 +27,20 @@ import viaduct.tenant.runtime.toObjectGRT
  * @param syncQueryValueGetter A suspending function that returns the synchronous query value,
  *        or null if no query selections were declared by the resolver
  */
-sealed class BaseFieldExecutionContextImpl(
+sealed class BaseFieldExecutionContextImpl<Q : Query>(
     baseData: InternalContext,
     engineExecutionContextWrapper: EngineExecutionContextWrapper,
     private val selections: SelectionSet<CompositeOutput>,
     override val requestContext: Any?,
     override val arguments: Arguments,
-    override val queryValue: Query,
+    override val queryValue: Q,
     private val syncQueryValueGetter: (suspend () -> EngineObjectData.Sync)?,
-    private val queryCls: KClass<Query>,
-) : BaseFieldExecutionContext<Query, Arguments, CompositeOutput>,
-    ResolverExecutionContextImpl(baseData, engineExecutionContextWrapper) {
+    private val queryCls: KClass<Q>,
+) : BaseFieldExecutionContext<Q, Arguments, CompositeOutput>,
+    ResolverExecutionContextImpl<Q>(baseData, engineExecutionContextWrapper) {
     override fun selections() = selections
 
-    override suspend fun getQueryValue(): Query {
+    override suspend fun getQueryValue(): Q {
         val resolvedSyncQueryValue = syncQueryValueGetter?.invoke()
             ?: throw IllegalStateException(
                 "Sync query value is not available. " +

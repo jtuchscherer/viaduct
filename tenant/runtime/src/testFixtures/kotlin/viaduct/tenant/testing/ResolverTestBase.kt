@@ -421,14 +421,14 @@ interface ResolverTestBase {
     }
 
     fun ResolverTestBase.createMutationFieldResolverContext(
-        ctxKClass: KClass<out MutationFieldExecutionContext<*, *, *>>,
+        ctxKClass: KClass<out MutationFieldExecutionContext<*, *, *, *>>,
         queryValue: Query = NullQuery,
         arguments: Arguments = Arguments.NoArguments,
         requestContext: Any? = null,
         selections: SelectionSet<*> = SelectionSet.NoSelections,
         contextQueries: List<Query> = emptyList(),
         contextMutations: List<Mutation> = emptyList()
-    ): MutationFieldExecutionContext<*, *, *> {
+    ): MutationFieldExecutionContext<*, *, *, *> {
         val innerCtx = mkMutationFieldExecutionContext(
             queryValue,
             arguments,
@@ -528,7 +528,7 @@ private inline fun <T, reified C : Any> getResolverContextKClass(resolver: Resol
 
 private fun <T> getFieldResolverContextKClass(resolver: ResolverBase<T>): KClass<out FieldExecutionContext<*, *, *, *>> = getResolverContextKClass(resolver)
 
-private fun <T> getMutationFieldResolverContextKClass(resolver: ResolverBase<T>): KClass<out MutationFieldExecutionContext<*, *, *>> = getResolverContextKClass(resolver)
+private fun <T> getMutationFieldResolverContextKClass(resolver: ResolverBase<T>): KClass<out MutationFieldExecutionContext<*, *, *, *>> = getResolverContextKClass(resolver)
 
 /**
  * Creates a Context class for a specific node resolver. We suggest using [runNodeResolver] to test the
@@ -587,6 +587,7 @@ private fun ResolverTestBase.mkFieldExecutionContext(
     )
 }
 
+@Suppress("UNCHECKED_CAST")
 private fun ResolverTestBase.mkMutationFieldExecutionContext(
     queryValue: Query,
     arguments: Arguments,
@@ -594,16 +595,16 @@ private fun ResolverTestBase.mkMutationFieldExecutionContext(
     selections: SelectionSet<*>,
     contextQueryValues: List<Query> = emptyList(),
     contextMutationValues: List<Mutation> = emptyList()
-): MutationFieldExecutionContext<*, *, *> {
+): MutationFieldExecutionContext<*, *, *, *> {
     val internalContext = context.internal
     val queryResultsMap = buildContextQueryMap(contextQueryValues)
     val mutationResultsMap = buildContextMutationMap(contextMutationValues)
 
-    return MockMutationFieldExecutionContext(
+    return MockMutationFieldExecutionContext<Query, Mutation, Arguments, CompositeOutput>(
         queryValue = queryValue,
         arguments = arguments,
         requestContext = requestContext,
-        selectionsValue = selections,
+        selectionsValue = selections as SelectionSet<CompositeOutput>,
         internalContext = internalContext,
         queryResults = queryResultsMap,
         mutationResults = mutationResultsMap,

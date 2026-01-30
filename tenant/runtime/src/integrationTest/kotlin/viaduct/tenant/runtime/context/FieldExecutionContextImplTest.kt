@@ -32,7 +32,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
         args: Arguments = Args,
         globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault,
         selectionSet: SelectionSet<CompositeOutput> = noSelections,
-    ): FieldExecutionContextImpl {
+    ): FieldExecutionContextImpl<QueryType> {
         val wrapper = createMockingWrapper(
             schema = SelectTestFeatureAppTest.schema,
             queryMock = queryObject
@@ -93,6 +93,10 @@ class FieldExecutionContextImplTest : ContextTestBase() {
                 }
             }
         }
+
+    // Note: Tests for query(String, Map) require a proper test setup with generated GRTs
+    // that include a Query$Reflection class. These tests are covered by integration tests
+    // in the feature test apps that have fully generated schemas.
 
     @Test
     fun `selectionsFor - multiple selection sets with one named Main`() {

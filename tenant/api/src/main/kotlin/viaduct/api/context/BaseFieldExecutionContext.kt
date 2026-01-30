@@ -15,7 +15,7 @@ interface BaseFieldExecutionContext<
     Q : Query,
     A : Arguments,
     O : CompositeOutput
-> : ResolverExecutionContext {
+> : ResolverExecutionContext<Q> {
     /**
      * A value of [Q], with any (and only) selections from [viaduct.api.Resolver.queryValueFragment]
      * populated.

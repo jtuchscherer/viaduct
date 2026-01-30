@@ -52,7 +52,7 @@ class NodeExecutionContextImplTest : ContextTestBase() {
         val ctx = mk()
         val ss = ctx.selectionsFor(Query.Reflection, "__typename", mapOf("var" to true))
         assertTrue(ss.contains(Query.Reflection.Fields.__typename))
-        val inner = (ss as SelectionSetImpl).rawSelectionSet
+        val inner = (ss as SelectionSetImpl<*>).rawSelectionSet
         assertEquals(mapOf("var" to true), inner.variables())
     }
 
@@ -60,14 +60,16 @@ class NodeExecutionContextImplTest : ContextTestBase() {
     fun query() =
         runBlockingTest {
             val ctx = mk()
-            ctx.selectionsFor(Query.Reflection, "__typename").also {
-                assertTrue(it.contains(Query.Reflection.Fields.__typename))
+            val selections = ctx.selectionsFor(Query.Reflection, "__typename")
+            assertTrue(selections.contains(Query.Reflection.Fields.__typename))
 
-                ctx.query(it).also { result ->
-                    assertEquals(queryObject, result)
-                }
-            }
+            val result = ctx.query(selections)
+            assertEquals(queryObject, result)
         }
+
+    // Note: Tests for query(String, Map) require a proper test setup with generated GRTs
+    // that include a Query$Reflection class. These tests are covered by integration tests
+    // in the feature test apps that have fully generated schemas.
 
     @Test
     fun nodeFor() {

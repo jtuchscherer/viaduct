@@ -3,6 +3,7 @@ package viaduct.api.context
 import viaduct.api.globalid.GlobalID
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.NodeObject
+import viaduct.api.types.Query
 import viaduct.apiannotations.StableApi
 
 /**
@@ -16,7 +17,7 @@ import viaduct.apiannotations.StableApi
  * @see viaduct.api.SelectiveResolver marker interface for selective resolvers
  */
 @StableApi
-interface NodeExecutionContext<T : NodeObject> : ResolverExecutionContext {
+interface NodeExecutionContext<T : NodeObject> : ResolverExecutionContext<Query> {
     /**
      * ID of the node that is being resolved
      */

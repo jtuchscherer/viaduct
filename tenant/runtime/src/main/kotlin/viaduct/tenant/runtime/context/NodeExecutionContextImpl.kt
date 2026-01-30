@@ -5,6 +5,7 @@ import viaduct.api.globalid.GlobalID
 import viaduct.api.internal.InternalContext
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.NodeObject
+import viaduct.api.types.Query
 
 class NodeExecutionContextImpl(
     baseData: InternalContext,
@@ -12,6 +13,6 @@ class NodeExecutionContextImpl(
     private val selections: SelectionSet<NodeObject>,
     override val requestContext: Any?,
     override val id: GlobalID<NodeObject>,
-) : SelectiveNodeExecutionContext<NodeObject>, ResolverExecutionContextImpl(baseData, engineExecutionContextWrapper) {
+) : SelectiveNodeExecutionContext<NodeObject>, ResolverExecutionContextImpl<Query>(baseData, engineExecutionContextWrapper) {
     override fun selections() = selections
 }

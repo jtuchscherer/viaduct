@@ -74,9 +74,9 @@ val InternalContext.executionContext: ExecutionContext
  * then the original ExecutionContext will be returned. Otherwise, a minimal
  * ExecutionContext will be returned.
  */
-val InternalContext.resolverExecutionContext: ResolverExecutionContext
+val InternalContext.resolverExecutionContext: ResolverExecutionContext<Query>
     get() =
-        this as? ResolverExecutionContext ?: MockResolverExecutionContext(this)
+        this as? ResolverExecutionContext<Query> ?: MockResolverExecutionContext<Query>(this)
 
 class MockInternalContext(
     override val schema: ViaductSchema,
@@ -114,15 +114,15 @@ open class MockExecutionContext(
         fun mk(
             schema: ViaductSchema = MockSchema.minimal,
             classLoader: ClassLoader = ClassLoader.getSystemClassLoader()
-        ): MockResolverExecutionContext = MockResolverExecutionContext(MockInternalContext.mk(schema, classLoader = classLoader))
+        ): MockResolverExecutionContext<Query> = MockResolverExecutionContext(MockInternalContext.mk(schema, classLoader = classLoader))
     }
 }
 
-open class MockResolverExecutionContext(
+open class MockResolverExecutionContext<Q : Query>(
     internalContext: InternalContext,
     val queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     private val selectionSetFactory: SelectionSetFactory? = null,
-) : MockExecutionContext(internalContext), ResolverExecutionContext {
+) : MockExecutionContext(internalContext), ResolverExecutionContext<Q> {
     override fun <T : CompositeOutput> selectionsFor(
         type: Type<T>,
         selections: String,
@@ -138,6 +138,19 @@ open class MockResolverExecutionContext(
     override suspend fun <T : Query> query(selections: SelectionSet<T>): T {
         @Suppress("UNCHECKED_CAST")
         return queryResults.get(selections as SelectionSet<Query>) as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun query(
+        selections: String,
+        variables: Map<String, Any?>
+    ): Q {
+        val selectionSet = selectionsFor(
+            reflectionLoader.reflectionFor(schema.schema.queryType.name) as Type<Query>,
+            selections,
+            variables
+        )
+        return query(selectionSet) as Q
     }
 
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
@@ -158,7 +171,7 @@ open class MockResolverExecutionContext(
         fun mk(
             schema: ViaductSchema = MockSchema.minimal,
             classLoader: ClassLoader = ClassLoader.getSystemClassLoader()
-        ): MockResolverExecutionContext = MockResolverExecutionContext(MockInternalContext.mk(schema, classLoader = classLoader))
+        ): MockResolverExecutionContext<Query> = MockResolverExecutionContext(MockInternalContext.mk(schema, classLoader = classLoader))
     }
 }
 
@@ -172,7 +185,7 @@ class MockFieldExecutionContext<T : Object, Q : Query, A : Arguments, O : Compos
     internalContext: InternalContext,
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     selectionSetFactory: SelectionSetFactory? = null,
-) : MockResolverExecutionContext(internalContext, queryResults, selectionSetFactory),
+) : MockResolverExecutionContext<Q>(internalContext, queryResults, selectionSetFactory),
     FieldExecutionContext<T, Q, A, O> {
     override fun selections() = selectionsValue
 
@@ -183,7 +196,7 @@ class MockFieldExecutionContext<T : Object, Q : Query, A : Arguments, O : Compos
 }
 
 @Suppress("DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES")
-class MockMutationFieldExecutionContext<Q : Query, A : Arguments, O : CompositeOutput>(
+class MockMutationFieldExecutionContext<Q : Query, M : Mutation, A : Arguments, O : CompositeOutput>(
     override val queryValue: Q,
     override val arguments: A,
     override val requestContext: Any?,
@@ -192,8 +205,8 @@ class MockMutationFieldExecutionContext<Q : Query, A : Arguments, O : CompositeO
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     private val mutationResults: PrebakedResults<Mutation> = EmptyPrebakedResults<Mutation>(),
     selectionSetFactory: SelectionSetFactory? = null,
-) : MockResolverExecutionContext(internalContext, queryResults, selectionSetFactory),
-    MutationFieldExecutionContext<Q, A, O> {
+) : MockResolverExecutionContext<Q>(internalContext, queryResults, selectionSetFactory),
+    MutationFieldExecutionContext<Q, M, A, O> {
     override fun selections() = selectionsValue
 
     // In mock contexts, sync and lazy values are the same
@@ -202,6 +215,15 @@ class MockMutationFieldExecutionContext<Q : Query, A : Arguments, O : CompositeO
     override suspend fun <T : Mutation> mutation(selections: SelectionSet<T>): T {
         @Suppress("UNCHECKED_CAST")
         return mutationResults.get(selections as SelectionSet<Mutation>) as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun mutation(
+        selections: String,
+        variables: Map<String, Any?>
+    ): M {
+        val mutationType = reflectionLoader.reflectionFor(schema.schema.mutationType.name) as Type<M>
+        return mutation(selectionsFor(mutationType, selections, variables))
     }
 }
 
@@ -213,7 +235,7 @@ class MockNodeExecutionContext<T : NodeObject>(
     internalContext: InternalContext,
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     selectionSetFactory: SelectionSetFactory? = null,
-) : MockResolverExecutionContext(internalContext, queryResults, selectionSetFactory),
+) : MockResolverExecutionContext<Query>(internalContext, queryResults, selectionSetFactory),
     SelectiveNodeExecutionContext<T> {
     override fun selections() = selectionsValue
 }

@@ -25,20 +25,20 @@ import viaduct.tenant.runtime.toObjectGRT
  * @param syncObjectValueGetter A suspending function that returns the synchronous object value,
  *        or null if no object selections were declared by the resolver
  */
-class FieldExecutionContextImpl(
+class FieldExecutionContextImpl<Q : Query>(
     baseData: InternalContext,
     engineExecutionContextWrapper: EngineExecutionContextWrapper,
     selections: SelectionSet<CompositeOutput>,
     requestContext: Any?,
     arguments: Arguments,
     override val objectValue: Object,
-    queryValue: Query,
+    queryValue: Q,
     private val syncObjectValueGetter: (suspend () -> EngineObjectData.Sync)?,
     syncQueryValueGetter: (suspend () -> EngineObjectData.Sync)?,
     private val objectCls: KClass<Object>,
-    queryCls: KClass<Query>,
-) : FieldExecutionContext<Object, Query, Arguments, CompositeOutput>,
-    BaseFieldExecutionContextImpl(
+    queryCls: KClass<Q>,
+) : FieldExecutionContext<Object, Q, Arguments, CompositeOutput>,
+    BaseFieldExecutionContextImpl<Q>(
         baseData,
         engineExecutionContextWrapper,
         selections,

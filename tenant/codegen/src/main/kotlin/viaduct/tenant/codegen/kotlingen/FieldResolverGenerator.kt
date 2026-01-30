@@ -113,6 +113,7 @@ private class ResolverModelImpl(
     override val gqlFieldName: String = this.field.name
     override val resolverName: String = gqlFieldName.capitalize()
     private val queryGrtTypeName: String = "$grtPackage.Query"
+    private val mutationGrtTypeName: String = if (mutationTypeName != null) "$grtPackage.$mutationTypeName" else "viaduct.api.types.Mutation"
     private val grtTypeName: String = "$grtPackage.$gqlTypeName"
     private val grtArgsName: String =
         if (field.hasArgs) {
@@ -131,7 +132,7 @@ private class ResolverModelImpl(
     override val ctxInterface: String
         get() =
             if (mutationTypeName != null && this.field.containingDef.name == mutationTypeName) {
-                "viaduct.api.context.MutationFieldExecutionContext<$queryGrtTypeName, $grtArgsName, $grtOutputName>"
+                "viaduct.api.context.MutationFieldExecutionContext<$queryGrtTypeName, $mutationGrtTypeName, $grtArgsName, $grtOutputName>"
             } else {
                 "viaduct.api.context.FieldExecutionContext<$grtTypeName, $queryGrtTypeName, $grtArgsName, $grtOutputName>"
             }
