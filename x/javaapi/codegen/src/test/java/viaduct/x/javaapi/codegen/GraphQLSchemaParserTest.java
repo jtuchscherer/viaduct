@@ -80,7 +80,7 @@ class GraphQLSchemaParserTest {
 
     List<ObjectModel> objects = parser.extractObjects(schema, "com.example.types");
 
-    assertThat(objects).hasSize(5); // User, Listing, Booking, PrimitiveListTest, Review
+    assertThat(objects).hasSize(6); // User, Listing, Booking, PrimitiveListTest, Review, PageInfo
 
     // User object (includes 5 base fields + 3 resolver fields from extend type)
     ObjectModel user =

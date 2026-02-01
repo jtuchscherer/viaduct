@@ -97,6 +97,15 @@ extend interface ExtendableInterface {
   extendedField: Int
 }
 
+"""
+Page Info type for connection
+"""
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
 # ============================================================================
 # Object Types
 # ============================================================================
