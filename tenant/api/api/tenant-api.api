@@ -312,6 +312,9 @@ public final class viaduct/api/reflect/Type$Companion {
 	public final fun ofClass (Lkotlin/reflect/KClass;)Lviaduct/api/reflect/Type;
 }
 
+public abstract interface class viaduct/api/reflect/TypeFields {
+}
+
 public abstract interface class viaduct/api/select/SelectionSet {
 	public static final field Companion Lviaduct/api/select/SelectionSet$Companion;
 	public abstract fun contains (Lviaduct/api/reflect/Field;)Z

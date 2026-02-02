@@ -35,3 +35,9 @@ interface Type<out T : GRT> {
             }
     }
 }
+
+/**
+ * Marker interface for the `Fields` object nested within a type's `Reflection` object.
+ * The `Fields` object contains [Field] descriptors for each field on the type.
+ */
+interface TypeFields<out T : GRT>
