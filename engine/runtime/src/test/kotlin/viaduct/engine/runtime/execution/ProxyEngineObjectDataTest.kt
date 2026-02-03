@@ -23,6 +23,7 @@ import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.newCell
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setRawValue
+import viaduct.engine.runtime.ObjectEngineResultTestHelper
 import viaduct.engine.runtime.ProxyEngineObjectData
 import viaduct.engine.runtime.Value
 import viaduct.engine.runtime.context.CompositeLocalContext
@@ -44,7 +45,7 @@ class ProxyEngineObjectDataTest {
             variables: Map<String, Any?> = emptyMap(),
             selections: String = "id"
         ): ObjectEngineResultImpl =
-            ObjectEngineResultImpl.newFromMap(
+            ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
                 resultMap,
                 errors.toMutableList(),
@@ -64,7 +65,7 @@ class ProxyEngineObjectDataTest {
                 fragment?.let {
                     selectionSetFactory.rawSelectionSet(typename, fragment, variables)
                 }
-            val oer = ObjectEngineResultImpl.newFromMap(
+            val oer = ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
                 resultMap,
                 errors.toMutableList(),
@@ -87,7 +88,7 @@ class ProxyEngineObjectDataTest {
                 fragment?.let {
                     selectionSetFactory.rawSelectionSet(typename, fragment, variables)
                 }
-            val oer = ObjectEngineResultImpl.newFromMap(
+            val oer = ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
                 resultMap,
                 errors.toMutableList(),

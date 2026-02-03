@@ -275,15 +275,6 @@ public final class viaduct/api/internal/ViaductObjectBuilder$Companion {
 	public final fun dynamicBuilderFor (Lviaduct/api/internal/InternalContext;Lkotlin/reflect/KClass;)Lviaduct/api/internal/ViaductObjectBuilder;
 }
 
-public final class viaduct/api/internal/select/SelectionsLoader$Companion {
-	public final fun const (Lviaduct/api/types/Object;)Lviaduct/api/internal/select/SelectionsLoader;
-}
-
-public abstract interface class viaduct/api/internal/select/SelectionsLoader$Factory {
-	public abstract fun forMutation (Ljava/lang/String;)Lviaduct/api/internal/select/SelectionsLoader;
-	public abstract fun forQuery (Ljava/lang/String;)Lviaduct/api/internal/select/SelectionsLoader;
-}
-
 public final class viaduct/api/mapping/GRTDomain$Companion {
 	public final fun forSelectionSet (Lviaduct/api/context/ExecutionContext;Lviaduct/api/select/SelectionSet;Lviaduct/api/internal/KeyMapping;)Lviaduct/mapping/graphql/Domain;
 	public static synthetic fun forSelectionSet$default (Lviaduct/api/mapping/GRTDomain$Companion;Lviaduct/api/context/ExecutionContext;Lviaduct/api/select/SelectionSet;Lviaduct/api/internal/KeyMapping;ILjava/lang/Object;)Lviaduct/mapping/graphql/Domain;

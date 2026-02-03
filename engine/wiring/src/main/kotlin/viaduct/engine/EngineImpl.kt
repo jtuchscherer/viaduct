@@ -17,7 +17,6 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.ExecuteSelectionSetOptions
 import viaduct.engine.api.ExecutionInput
-import viaduct.engine.api.FragmentLoader
 import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.SubqueryExecutionException
 import viaduct.engine.api.TemporaryBypassAccessCheck
@@ -56,7 +55,6 @@ class EngineImpl(
     private val fullSchema: ViaductSchema,
 ) : Engine, EngineGraphQLJavaCompat {
     private val coroutineInterop: CoroutineInterop = config.coroutineInterop
-    private val fragmentLoader: FragmentLoader = config.fragmentLoader
     private val flagManager: FlagManager = config.flagManager
     private val temporaryBypassAccessCheck: TemporaryBypassAccessCheck = config.temporaryBypassAccessCheck
     private val dataFetcherExceptionHandler: DataFetcherExceptionHandler = config.dataFetcherExceptionHandler
@@ -134,7 +132,6 @@ class EngineImpl(
     private val engineExecutionContextFactory = EngineExecutionContextFactory(
         fullSchema,
         dispatcherRegistry,
-        fragmentLoader,
         resolverDataFetcherInstrumentation,
         flagManager,
         this,

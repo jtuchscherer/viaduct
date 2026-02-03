@@ -13,7 +13,6 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.ExecuteSelectionSetOptions
 import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.FragmentLoader
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolutionPolicy
@@ -30,7 +29,6 @@ import viaduct.service.api.spi.GlobalIDCodec
 class EngineExecutionContextFactory(
     private val fullSchema: ViaductSchema,
     private val dispatcherRegistry: DispatcherRegistry,
-    @Suppress("UNUSED_PARAMETER") fragmentLoader: FragmentLoader,
     private val resolverInstrumentation: Instrumentation,
     private val flagManager: FlagManager,
     private val engine: Engine,

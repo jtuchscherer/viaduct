@@ -20,7 +20,6 @@ import viaduct.api.internal.ObjectBaseTestHelpers
 import viaduct.api.internal.ResolverBase
 import viaduct.api.internal.internal
 import viaduct.api.internal.select.SelectionSetFactory
-import viaduct.api.internal.select.SelectionsLoader
 import viaduct.api.mocks.MockExecutionContext
 import viaduct.api.mocks.MockFieldExecutionContext
 import viaduct.api.mocks.MockInternalContext
@@ -37,14 +36,11 @@ import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
 import viaduct.apiannotations.TestingApi
-import viaduct.engine.api.FragmentLoader
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.runtime.RawSelectionsLoaderImpl
 import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.select.SelectionSetFactoryImpl
 import viaduct.tenant.runtime.select.SelectionSetImpl
-import viaduct.tenant.runtime.select.SelectionsLoaderImpl
 
 /**
  * Base class for Viaduct resolver tests. Use [runFieldResolver] for non-mutation resolvers
@@ -139,14 +135,6 @@ interface ResolverTestBase {
      * to load the schema in their preferred way (e.g., from resources, test data, etc.)
      */
     fun getSchema(): ViaductSchema
-
-    /**
-     * Subclasses must provide a FragmentLoader instance. This allows different implementations
-     * to integrate with their dependency injection framework.
-     */
-    fun getFragmentLoader(): FragmentLoader = mockk()
-
-    val selectionsLoaderFactory: SelectionsLoader.Factory
 
     val ossSelectionSetFactory: SelectionSetFactory
 
@@ -446,14 +434,6 @@ interface ResolverTestBase {
         val internal = MockInternalContext(getSchema(), GlobalIDCodecDefault, rl)
         return MockExecutionContext(internal)
     }
-
-    fun mkSelectionsLoaderFactory(): SelectionsLoader.Factory =
-        SelectionsLoaderImpl.Factory(
-            RawSelectionsLoaderImpl.Factory(
-                getFragmentLoader(),
-                getSchema()
-            )
-        )
 
     fun mkSelectionSetFactory(): SelectionSetFactory =
         SelectionSetFactoryImpl(

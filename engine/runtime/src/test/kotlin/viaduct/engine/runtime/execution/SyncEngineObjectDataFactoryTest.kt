@@ -18,6 +18,7 @@ import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setRawValue
+import viaduct.engine.runtime.ObjectEngineResultTestHelper
 import viaduct.engine.runtime.SyncEngineObjectDataFactory
 import viaduct.engine.runtime.SyncProxyEngineObjectData
 import viaduct.engine.runtime.Value
@@ -45,7 +46,7 @@ class SyncEngineObjectDataFactoryTest {
             variables: Map<String, Any?> = emptyMap(),
             selections: String = "id"
         ): ObjectEngineResultImpl =
-            ObjectEngineResultImpl.newFromMap(
+            ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
                 resultMap,
                 errors.toMutableList(),
