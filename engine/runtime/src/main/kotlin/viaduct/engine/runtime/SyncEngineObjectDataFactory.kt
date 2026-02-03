@@ -161,31 +161,16 @@ object SyncEngineObjectDataFactory {
             else -> value
         }
         // To understand why the above is correct:
-        // There are two code paths that populate an ObjectEngineResultImpl:
         //
-        // 1. Live resolution path - During normal query execution, field resolvers
-        //    run and their results are wrapped in FieldResolutionResult before being
-        //    stored in the RAW_VALUE_SLOT of a Cell. The FieldResolutionResult contains:
-        //       - engineResult - the actual value (which could be an ObjectEngineResultImpl
-        //         for nested objects)
-        //       - errors - any errors from resolution
+        // During query execution, field resolvers run and their results are wrapped
+        // in FieldResolutionResult before being stored in the RAW_VALUE_SLOT of a Cell.
+        // The FieldResolutionResult contains:
+        //    - engineResult - the actual value (which could be an ObjectEngineResultImpl
+        //      for nested objects)
+        //    - errors - any errors from resolution
         //
-        // 2. From-map path (via newFromMap) - When data comes from the fragment loader
-        //    (ViaductClassicFragmentLoader), the ObjectEngineResultImpl.newFromMap method
-        //    creates an OER from a pre-resolved map. In this path, nested objects are stored
-        //    directly as ObjectEngineResultImpl in the RAW_VALUE_SLOT, without a
-        //    FieldResolutionResult wrapper.
-        //
-        // So in unwrap:
-        //   - FieldResolutionResult branch: handles the live resolution path - unwrap errors, then recurse
-        //     on engineResult
-        //   - ObjectEngineResultImpl branch: handles nested objects from either path (directly from from-map,
-        //     or after unwrapping FieldResolutionResult in live resolution)
-        //
-        // Both paths use Cell to wrap values, and both paths wrap list elements in Cells.
-        //
-        // Note the comment that the from-map path is tied to the fragment loader -- this suggests
-        // we might eliminate this path if we eliminate the fragment loader.
+        // So unwrap handles: Cell -> FieldResolutionResult -> ObjectEngineResultImpl (for nested objects).
+        // List elements are also wrapped in Cells.
     }
 
     /**

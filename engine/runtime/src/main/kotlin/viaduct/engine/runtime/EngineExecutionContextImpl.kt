@@ -16,15 +16,12 @@ import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.FragmentLoader
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.RawSelectionSet
-import viaduct.engine.api.RawSelectionsLoader
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.SubqueryExecutionException
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
 import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.service.api.spi.GlobalIDCodec
-import viaduct.utils.slf4j.logger
 
 /**
  * Factory for creating an engine-execution context.
@@ -33,7 +30,7 @@ import viaduct.utils.slf4j.logger
 class EngineExecutionContextFactory(
     private val fullSchema: ViaductSchema,
     private val dispatcherRegistry: DispatcherRegistry,
-    fragmentLoader: FragmentLoader,
+    @Suppress("UNUSED_PARAMETER") fragmentLoader: FragmentLoader,
     private val resolverInstrumentation: Instrumentation,
     private val flagManager: FlagManager,
     private val engine: Engine,
@@ -42,10 +39,6 @@ class EngineExecutionContextFactory(
 ) {
     // Constructing this is expensive, so do it just once per schema-version
     private val rawSelectionSetFactory: RawSelectionSet.Factory = RawSelectionSetFactoryImpl(fullSchema)
-
-    // Not expensive, but why not do it once anyway
-    private val rawSelectionsLoaderFactory: RawSelectionsLoader.Factory =
-        RawSelectionsLoaderImpl.Factory(fragmentLoader, fullSchema)
 
     fun create(
         scopedSchema: ViaductSchema,
@@ -56,12 +49,11 @@ class EngineExecutionContextFactory(
             scopedSchema,
             requestContext,
             rawSelectionSetFactory,
-            rawSelectionsLoaderFactory,
             dispatcherRegistry,
             resolverInstrumentation,
             ConcurrentHashMap<String, FieldDataLoader>(),
             ConcurrentHashMap<String, NodeDataLoader>(),
-            flagManager.isEnabled(Flags.EXECUTE_ACCESS_CHECKS),
+            flagManager.isEnabled(FlagManager.Flags.EXECUTE_ACCESS_CHECKS),
             engine,
             globalIDCodec,
             flagManager,
@@ -97,7 +89,6 @@ class EngineExecutionContextImpl(
     override val scopedSchema: ViaductSchema,
     override val requestContext: Any?,
     override val rawSelectionSetFactory: RawSelectionSet.Factory,
-    override val rawSelectionsLoaderFactory: RawSelectionsLoader.Factory,
     val dispatcherRegistry: DispatcherRegistry,
     val resolverInstrumentation: Instrumentation,
     internal val fieldDataLoaders: ConcurrentHashMap<String, FieldDataLoader>,
@@ -113,8 +104,6 @@ class EngineExecutionContextImpl(
     executionHandle: EngineExecutionContext.ExecutionHandle? = null,
 ) : EngineExecutionContext {
     companion object {
-        private val log by logger()
-
         const val SUBQUERY_EXECUTION_METER_NAME = "viaduct.subquery.execution"
     }
 
@@ -153,55 +142,29 @@ class EngineExecutionContextImpl(
         options: ExecuteSelectionSetOptions,
     ): EngineObjectData {
         val handle = executionHandle
-        val useHandlePath = flagManager.isEnabled(Flags.ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE) && handle != null
-
-        if (useHandlePath) {
-            return executeWithMetrics("handle") {
-                engine.executeSelectionSet(handle!!, selectionSet, options)
-            }
-        }
-
-        // Legacy fallback doesn't support targetResult
-        if (options.targetResult != null) {
-            incrementSubqueryExecutionCounter("legacy", success = false)
-            throw SubqueryExecutionException(
-                "targetResult option requires executionHandle and ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE flag"
+            ?: throw SubqueryExecutionException(
+                "executeSelectionSet requires an executionHandle. " +
+                    "This typically means executeSelectionSet was called before execution started " +
+                    "or from a context that doesn't have access to the current execution."
             )
-        }
 
-        log.debug(
-            "Falling back to legacy rawSelectionsLoader path for resolverId={}",
-            resolverId
-        )
-
-        return executeWithMetrics("legacy") {
-            when (options.operationType) {
-                Engine.OperationType.QUERY -> rawSelectionsLoaderFactory.forQuery(resolverId).load(selectionSet)
-                Engine.OperationType.MUTATION -> rawSelectionsLoaderFactory.forMutation(resolverId).load(selectionSet)
-            }
+        return executeWithMetrics {
+            engine.executeSelectionSet(handle, selectionSet, options)
         }
     }
 
-    private suspend inline fun executeWithMetrics(
-        path: String,
-        block: () -> EngineObjectData
-    ): EngineObjectData {
+    private suspend inline fun executeWithMetrics(block: () -> EngineObjectData): EngineObjectData {
         return try {
-            block().also { incrementSubqueryExecutionCounter(path, success = true) }
+            block().also { incrementSubqueryExecutionCounter(success = true) }
         } catch (e: Exception) {
-            incrementSubqueryExecutionCounter(path, success = false)
+            incrementSubqueryExecutionCounter(success = false)
             throw e
         }
     }
 
-    private fun incrementSubqueryExecutionCounter(
-        path: String,
-        success: Boolean
-    ) {
+    private fun incrementSubqueryExecutionCounter(success: Boolean) {
         meterRegistry?.counter(
             SUBQUERY_EXECUTION_METER_NAME,
-            "path",
-            path,
             "success",
             success.toString()
         )?.increment()
@@ -256,7 +219,6 @@ class EngineExecutionContextImpl(
             requestContext = this.requestContext,
             activeSchema = activeSchema,
             rawSelectionSetFactory = this.rawSelectionSetFactory,
-            rawSelectionsLoaderFactory = this.rawSelectionsLoaderFactory,
             dispatcherRegistry = this.dispatcherRegistry,
             resolverInstrumentation = this.resolverInstrumentation,
             fieldDataLoaders = this.fieldDataLoaders,

@@ -20,7 +20,6 @@ interface EngineExecutionContext {
     val scopedSchema: ViaductSchema
     val activeSchema: ViaductSchema
     val rawSelectionSetFactory: RawSelectionSet.Factory
-    val rawSelectionsLoaderFactory: RawSelectionsLoader.Factory
 
     /**
      * The GlobalIDCodec shared across all tenant-API implementations in this Viaduct instance.
@@ -151,23 +150,14 @@ interface EngineExecutionContext {
      *
      * ## Execution Handle Requirements
      *
-     * If [ExecuteSelectionSetOptions.targetResult] is set, this method requires:
-     * - a non-null [executionHandle], and
-     * - the `ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE` flag to be enabled.
-     *
-     * If these conditions are not met, it will **fail fast** with [SubqueryExecutionException]
-     * rather than silently degrading behavior.
-     *
-     * For basic execution (default options with [ExecuteSelectionSetOptions.targetResult] == null),
-     * this method may fall back to the legacy [RawSelectionsLoader] path when the handle-based
-     * path is unavailable.
+     * This method requires a non-null [executionHandle]. If the handle is null (e.g., because
+     * execution hasn't started yet), it will throw [SubqueryExecutionException].
      *
      * @param resolverId Identifier for instrumentation and tracing
      * @param selectionSet The [RawSelectionSet] containing the fields to resolve
      * @param options Execution options controlling behavior. Default executes as a Query.
      * @return The resolved [EngineObjectData]
-     * @throws SubqueryExecutionException if [ExecuteSelectionSetOptions.targetResult] is requested
-     *         but handle-based execution is not available, the schema doesn't support the
+     * @throws SubqueryExecutionException if [executionHandle] is null, the schema doesn't support the
      *         requested operation type, or field resolution fails
      * @see ExecuteSelectionSetOptions For available options
      */

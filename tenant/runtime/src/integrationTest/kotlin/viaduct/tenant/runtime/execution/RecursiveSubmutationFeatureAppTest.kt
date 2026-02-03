@@ -1,11 +1,8 @@
 package viaduct.tenant.runtime.execution.submutations
 
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import viaduct.api.Resolver
 import viaduct.graphql.test.assertEquals
-import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.mocks.MockFlagManager
 import viaduct.tenant.runtime.execution.submutations.resolverbases.MutationResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
@@ -21,14 +18,6 @@ import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
  * [SubqueryExecutionFeatureAppTest].
  */
 class RecursiveSubmutationFeatureAppTest : FeatureAppTestBase() {
-    @BeforeEach
-    override fun initViaductBuilder() {
-        super.initViaductBuilder()
-        withViaductBuilder {
-            withFlagManager(MockFlagManager.mk(FlagManager.Flags.ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE))
-        }
-    }
-
     override var sdl =
         """
         |#START_SCHEMA

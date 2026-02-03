@@ -20,12 +20,8 @@ package viaduct.engine.api
  *
  * ## Execution Handle Requirements
  *
- * The [targetResult] option is only supported when:
- * - [EngineExecutionContext.executionHandle] is non-null, and
- * - the `ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE` flag is enabled.
- *
- * If these conditions are not met and [targetResult] is set, execution will fail fast
- * with [SubqueryExecutionException].
+ * These options require [EngineExecutionContext.executionHandle] to be non-null.
+ * If the handle is null, execution will fail fast with [SubqueryExecutionException].
  *
  * @property operationType Whether to execute against Query or Mutation root. Default is QUERY.
  * @property targetResult Optional [ObjectEngineResult] to populate with resolved field results.

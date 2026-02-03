@@ -30,7 +30,7 @@ Selection execution uses a three-tier API architecture:
 This layering provides:
 - Simple APIs for common cases (tenant layer)
 - Flexibility for advanced use cases (via `ExecuteSelectionSetOptions`)
-- Clear separation of concerns (EEC handles flag checks and fallback logic)
+- Clear separation of concerns (EEC handles validation and delegates to Engine)
 
 ## When to Use Subqueries
 
@@ -61,7 +61,7 @@ For declarative, static sibling/root fields known at registration time, prefer `
 ┌─────────────────────────────────────┐
 │ Step 3: Engine API Layer            │
 │ EEC.executeSelectionSet()              │
-│ (flag check + fallback logic)       │
+│ (validates handle)       │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -120,11 +120,10 @@ This bridge is the only place the tenant runtime touches the engine. It converts
 
 ## Step 3: The Engine API Layer
 
-The Engine API layer is `EngineExecutionContextImpl.executeSelectionSet()`. This is where the decision logic lives:
+The Engine API layer is `EngineExecutionContextImpl.executeSelectionSet()`. This method:
 
-1. Check if advanced options require a valid handle -- fail fast with `SubqueryExecutionException` if unavailable
-2. If `ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE` flag is enabled and handle is available, use handle-based execution
-3. Otherwise, fall back to the legacy `RawSelectionsLoader` path (for basic options only)
+1. Validates that `executionHandle` is available — fails fast with `SubqueryExecutionException` if not
+2. Delegates to `Engine.executeSelectionSet()` with the handle, selection set, and options
 
 The tenant wrapper calls `executeSelectionSet()` with `ExecuteSelectionSetOptions.DEFAULT` for queries or `ExecuteSelectionSetOptions.MUTATION` for mutations.
 
@@ -136,7 +135,7 @@ Options:
 - `operationType` — Query or Mutation (default: Query)
 - `targetResult` — Memoization control (default: fresh instance)
 
-The `targetResult` option requires both a valid `executionHandle` and the `ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE` flag. If these conditions are not met, `executeSelectionSet()` throws immediately rather than silently degrading.
+All options require a valid `executionHandle`. If the handle is not available (e.g., execution hasn't started yet), `executeSelectionSet()` throws immediately rather than silently degrading.
 
 **Key files:**
 - `engine/api/.../ExecuteSelectionSetOptions.kt` — options definition
@@ -217,7 +216,7 @@ Back in `EngineExecutionContextWrapperImpl`, the `EngineObjectData` result is co
 
 Selection execution wraps failures in `SubqueryExecutionException`:
 
-- **Missing handle for advanced options**: `executeSelectionSet()` throws immediately if advanced options require a handle but none is available
+- **Missing handle**: `executeSelectionSet()` throws immediately if `executionHandle` is null
 - **Invalid handle**: `asExecutionParameters()` throws `invalidExecutionHandle()` if the handle isn't an `ExecutionParameters`
 - **Selection type mismatch**: If the `RawSelectionSet.type` doesn't match the root type for the operation (e.g., passing a `User` selection to a Query subquery)
 - **Plan build issues**: Wrapped in `queryPlanBuildFailed(e)`
@@ -236,9 +235,8 @@ Each `ExecutionParameters` has its own `ErrorAccumulator`, so selection errors f
 | `querySelections("field")` | Declarative sibling/root fields | Registered as child plans, executed with root query plan |
 | `ctx.query(selections)` | Dynamic selections | Executes via ExecutionHandle |
 | `EEC.executeSelectionSet(options)` | Advanced use cases | Configurable execution options |
-| `FragmentLoader` | Legacy compatibility | Full GraphQL-Java re-execution |
 
-Use `querySelections` when fields are known at registration time—it's simpler and more efficient. Use `ctx.query()` when selections depend on runtime data. Use `EEC.executeSelectionSet()` with custom options for advanced tenant runtime integrations. `FragmentLoader` remains for existing resolvers that still construct full documents manually; prefer `querySelections` or `ctx.query()` for new code.
+Use `querySelections` when fields are known at registration time—it's simpler and more efficient. Use `ctx.query()` when selections depend on runtime data. Use `EEC.executeSelectionSet()` with custom options for advanced tenant runtime integrations.
 
 ## Testing
 
@@ -248,4 +246,3 @@ Use `querySelections` when fields are known at registration time—it's simpler 
 ## References
 
 - [`context-flow.md`](../engine/runtime/impldocs/context-flow.md) — ExecutionHandle and EEC architecture
-- `Flags.kt` — `ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE` feature flag for gradual rollout

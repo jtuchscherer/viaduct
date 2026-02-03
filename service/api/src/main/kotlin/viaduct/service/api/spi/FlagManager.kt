@@ -44,6 +44,5 @@ interface FlagManager {
         EXECUTE_ACCESS_CHECKS("execute_access_checks_in_modern_execution_strategy"),
         DISABLE_QUERY_PLAN_CACHE("disable_query_plan_cache"),
         KILLSWITCH_NON_BLOCKING_ENQUEUE_FLUSH("common.kotlin.nextTickDispatcher.killswitch.nonBlockingEnqueueFlush"),
-        ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE("enable_subquery_execution_via_handle"),
     }
 }

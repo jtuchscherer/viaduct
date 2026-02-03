@@ -222,7 +222,6 @@ class EngineExecutionContextExtensionsTest {
             override val scopedSchema: ViaductSchema get() = mockk()
             override val activeSchema: ViaductSchema get() = mockk()
             override val rawSelectionSetFactory get() = mockk<viaduct.engine.api.RawSelectionSet.Factory>()
-            override val rawSelectionsLoaderFactory get() = mockk<viaduct.engine.api.RawSelectionsLoader.Factory>()
             override val globalIDCodec: GlobalIDCodec get() = mockk<GlobalIDCodec>()
             override val requestContext: Any? get() = null
             override val engine get() = mockk<viaduct.engine.api.Engine>()

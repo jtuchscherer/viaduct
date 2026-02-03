@@ -2,12 +2,9 @@
 
 package viaduct.tenant.runtime.execution.subqueryexecution
 
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import viaduct.api.Resolver
 import viaduct.graphql.test.assertEquals
-import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.mocks.MockFlagManager
 import viaduct.tenant.runtime.execution.subqueryexecution.resolverbases.CalculatorResolvers
 import viaduct.tenant.runtime.execution.subqueryexecution.resolverbases.ContainerResolvers
 import viaduct.tenant.runtime.execution.subqueryexecution.resolverbases.Level1Resolvers
@@ -35,14 +32,6 @@ import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
  * Note: ctx.mutation() is only available from MutationFieldExecutionContext (mutation resolvers).
  */
 class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
-    @BeforeEach
-    override fun initViaductBuilder() {
-        super.initViaductBuilder()
-        withViaductBuilder {
-            withFlagManager(MockFlagManager.mk(FlagManager.Flags.ENABLE_SUBQUERY_EXECUTION_VIA_HANDLE))
-        }
-    }
-
     override var sdl = """
         #START_SCHEMA
         extend type Query {
