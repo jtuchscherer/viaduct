@@ -15,7 +15,7 @@ This document follows a selection execution from the resolver's `ctx.query()` ca
 - **ExecutionHandle**: An opaque reference to the parent request's `ExecutionParameters`. Used to recover engine state when running selection executions.
 - **RawSelectionSet**: The engine's untyped representation of selections, variables, and fragments—what the planner actually consumes.
 - **GRT objects**: Generated, strongly-typed GraphQL Representational Types (e.g., `Query`, `Mutation`) returned to tenant resolvers.
-- **EEC**: `EngineExecutionContext`, the request-scoped context that provides access to schema, execution state, and the `executeSelectionSet()` API.
+- **EEC**: `EngineExecutionContext`, the request-scoped context that provides access to schema, execution state, and the `resolveSelectionSet()` API.
 
 ## Three-Tier Architecture
 
@@ -24,12 +24,12 @@ Selection execution uses a three-tier API architecture:
 | Tier | API | Purpose | Consumers |
 |------|-----|---------|-----------|
 | **Tenant** | `ctx.query(SelectionSet<T>)` / `ctx.mutation(SelectionSet<T>)` | Typed, simple, opinionated | Resolver code |
-| **Engine API** | `EEC.executeSelectionSet(resolverId, selectionSet, options)` | Flexible, configurable | Advanced tenant runtime integrations, engine internals |
-| **Wiring** | `Engine.executeSelectionSet(handle, selectionSet, options)` | Implementation detail | Only called by EEC |
+| **Engine API** | `EEC.resolveSelectionSet(resolverId, selectionSet, options)` | Flexible, configurable | Advanced tenant runtime integrations, engine internals |
+| **Wiring** | `Engine.resolveSelectionSet(handle, selectionSet, options)` | Implementation detail | Only called by EEC |
 
 This layering provides:
 - Simple APIs for common cases (tenant layer)
-- Flexibility for advanced use cases (via `ExecuteSelectionSetOptions`)
+- Flexibility for advanced use cases (via `ResolveSelectionSetOptions`)
 - Clear separation of concerns (EEC handles validation and delegates to Engine)
 
 ## When to Use Subqueries
@@ -60,14 +60,14 @@ For declarative, static sibling/root fields known at registration time, prefer `
                   ▼
 ┌─────────────────────────────────────┐
 │ Step 3: Engine API Layer            │
-│ EEC.executeSelectionSet()              │
+│ EEC.resolveSelectionSet()              │
 │ (validates handle)       │
 └─────────────────┬───────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────┐
 │ Step 4: Wiring Layer                │
-│ Engine.executeSelectionSet()           │
+│ Engine.resolveSelectionSet()           │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -108,7 +108,7 @@ When a resolver calls `ctx.query(selections)`, the call flows through the bridge
 
 1. `ResolverExecutionContextImpl.query()` delegates to `EngineExecutionContextWrapperImpl.query()`
 2. The wrapper converts the tenant's `SelectionSet<T>` into a `RawSelectionSet`
-3. It calls `EngineExecutionContext.executeSelectionSet(resolverId, rawSelectionSet, options)`
+3. It calls `EngineExecutionContext.resolveSelectionSet(resolverId, rawSelectionSet, options)`
 
 This bridge is the only place the tenant runtime touches the engine. It converts:
 - **To engine**: `SelectionSet<Query>` → `RawSelectionSet` (the `ExecutionHandle` is accessed internally)
@@ -120,30 +120,30 @@ This bridge is the only place the tenant runtime touches the engine. It converts
 
 ## Step 3: The Engine API Layer
 
-The Engine API layer is `EngineExecutionContextImpl.executeSelectionSet()`. This method:
+The Engine API layer is `EngineExecutionContextImpl.resolveSelectionSet()`. This method:
 
 1. Validates that `executionHandle` is available — fails fast with `SubqueryExecutionException` if not
-2. Delegates to `Engine.executeSelectionSet()` with the handle, selection set, and options
+2. Delegates to `Engine.resolveSelectionSet()` with the handle, selection set, and options
 
-The tenant wrapper calls `executeSelectionSet()` with `ExecuteSelectionSetOptions.DEFAULT` for queries or `ExecuteSelectionSetOptions.MUTATION` for mutations.
+The tenant wrapper calls `resolveSelectionSet()` with `ResolveSelectionSetOptions.DEFAULT` for queries or `ResolveSelectionSetOptions.MUTATION` for mutations.
 
-### ExecuteSelectionSetOptions
+### ResolveSelectionSetOptions
 
-`ExecuteSelectionSetOptions` provides flexibility for advanced use cases. See `engine/api/.../ExecuteSelectionSetOptions.kt` for the full definition.
+`ResolveSelectionSetOptions` provides flexibility for advanced use cases. See `engine/api/.../ResolveSelectionSetOptions.kt` for the full definition.
 
 Options:
 - `operationType` — Query or Mutation (default: Query)
 - `targetResult` — Memoization control (default: fresh instance)
 
-All options require a valid `executionHandle`. If the handle is not available (e.g., execution hasn't started yet), `executeSelectionSet()` throws immediately rather than silently degrading.
+All options require a valid `executionHandle`. If the handle is not available (e.g., execution hasn't started yet), `resolveSelectionSet()` throws immediately rather than silently degrading.
 
 **Key files:**
-- `engine/api/.../ExecuteSelectionSetOptions.kt` — options definition
-- `engine/runtime/.../EngineExecutionContextImpl.kt` — `executeSelectionSet()` implementation
+- `engine/api/.../ResolveSelectionSetOptions.kt` — options definition
+- `engine/runtime/.../EngineExecutionContextImpl.kt` — `resolveSelectionSet()` implementation
 
 ## Step 4: The Wiring Layer
 
-The wiring layer is `EngineImpl.executeSelectionSet()`. It takes the opaque `ExecutionHandle`, a `RawSelectionSet`, and an `ExecuteSelectionSetOptions` instance that carries the operation type and optional target `ObjectEngineResult`.
+The wiring layer is `EngineImpl.resolveSelectionSet()`. It takes the opaque `ExecutionHandle`, a `RawSelectionSet`, and an `ResolveSelectionSetOptions` instance that carries the operation type and optional target `ObjectEngineResult`.
 
 This method:
 
@@ -157,7 +157,7 @@ The `ExecutionHandle` is deliberately opaque -- tenant code sees `EngineExecutio
 Inside the runtime module, `asExecutionParameters()` bridges that gap. If someone fabricates a handle that isn't an `ExecutionParameters`, the cast fails with `SubqueryExecutionException.invalidExecutionHandle()`.
 
 **Key files:**
-- `engine/api/.../Engine.kt` — `executeSelectionSet()` interface
+- `engine/api/.../Engine.kt` — `resolveSelectionSet()` interface
 - `engine/wiring/.../EngineImpl.kt` — implementation
 - `engine/runtime/.../execution/ExecutionHandleExtensions.kt` — handle extraction
 
@@ -185,7 +185,7 @@ The `targetResult` option controls memoization. `ObjectEngineResultImpl` holds r
 - Fresh `ObjectEngineResultImpl` → isolated execution, no shared memoization
 - Existing `ObjectEngineResultImpl` → selections share already-resolved fields
 
-The tenant-facing `ctx.query()` and `ctx.mutation()` always create fresh instances, so selections issued through those APIs are isolated by default. The lower-level `EEC.executeSelectionSet()` with custom `targetResult` enables shared memoization for advanced use cases.
+The tenant-facing `ctx.query()` and `ctx.mutation()` always create fresh instances, so selections issued through those APIs are isolated by default. The lower-level `EEC.resolveSelectionSet()` with custom `targetResult` enables shared memoization for advanced use cases.
 
 ### Building the QueryPlan
 
@@ -216,7 +216,7 @@ Back in `EngineExecutionContextWrapperImpl`, the `EngineObjectData` result is co
 
 Selection execution wraps failures in `SubqueryExecutionException`:
 
-- **Missing handle**: `executeSelectionSet()` throws immediately if `executionHandle` is null
+- **Missing handle**: `resolveSelectionSet()` throws immediately if `executionHandle` is null
 - **Invalid handle**: `asExecutionParameters()` throws `invalidExecutionHandle()` if the handle isn't an `ExecutionParameters`
 - **Selection type mismatch**: If the `RawSelectionSet.type` doesn't match the root type for the operation (e.g., passing a `User` selection to a Query subquery)
 - **Plan build issues**: Wrapped in `queryPlanBuildFailed(e)`
@@ -234,9 +234,9 @@ Each `ExecutionParameters` has its own `ErrorAccumulator`, so selection errors f
 |---------|----------|-----------|
 | `querySelections("field")` | Declarative sibling/root fields | Registered as child plans, executed with root query plan |
 | `ctx.query(selections)` | Dynamic selections | Executes via ExecutionHandle |
-| `EEC.executeSelectionSet(options)` | Advanced use cases | Configurable execution options |
+| `EEC.resolveSelectionSet(options)` | Advanced use cases | Configurable execution options |
 
-Use `querySelections` when fields are known at registration time—it's simpler and more efficient. Use `ctx.query()` when selections depend on runtime data. Use `EEC.executeSelectionSet()` with custom options for advanced tenant runtime integrations.
+Use `querySelections` when fields are known at registration time—it's simpler and more efficient. Use `ctx.query()` when selections depend on runtime data. Use `EEC.resolveSelectionSet()` with custom options for advanced tenant runtime integrations.
 
 ## Testing
 

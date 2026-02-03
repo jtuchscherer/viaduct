@@ -1,7 +1,7 @@
 package viaduct.engine.api
 
 /**
- * Options for executing a selection set via [EngineExecutionContext.executeSelectionSet].
+ * Options for executing a selection set via [EngineExecutionContext.resolveSelectionSet].
  *
  * This options class provides flexibility for advanced use cases while keeping
  * the common tenant-level `ctx.query()` and `ctx.mutation()` APIs simple.
@@ -27,12 +27,12 @@ package viaduct.engine.api
  * @property targetResult Optional [ObjectEngineResult] to populate with resolved field results.
  *           When null, a fresh result container is created for isolated execution.
  */
-data class ExecuteSelectionSetOptions(
+data class ResolveSelectionSetOptions(
     val operationType: Engine.OperationType = Engine.OperationType.QUERY,
     val targetResult: ObjectEngineResult? = null,
 ) {
     companion object {
-        val DEFAULT = ExecuteSelectionSetOptions()
-        val MUTATION = ExecuteSelectionSetOptions(operationType = Engine.OperationType.MUTATION)
+        val DEFAULT = ResolveSelectionSetOptions()
+        val MUTATION = ResolveSelectionSetOptions(operationType = Engine.OperationType.MUTATION)
     }
 }

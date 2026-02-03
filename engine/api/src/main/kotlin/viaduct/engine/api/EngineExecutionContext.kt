@@ -41,7 +41,7 @@ interface EngineExecutionContext {
      *
      * This handle is set automatically by the engine when execution begins. It allows
      * the engine to associate this context with the correct execution state when
-     * [executeSelectionSet] is called.
+     * [resolveSelectionSet] is called.
      *
      * ## Lifecycle
      *
@@ -125,7 +125,7 @@ interface EngineExecutionContext {
     /**
      * Interface representing an opaque handle representing an ongoing execution.
      *
-     * This handle enables subquery execution (via [executeSelectionSet]) without tenant runtime
+     * This handle enables subquery execution (via [resolveSelectionSet]) without tenant runtime
      * code needing to understand execution internals. The engine uses this handle to:
      * - Access the current execution's coroutine scope and error accumulator
      * - Maintain parent-child relationships for error attribution
@@ -145,8 +145,8 @@ interface EngineExecutionContext {
      *
      * This method is the Engine API layer in the three-tier architecture:
      * - **Tenant**: `ctx.query(SelectionSet<T>)` / `ctx.mutation(SelectionSet<T>)` - typed, simple
-     * - **Engine API**: `EEC.executeSelectionSet(...)` - flexible, for shims and engine internals
-     * - **Wiring**: `Engine.executeSelectionSet(...)` - implementation detail, only called by EEC
+     * - **Engine API**: `EEC.resolveSelectionSet(...)` - flexible, for shims and engine internals
+     * - **Wiring**: `Engine.resolveSelectionSet(...)` - implementation detail, only called by EEC
      *
      * ## Execution Handle Requirements
      *
@@ -159,12 +159,12 @@ interface EngineExecutionContext {
      * @return The resolved [EngineObjectData]
      * @throws SubqueryExecutionException if [executionHandle] is null, the schema doesn't support the
      *         requested operation type, or field resolution fails
-     * @see ExecuteSelectionSetOptions For available options
+     * @see ResolveSelectionSetOptions For available options
      */
-    suspend fun executeSelectionSet(
+    suspend fun resolveSelectionSet(
         resolverId: String,
         selectionSet: RawSelectionSet,
-        options: ExecuteSelectionSetOptions = ExecuteSelectionSetOptions.DEFAULT,
+        options: ResolveSelectionSetOptions = ResolveSelectionSetOptions.DEFAULT,
     ): EngineObjectData
 
     fun createNodeReference(

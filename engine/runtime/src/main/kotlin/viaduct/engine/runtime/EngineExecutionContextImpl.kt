@@ -11,11 +11,11 @@ import java.util.function.Supplier
 import viaduct.engine.api.Engine
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.ExecuteSelectionSetOptions
 import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolutionPolicy
+import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.SubqueryExecutionException
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
@@ -134,20 +134,20 @@ class EngineExecutionContextImpl(
         return dispatcherRegistry.getNodeResolverDispatcher(typeName) != null
     }
 
-    override suspend fun executeSelectionSet(
+    override suspend fun resolveSelectionSet(
         resolverId: String,
         selectionSet: RawSelectionSet,
-        options: ExecuteSelectionSetOptions,
+        options: ResolveSelectionSetOptions,
     ): EngineObjectData {
         val handle = executionHandle
             ?: throw SubqueryExecutionException(
-                "executeSelectionSet requires an executionHandle. " +
-                    "This typically means executeSelectionSet was called before execution started " +
+                "resolveSelectionSet requires an executionHandle. " +
+                    "This typically means resolveSelectionSet was called before execution started " +
                     "or from a context that doesn't have access to the current execution."
             )
 
         return executeWithMetrics {
-            engine.executeSelectionSet(handle, selectionSet, options)
+            engine.resolveSelectionSet(handle, selectionSet, options)
         }
     }
 
