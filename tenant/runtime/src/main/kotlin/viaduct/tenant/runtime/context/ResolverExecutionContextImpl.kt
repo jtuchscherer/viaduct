@@ -13,8 +13,6 @@ sealed class ResolverExecutionContextImpl<Q : Query>(
     baseData: InternalContext,
     protected val engineExecutionContextWrapper: EngineExecutionContextWrapper,
 ) : ResolverExecutionContext<Q>, ExecutionContextImpl(baseData) {
-    override suspend fun <T : Query> query(selections: SelectionSet<T>) = engineExecutionContextWrapper.query(this, "query", selections)
-
     @Suppress("UNCHECKED_CAST")
     override suspend fun query(
         selections: String,
@@ -23,6 +21,8 @@ sealed class ResolverExecutionContextImpl<Q : Query>(
         val queryType = reflectionLoader.reflectionFor(schema.schema.queryType.name) as Type<Q>
         return query(selectionsFor(queryType, selections, variables))
     }
+
+    private suspend fun <T : Query> query(selections: SelectionSet<T>) = engineExecutionContextWrapper.query(this, "query", selections)
 
     override fun <T : CompositeOutput> selectionsFor(
         type: Type<T>,

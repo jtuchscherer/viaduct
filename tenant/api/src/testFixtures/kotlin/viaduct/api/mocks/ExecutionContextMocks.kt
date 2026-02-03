@@ -135,7 +135,7 @@ open class MockResolverExecutionContext<Q : Query>(
         }
     }
 
-    override suspend fun <T : Query> query(selections: SelectionSet<T>): T {
+    private suspend fun <T : Query> query(selections: SelectionSet<T>): T {
         @Suppress("UNCHECKED_CAST")
         return queryResults.get(selections as SelectionSet<Query>) as T
     }
@@ -212,7 +212,7 @@ class MockMutationFieldExecutionContext<Q : Query, M : Mutation, A : Arguments, 
     // In mock contexts, sync and lazy values are the same
     override suspend fun getQueryValue(): Q = queryValue
 
-    override suspend fun <T : Mutation> mutation(selections: SelectionSet<T>): T {
+    private suspend fun <T : Mutation> mutation(selections: SelectionSet<T>): T {
         @Suppress("UNCHECKED_CAST")
         return mutationResults.get(selections as SelectionSet<Mutation>) as T
     }

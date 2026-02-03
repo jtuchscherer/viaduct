@@ -44,7 +44,7 @@ class RecursiveSubmutationFeatureAppTest : FeatureAppTestBase() {
      *
      * Note: Subqueries do NOT inherit the parent request's GraphQL variables. You can either:
      * - Use inline literal values in the selection string (as shown here)
-     * - Pass a variables map to selectionsFor: `ctx.selectionsFor(Type, "field(arg: \$var)", mapOf("var" to value))`
+     * - Pass a variables map to ctx.mutation: `ctx.mutation("field(arg: \$var)", mapOf("var" to value))`
      */
     @Resolver
     class Mutation_ExampleMutationSelections : MutationResolvers.ExampleMutationSelections() {
@@ -54,12 +54,7 @@ class RecursiveSubmutationFeatureAppTest : FeatureAppTestBase() {
                 1 -> 1
                 else -> {
                     // Use inline literal value for the argument, not a variable
-                    val mutation = ctx.mutation(
-                        ctx.selectionsFor(
-                            Mutation.Reflection,
-                            "exampleMutationSelections(triangleSize: ${size - 1})"
-                        )
-                    )
+                    val mutation = ctx.mutation("exampleMutationSelections(triangleSize: ${size - 1})")
                     size + mutation.getExampleMutationSelections()!!
                 }
             }

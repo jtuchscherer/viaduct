@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import viaduct.api.mocks.MockInternalContext
+import viaduct.api.mocks.MockReflectionLoader
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
@@ -39,7 +40,11 @@ class FieldExecutionContextImplTest : ContextTestBase() {
         )
 
         return FieldExecutionContextImpl(
-            MockInternalContext(SelectTestFeatureAppTest.schema, globalIDCodec),
+            MockInternalContext(
+                SelectTestFeatureAppTest.schema,
+                globalIDCodec,
+                MockReflectionLoader(Query.Reflection)
+            ),
             wrapper,
             selectionSet,
             null, // requestContext
@@ -85,18 +90,9 @@ class FieldExecutionContextImplTest : ContextTestBase() {
     fun query() =
         runBlockingTest {
             val ctx = mk()
-            ctx.selectionsFor(Query.Reflection, "__typename").also {
-                assertTrue(it.contains(Query.Reflection.Fields.__typename))
-
-                ctx.query(it).also { result ->
-                    assertEquals(queryObject, result)
-                }
-            }
+            val result = ctx.query("__typename")
+            assertEquals(queryObject, result)
         }
-
-    // Note: Tests for query(String, Map) require a proper test setup with generated GRTs
-    // that include a Query$Reflection class. These tests are covered by integration tests
-    // in the feature test apps that have fully generated schemas.
 
     @Test
     fun `selectionsFor - multiple selection sets with one named Main`() {

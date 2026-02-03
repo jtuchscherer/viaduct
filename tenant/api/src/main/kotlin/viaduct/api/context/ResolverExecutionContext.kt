@@ -13,11 +13,6 @@ import viaduct.apiannotations.StableApi
 @StableApi
 interface ResolverExecutionContext<Q : QueryType> : ExecutionContext {
     /**
-     * Loads the provided [SelectionSet] on the root Query type, and return the response
-     */
-    suspend fun <T : QueryType> query(selections: SelectionSet<T>): T
-
-    /**
      * Loads the provided selections on the root Query type, and returns the response typed as [Q].
      * This is a convenience method that combines [selectionsFor] and [query].
      *

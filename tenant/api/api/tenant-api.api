@@ -94,7 +94,6 @@ public abstract interface class viaduct/api/context/FieldExecutionContext : viad
 
 public abstract interface class viaduct/api/context/MutationFieldExecutionContext : viaduct/api/context/BaseFieldExecutionContext {
 	public abstract fun mutation (Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun mutation (Lviaduct/api/select/SelectionSet;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class viaduct/api/context/MutationFieldExecutionContext$DefaultImpls {
@@ -109,7 +108,6 @@ public abstract interface class viaduct/api/context/ResolverExecutionContext : v
 	public abstract fun globalIDStringFor (Lviaduct/api/reflect/Type;Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun nodeFor (Lviaduct/api/globalid/GlobalID;)Lviaduct/api/types/NodeObject;
 	public abstract fun query (Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun query (Lviaduct/api/select/SelectionSet;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun selectionsFor (Lviaduct/api/reflect/Type;Ljava/lang/String;Ljava/util/Map;)Lviaduct/api/select/SelectionSet;
 }
 

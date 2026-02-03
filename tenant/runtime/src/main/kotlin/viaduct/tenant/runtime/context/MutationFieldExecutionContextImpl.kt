@@ -44,8 +44,6 @@ class MutationFieldExecutionContextImpl<Q : Query, M : Mutation>(
         syncQueryValueGetter,
         queryCls,
     ) {
-    override suspend fun <T : Mutation> mutation(selections: SelectionSet<T>) = engineExecutionContextWrapper.mutation(this, "mutation", selections)
-
     @Suppress("UNCHECKED_CAST")
     override suspend fun mutation(
         selections: String,
@@ -54,4 +52,6 @@ class MutationFieldExecutionContextImpl<Q : Query, M : Mutation>(
         val mutationType = reflectionLoader.reflectionFor(schema.schema.mutationType.name) as Type<M>
         return mutation(selectionsFor(mutationType, selections, variables))
     }
+
+    private suspend fun <T : Mutation> mutation(selections: SelectionSet<T>) = engineExecutionContextWrapper.mutation(this, "mutation", selections)
 }

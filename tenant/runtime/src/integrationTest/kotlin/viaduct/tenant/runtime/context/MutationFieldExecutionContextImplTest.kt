@@ -8,10 +8,12 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import viaduct.api.mocks.MockInternalContext
+import viaduct.api.mocks.MockReflectionLoader
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.Query as QueryType
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.select.Mutation
+import viaduct.tenant.runtime.select.Query
 import viaduct.tenant.runtime.select.SelectTestFeatureAppTest
 
 class MutationFieldExecutionContextImplTest : ContextTestBase() {
@@ -24,7 +26,11 @@ class MutationFieldExecutionContextImplTest : ContextTestBase() {
         )
 
         return MutationFieldExecutionContextImpl(
-            MockInternalContext(SelectTestFeatureAppTest.schema, GlobalIDCodecDefault),
+            MockInternalContext(
+                SelectTestFeatureAppTest.schema,
+                GlobalIDCodecDefault,
+                MockReflectionLoader(Query.Reflection, Mutation.Reflection)
+            ),
             wrapper,
             noSelections,
             null, // requestContext
@@ -39,7 +45,7 @@ class MutationFieldExecutionContextImplTest : ContextTestBase() {
     fun mutation() =
         runBlockingTest {
             val ctx = mk()
-            assertEquals(mutationObject, ctx.mutation(SelectionSet.empty(Mutation.Reflection)))
+            assertEquals(mutationObject, ctx.mutation("__typename"))
         }
 
     @Test

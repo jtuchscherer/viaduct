@@ -62,20 +62,17 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
             incrementCounter: Int @resolver
             triggerNestedMutation: Int @resolver
             fetchFromQueryDuringMutation: String @resolver
-            # ctx.query/mutation(selections, variables) API tests
-            mutationViaString: Int @resolver
-            mutationViaStringWithVariables(multiplier: Int!): Int @resolver
-            queryViaStringFromMutation: String @resolver
-            queryViaStringWithVariablesFromMutation(n: Int!): Int @resolver
+            # ctx.query/mutation(selections, variables) API with variables map
+            mutationWithVariables(multiplier: Int!): Int @resolver
+            queryWithVariablesFromMutation(n: Int!): Int @resolver
         }
 
         type Container {
             derivedFromQuery: Int @resolver
             viaQuerySelections: Int @resolver
             viaCtxQuery: Int @resolver
-            # ctx.query/mutation(selections, variables) API tests
-            queryViaString: Int @resolver
-            queryViaStringWithVariables(multiplier: Int!): Int @resolver
+            # ctx.query(selections, variables) API with variables map
+            queryWithVariables(multiplier: Int!): Int @resolver
         }
 
         type User {
@@ -176,8 +173,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class Mutation_TriggerNestedMutationResolver : MutationResolvers.TriggerNestedMutation() {
         override suspend fun resolve(ctx: Context): Int {
-            val selections = ctx.selectionsFor(Mutation.Reflection, "incrementCounter")
-            val mutationResult = ctx.mutation(selections)
+            val mutationResult = ctx.mutation("incrementCounter")
             return mutationResult.getIncrementCounter() ?: 0
         }
     }
@@ -189,8 +185,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class Mutation_FetchFromQueryDuringMutationResolver : MutationResolvers.FetchFromQueryDuringMutation() {
         override suspend fun resolve(ctx: Context): String {
-            val selections = ctx.selectionsFor(Query.Reflection, "firstName lastName")
-            val queryResult = ctx.query(selections)
+            val queryResult = ctx.query("firstName lastName")
             val first = queryResult.getFirstName() ?: ""
             val last = queryResult.getLastName() ?: ""
             return "Mutation processed for: $first $last"
@@ -204,8 +199,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class Container_DerivedFromQueryResolver : ContainerResolvers.DerivedFromQuery() {
         override suspend fun resolve(ctx: Context): Int {
-            val selections = ctx.selectionsFor(Query.Reflection, "rootValue")
-            val queryResult = ctx.query(selections)
+            val queryResult = ctx.query("rootValue")
             val rootValue = queryResult.getRootValue() ?: 0
             return rootValue * 2
         }
@@ -228,8 +222,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class Container_ViaCtxQueryResolver : ContainerResolvers.ViaCtxQuery() {
         override suspend fun resolve(ctx: Context): Int {
-            val selections = ctx.selectionsFor(Query.Reflection, "rootValue")
-            val result = ctx.query(selections)
+            val result = ctx.query("rootValue")
             return result.getRootValue() ?: 0
         }
     }
@@ -240,8 +233,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class User_FullNameResolver : UserResolvers.FullName() {
         override suspend fun resolve(ctx: Context): String {
-            val selections = ctx.selectionsFor(Query.Reflection, "firstName lastName")
-            val queryResult = ctx.query(selections)
+            val queryResult = ctx.query("firstName lastName")
             val first = queryResult.getFirstName() ?: ""
             val last = queryResult.getLastName() ?: ""
             return "$first $last"
@@ -253,17 +245,13 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
      *
      * Note: Subqueries do NOT inherit the parent request's GraphQL variables. You can either:
      * - Use inline literal values in the selection string (as shown here): `"multiply(n: $input)"`
-     * - Pass a variables map to selectionsFor: `ctx.selectionsFor(Type, "multiply(n: \$n)", mapOf("n" to input))`
+     * - Pass a variables map to ctx.query: `ctx.query("multiply(n: \$n)", mapOf("n" to input))`
      */
     @Resolver
     class Calculator_DoubleResolver : CalculatorResolvers.Double() {
         override suspend fun resolve(ctx: Context): Int {
             val input = ctx.arguments.input
-            val selections = ctx.selectionsFor(
-                Query.Reflection,
-                "multiply(n: $input)"
-            )
-            val queryResult = ctx.query(selections)
+            val queryResult = ctx.query("multiply(n: $input)")
             return queryResult.getMultiply() ?: 0
         }
     }
@@ -282,8 +270,7 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     @Resolver
     class Level2_DerivedValueResolver : Level2Resolvers.DerivedValue() {
         override suspend fun resolve(ctx: Context): Int {
-            val selections = ctx.selectionsFor(Query.Reflection, "baseValue")
-            val result = ctx.query(selections)
+            val result = ctx.query("baseValue")
             return (result.getBaseValue() ?: 0) * 3
         }
     }
@@ -432,26 +419,14 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
         }
     }
 
-    // ==================== ctx.query/mutation(selections, variables) API Tests ====================
+    // ==================== ctx.query/mutation(selections, variables) with variables map ====================
 
     /**
-     * Resolver using ctx.query(selections) API.
-     * This tests the string-based API.
+     * Resolver using ctx.query(selections, variables) API with variables map.
+     * This tests passing variables to subqueries.
      */
     @Resolver
-    class Container_QueryViaStringResolver : ContainerResolvers.QueryViaString() {
-        override suspend fun resolve(ctx: Context): Int {
-            // Use ctx.query(selections)
-            val result = ctx.query("rootValue")
-            return result.getRootValue() ?: 0
-        }
-    }
-
-    /**
-     * Resolver using ctx.query(selections, variables) API with variables.
-     */
-    @Resolver
-    class Container_QueryViaStringWithVariablesResolver : ContainerResolvers.QueryViaStringWithVariables() {
+    class Container_QueryWithVariablesResolver : ContainerResolvers.QueryWithVariables() {
         override suspend fun resolve(ctx: Context): Int {
             val multiplier = ctx.arguments.multiplier
             // Pass variables to the query
@@ -461,22 +436,10 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     }
 
     /**
-     * Mutation resolver using ctx.mutation(selections) API.
+     * Mutation resolver using ctx.mutation() and combining result with argument.
      */
     @Resolver
-    class Mutation_MutationViaStringResolver : MutationResolvers.MutationViaString() {
-        override suspend fun resolve(ctx: Context): Int {
-            // Use ctx.mutation(selections)
-            val result = ctx.mutation("incrementCounter")
-            return result.getIncrementCounter() ?: 0
-        }
-    }
-
-    /**
-     * Mutation resolver using ctx.mutation(selections, variables) API with variables.
-     */
-    @Resolver
-    class Mutation_MutationViaStringWithVariablesResolver : MutationResolvers.MutationViaStringWithVariables() {
+    class Mutation_MutationWithVariablesResolver : MutationResolvers.MutationWithVariables() {
         override suspend fun resolve(ctx: Context): Int {
             val multiplier = ctx.arguments.multiplier
             // Increment the counter
@@ -488,24 +451,10 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     }
 
     /**
-     * Mutation resolver using ctx.query(selections) API to fetch query data.
+     * Mutation resolver using ctx.query(selections, variables) API with variables map.
      */
     @Resolver
-    class Mutation_QueryViaStringFromMutationResolver : MutationResolvers.QueryViaStringFromMutation() {
-        override suspend fun resolve(ctx: Context): String {
-            // ctx.query(selections) from mutation context
-            val queryResult = ctx.query("firstName lastName")
-            val first = queryResult.getFirstName() ?: ""
-            val last = queryResult.getLastName() ?: ""
-            return "Query from mutation: $first $last"
-        }
-    }
-
-    /**
-     * Mutation resolver using ctx.query(selections, variables) API with variables.
-     */
-    @Resolver
-    class Mutation_QueryViaStringWithVariablesFromMutationResolver : MutationResolvers.QueryViaStringWithVariablesFromMutation() {
+    class Mutation_QueryWithVariablesFromMutationResolver : MutationResolvers.QueryWithVariablesFromMutation() {
         override suspend fun resolve(ctx: Context): Int {
             val n = ctx.arguments.n
             // ctx.query(selections, variables) from mutation context
@@ -515,31 +464,12 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
     }
 
     @Test
-    fun `ctx query with string selections executes subquery`() {
+    fun `ctx query with variables map`() {
         execute(
             query = """
                 query {
                     container {
-                        queryViaString
-                    }
-                }
-            """.trimIndent()
-        ).assertEquals {
-            "data" to {
-                "container" to {
-                    "queryViaString" to 42
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `ctx query with string selections and variables`() {
-        execute(
-            query = """
-                query {
-                    container {
-                        queryViaStringWithVariables(multiplier: 5)
+                        queryWithVariables(multiplier: 5)
                     }
                 }
             """.trimIndent()
@@ -547,85 +477,41 @@ class SubqueryExecutionFeatureAppTest : FeatureAppTestBase() {
             "data" to {
                 "container" to {
                     // multiply(n: 5) returns 5 * 2 = 10
-                    "queryViaStringWithVariables" to 10
+                    "queryWithVariables" to 10
                 }
             }
         }
     }
 
     @Test
-    fun `ctx mutation with string selections executes nested mutation`() {
+    fun `ctx mutation result combined with argument`() {
         counter = 0
         execute(
             query = """
                 mutation {
-                    mutationViaString
-                }
-            """.trimIndent()
-        ).assertEquals {
-            "data" to {
-                "mutationViaString" to 1
-            }
-        }
-
-        // Call again to verify counter increments
-        execute(
-            query = """
-                mutation {
-                    mutationViaString
-                }
-            """.trimIndent()
-        ).assertEquals {
-            "data" to {
-                "mutationViaString" to 2
-            }
-        }
-    }
-
-    @Test
-    fun `ctx mutation with string selections and multiplier`() {
-        counter = 0
-        execute(
-            query = """
-                mutation {
-                    mutationViaStringWithVariables(multiplier: 10)
+                    mutationWithVariables(multiplier: 10)
                 }
             """.trimIndent()
         ).assertEquals {
             "data" to {
                 // counter becomes 1, then 1 * 10 = 10
-                "mutationViaStringWithVariables" to 10
+                "mutationWithVariables" to 10
             }
         }
     }
 
     @Test
-    fun `ctx query with string selections from mutation context`() {
+    fun `ctx query with variables map from mutation context`() {
         execute(
             query = """
                 mutation {
-                    queryViaStringFromMutation
-                }
-            """.trimIndent()
-        ).assertEquals {
-            "data" to {
-                "queryViaStringFromMutation" to "Query from mutation: Alice Smith"
-            }
-        }
-    }
-
-    @Test
-    fun `ctx query with string selections and variables from mutation context`() {
-        execute(
-            query = """
-                mutation {
-                    queryViaStringWithVariablesFromMutation(n: 7)
+                    queryWithVariablesFromMutation(n: 7)
                 }
             """.trimIndent()
         ).assertEquals {
             "data" to {
                 // multiply(n: 7) returns 7 * 2 = 14
-                "queryViaStringWithVariablesFromMutation" to 14
+                "queryWithVariablesFromMutation" to 14
             }
         }
     }
