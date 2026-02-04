@@ -113,3 +113,11 @@ class UserEdge private constructor(...): Edge<User> {
 ```
 
 See [Pagination](../pagination/index.md) for details on building connection responses.
+
+## PageInfo
+
+`PageInfo` is a built-in type that provides pagination metadata for connections. Unlike other types that are generated per-tenant, `PageInfo` is part of Viaduct's default schema and is automatically available to all connection types.
+
+When a custom `PageInfo` type is defined in the schema, Viaduct validates that it conforms exactly to the [Relay Connection specification](https://relay.dev/graphql/connections.htm){:target="_blank"}. Custom fields and directives are not permitted on the `PageInfo` type.
+
+See [PageInfo in the Pagination guide](../pagination/index.md#pageinfo) for details on automatic handling and validation rules.

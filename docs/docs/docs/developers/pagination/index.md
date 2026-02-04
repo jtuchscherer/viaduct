@@ -53,7 +53,7 @@ A type with `@edge` must have:
 
 ### PageInfo
 
-`PageInfo` is a built-in type that provides pagination metadata:
+`PageInfo` is a built-in type that provides pagination metadata per the [Relay Connection specification](https://relay.dev/graphql/connections.htm){:target="_blank"}:
 
 ```graphqls
 type PageInfo {
@@ -62,6 +62,42 @@ type PageInfo {
   startCursor: String
   endCursor: String
 }
+```
+
+#### Automatic PageInfo Handling
+
+Viaduct automatically manages the `PageInfo` type in your schema:
+
+- **If PageInfo doesn't exist**: Viaduct creates it with the standard Relay fields shown above
+- **If PageInfo already exists**: Viaduct validates it conforms exactly to the Relay specification
+
+This ensures all connection types have access to a compliant `PageInfo` type without requiring manual definition.
+
+#### PageInfo Validation
+
+When a custom `PageInfo` type is defined, it must match the Relay specification exactly:
+
+- **Required fields only**: Only the four standard fields (`hasNextPage`, `hasPreviousPage`, `startCursor`, `endCursor`) are allowed
+- **No custom fields**: Additional fields such as `totalCount` are not permitted
+- **No custom directives**: Directives on the `PageInfo` type or its fields are not allowed
+
+**Field requirements:**
+
+| Field | Type | Nullability |
+|-------|------|-----------|
+| `hasNextPage` | `Boolean` | Non-nullable (`!`) required |
+| `hasPreviousPage` | `Boolean` | Non-nullable (`!`) required |
+| `startCursor` | `String` | Nullable |
+| `endCursor` | `String` | Nullable |
+
+Non-conforming `PageInfo` types result in a validation error:
+
+```
+PageInfo type does not conform to Relay Connection specification:
+  - Missing required field 'hasPreviousPage'
+  - Field 'hasNextPage' must be non-nullable (Boolean!)
+  - PageInfo type cannot have custom fields. Found extra fields: 'totalCount'.
+  - PageInfo type cannot have custom directives. Found directives: @deprecated.
 ```
 
 ### Connection Field Arguments
