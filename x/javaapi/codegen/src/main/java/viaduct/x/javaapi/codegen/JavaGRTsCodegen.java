@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import viaduct.graphql.schema.ViaductSchema;
 
 /**
@@ -27,49 +26,28 @@ public class JavaGRTsCodegen {
       int inputCount,
       int interfaceCount,
       int unionCount,
-      int resolverFileCount,
-      int resolverCount,
       List<File> generatedFiles) {
     public int totalCount() {
-      return enumCount + objectCount + inputCount + interfaceCount + unionCount + resolverFileCount;
+      return enumCount + objectCount + inputCount + interfaceCount + unionCount;
     }
   }
 
   /**
-   * Generates Java GRTs and resolver base classes from GraphQL schema files.
+   * Generates Java GRTs from GraphQL schema files.
    *
-   * <p>This method matches Kotlin's Args pattern:
-   *
-   * <ul>
-   *   <li>GRT types are written to {@code grtOutputDir} in package subdirectories
-   *   <li>Resolver files are written directly to {@code resolverGeneratedDir} (not in package
-   *       subdirs)
-   *   <li>Resolver code uses package {@code {tenantPackage}.resolverbases}
-   * </ul>
+   * <p>GRT types are written to {@code grtOutputDir} in package subdirectories.
    *
    * @param schemaFiles list of GraphQL schema files to parse
    * @param grtOutputDir output directory for generated GRT files (written to package subdirs)
    * @param grtPackage Java package name for generated GRT types
-   * @param resolverGeneratedDir output directory for resolver files (written directly, not in
-   *     package subdirs)
-   * @param tenantPackage Java package name for resolver bases (resolvers use
-   *     {tenantPackage}.resolverbases)
    * @return result containing counts of generated types
    * @throws IOException if there's an error reading or writing files
    */
-  public Result generate(
-      List<File> schemaFiles,
-      File grtOutputDir,
-      String grtPackage,
-      File resolverGeneratedDir,
-      String tenantPackage)
+  public Result generate(List<File> schemaFiles, File grtOutputDir, String grtPackage)
       throws IOException {
-    // Ensure output directories exist
+    // Ensure output directory exists
     if (!grtOutputDir.exists() && !grtOutputDir.mkdirs()) {
       throw new IOException("Failed to create GRT output directory: " + grtOutputDir);
-    }
-    if (!resolverGeneratedDir.exists() && !resolverGeneratedDir.mkdirs()) {
-      throw new IOException("Failed to create resolver output directory: " + resolverGeneratedDir);
     }
 
     // Parse schemas into ViaductSchema
@@ -107,31 +85,12 @@ public class JavaGRTsCodegen {
       generatedFiles.add(JavaGRTGenerator.UnionGenerator.generateToFile(model, grtOutputDir));
     }
 
-    // Generate resolver base classes (written directly to resolverGeneratedDir)
-    int resolverCount = 0;
-    String mutationTypeName =
-        schema.getMutationTypeDef() != null ? schema.getMutationTypeDef().getName() : null;
-    Map<String, List<ResolverModel>> resolversByType =
-        parser.extractResolvers(schema, grtPackage, mutationTypeName);
-
-    for (Map.Entry<String, List<ResolverModel>> entry : resolversByType.entrySet()) {
-      String typeName = entry.getKey();
-      List<ResolverModel> resolvers = entry.getValue();
-
-      ResolversFileModel fileModel = new ResolversFileModel(tenantPackage, typeName, resolvers);
-      generatedFiles.add(
-          JavaGRTGenerator.ResolverGenerator.generateToFile(fileModel, resolverGeneratedDir));
-      resolverCount += resolvers.size();
-    }
-
     return new Result(
         enumModels.size(),
         objectModels.size(),
         inputModels.size(),
         interfaceModels.size(),
         unionModels.size(),
-        resolversByType.size(),
-        resolverCount,
         generatedFiles);
   }
 }

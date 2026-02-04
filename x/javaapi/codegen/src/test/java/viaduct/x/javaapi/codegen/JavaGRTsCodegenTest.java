@@ -57,15 +57,9 @@ class JavaGRTsCodegenTest {
   @Test
   void generatesAllTypesToFiles() throws IOException {
     File grtOutputDir = tempDir.resolve("grt-output").toFile();
-    File resolverOutputDir = tempDir.resolve("resolver-output").toFile();
 
     JavaGRTsCodegen.Result result =
-        codegen.generate(
-            List.of(schemaFile.toFile()),
-            grtOutputDir,
-            "com.example.generated",
-            resolverOutputDir,
-            "com.example.tenant");
+        codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example.generated");
 
     // Verify counts
     assertThat(result.enumCount()).isEqualTo(1);
@@ -73,8 +67,6 @@ class JavaGRTsCodegenTest {
     assertThat(result.inputCount()).isEqualTo(1);
     assertThat(result.interfaceCount()).isEqualTo(1);
     assertThat(result.unionCount()).isEqualTo(1);
-    assertThat(result.resolverFileCount()).isEqualTo(0); // No resolver fields in schema
-    assertThat(result.resolverCount()).isEqualTo(0); // No resolver fields in schema
     assertThat(result.totalCount()).isEqualTo(5);
 
     // Verify generated files list
@@ -118,33 +110,19 @@ class JavaGRTsCodegenTest {
   @Test
   void createsOutputDirectoryIfNotExists() throws IOException {
     File grtOutputDir = tempDir.resolve("nested/grt/dir").toFile();
-    File resolverOutputDir = tempDir.resolve("nested/resolver/dir").toFile();
     assertThat(grtOutputDir).doesNotExist();
-    assertThat(resolverOutputDir).doesNotExist();
 
-    codegen.generate(
-        List.of(schemaFile.toFile()),
-        grtOutputDir,
-        "com.example",
-        resolverOutputDir,
-        "com.example.tenant");
+    codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example");
 
     assertThat(grtOutputDir).exists();
-    assertThat(resolverOutputDir).exists();
   }
 
   @Test
   void generatedFilesContainAbsolutePaths() throws IOException {
     File grtOutputDir = tempDir.resolve("grt-output").toFile();
-    File resolverOutputDir = tempDir.resolve("resolver-output").toFile();
 
     JavaGRTsCodegen.Result result =
-        codegen.generate(
-            List.of(schemaFile.toFile()),
-            grtOutputDir,
-            "com.example",
-            resolverOutputDir,
-            "com.example.tenant");
+        codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example");
 
     for (File file : result.generatedFiles()) {
       assertThat(file.isAbsolute()).isTrue();

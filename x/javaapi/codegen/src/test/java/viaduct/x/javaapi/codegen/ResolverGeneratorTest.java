@@ -26,7 +26,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "User", List.of(resolverModel));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     assertThat(generated)
         .contains("package com.example.tenant.resolverbases;")
@@ -61,7 +61,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "Query", List.of(resolverModel));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     assertThat(generated)
         .contains("@ResolverFor(typeName = \"Query\", fieldName = \"user\")")
@@ -87,7 +87,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "Mutation", List.of(resolverModel));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     assertThat(generated)
         .contains("@ResolverFor(typeName = \"Mutation\", fieldName = \"createUser\")")
@@ -128,7 +128,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "User", List.of(resolver1, resolver2));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     assertThat(generated)
         .contains("public final class UserResolvers")
@@ -157,7 +157,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "User", List.of(resolverModel));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     assertThat(generated)
         .contains("@ResolverFor(typeName = \"User\", fieldName = \"fullName\")")
@@ -184,7 +184,7 @@ class ResolverGeneratorTest {
     ResolversFileModel fileModel =
         new ResolversFileModel("com.example.tenant", "User", List.of(resolverModel));
 
-    String generated = JavaGRTGenerator.ResolverGenerator.generate(fileModel);
+    String generated = JavaResolverGenerator.generate(fileModel);
 
     // Check that Context class has all required delegate methods
     assertThat(generated)
