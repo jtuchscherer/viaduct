@@ -12,7 +12,7 @@ theme:
   name: material
   custom_dir: overrides
   logo: assets/images/logo-only-white.svg
-  favicon: assets/images/favicon.ico
+  favicon: assets/images/favicon.svg
   palette:
     # Palette toggle for light mode
     - scheme: default
