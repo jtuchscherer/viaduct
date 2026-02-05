@@ -14,10 +14,12 @@ interface FlagManager {
      */
     fun isEnabled(flag: Flag): Boolean
 
+    @StableApi
     object disabled : FlagManager {
         override fun isEnabled(flag: Flag): Boolean = false
     }
 
+    @StableApi
     object default : FlagManager {
         override fun isEnabled(flag: Flag): Boolean =
             when (flag) {
