@@ -38,6 +38,7 @@ import viaduct.utils.slf4j.logger
 /**
  * Provides default schema components (directives and root types) for Viaduct schemas,
  * adding core Viaduct directives and intelligently creating root types only when needed.
+ * Now supports includeRootTypes flag to control whether root types are generated.
  */
 object DefaultSchemaProvider {
     const val SDL_FILENAME: String = "@@viaduct_default_schema.graphqls"
@@ -215,7 +216,8 @@ object DefaultSchemaProvider {
         includeNodeDefinition: IncludeNodeSchema = IncludeNodeSchema.IfUsed,
         includeNodeQueries: IncludeNodeSchema = IncludeNodeSchema.IfUsed,
         existingSDLFiles: List<File> = emptyList(),
-        includePageInfo: Boolean = true
+        includePageInfo: Boolean = true,
+        includeRootTypes: Boolean = true
     ): String {
         val extantRegistry = if (existingSDLFiles.isNotEmpty()) {
             val reader = MultiSourceReader.newMultiSourceReader().let { readerBuilder ->
@@ -236,9 +238,10 @@ object DefaultSchemaProvider {
             builder = builder,
             includeNodeDefinition = includeNodeDefinition,
             includeNodeQueries = includeNodeQueries,
-            forceAddRootTypes = true,
+            forceAddRootTypes = includeRootTypes,
             allowExisting = existingSDLFiles.isNotEmpty(),
-            includePageInfo = includePageInfo
+            includePageInfo = includePageInfo,
+            includeRootTypes = includeRootTypes
         )
         return builder.building.toSDL()
     }
@@ -277,7 +280,8 @@ object DefaultSchemaProvider {
         includeNodeQueries: IncludeNodeSchema,
         forceAddRootTypes: Boolean,
         allowExisting: Boolean,
-        includePageInfo: Boolean = true
+        includePageInfo: Boolean = true,
+        includeRootTypes: Boolean = true
     ): RegistryBuilder {
         addDefaultDirectives(builder, allowExisting)
         addStandardScalars(builder, allowExisting)
@@ -313,7 +317,9 @@ object DefaultSchemaProvider {
             }
         }
 
-        addRootTypes(builder, forceAddRootTypes, allowExisting)
+        if (includeRootTypes) {
+            addRootTypes(builder, forceAddRootTypes, allowExisting)
+        }
         return builder
     }
 
