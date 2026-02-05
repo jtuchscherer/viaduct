@@ -2,6 +2,7 @@
 
 package viaduct.engine.runtime.execution
 
+import graphql.execution.MergedField
 import graphql.execution.ResultPath
 import graphql.language.Argument
 import graphql.language.AstPrinter
@@ -10,6 +11,7 @@ import graphql.language.Field as GJField
 import graphql.language.FragmentDefinition as GJFragmentDefinition
 import graphql.language.Node
 import graphql.language.SelectionSet as GJSelectionSet
+import graphql.language.SourceLocation
 import graphql.language.TypeName as GJTypeName
 import graphql.language.VariableReference
 import graphql.schema.GraphQLObjectType
@@ -17,6 +19,7 @@ import graphql.schema.GraphQLOutputType
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import strikt.api.Assertion
 import strikt.api.expectThat
@@ -787,6 +790,27 @@ class QueryPlanTest {
             expectThat(plan.executionCondition).isEqualTo(ALWAYS_EXECUTE)
             expectThat(plan.executionCondition.shouldExecute()).isEqualTo(true)
         }
+    }
+
+    @Test
+    fun `regression -- CollectedField_sourceLocation does not throw for fields with missing source location`() {
+        // A MergedField may be created from fields without a source location.
+        // Ensure that in the CollectedField representation, that we can access this source location
+        // without throwing an NPE
+        val mergedField = MergedField.newMergedField(GJField("field")).build()
+
+        // sanity check
+        assertNull(mergedField.singleField.sourceLocation)
+
+        val cf = CollectedField(
+            "field",
+            null,
+            mergedField,
+            emptyList(),
+            emptyMap(),
+        )
+
+        assertEquals(SourceLocation.EMPTY, cf.sourceLocation)
     }
 
     private class Fixture(

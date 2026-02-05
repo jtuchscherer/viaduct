@@ -86,7 +86,9 @@ data class QueryPlan(
      * A CollectedField is the result of applying the CollectFields algorithm.
      *
      * It represents a merged and normalized selection within a selection set, and has
-     * no unresolved constraints like unapplied conditional directives, and will always be executed.
+     * no unresolved constraints like unapplied conditional directives.
+     *
+     * A CollectedField will always be executed.
      */
     data class CollectedField(
         val responseKey: String,
@@ -97,7 +99,8 @@ data class QueryPlan(
         val collectedFieldMetadata: FieldMetadata? = FieldMetadata.empty,
     ) : Selection {
         override val constraints: Constraints get() = Constraints.Unconstrained
-        val sourceLocation: SourceLocation get() = mergedField.singleField.sourceLocation
+
+        val sourceLocation: SourceLocation get() = mergedField.singleField.sourceLocation ?: SourceLocation.EMPTY
         val fieldName: String get() = mergedField.name
         val alias: String? get() = mergedField.singleField.alias
 
