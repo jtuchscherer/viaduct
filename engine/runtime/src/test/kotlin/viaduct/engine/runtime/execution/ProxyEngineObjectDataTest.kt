@@ -9,6 +9,7 @@ import kotlin.test.assertContains
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -567,6 +568,49 @@ class ProxyEngineObjectDataTest {
                 proxy.fetch("listField")
             }
             assertEquals(listOf(err), exc.graphQLErrors)
+        }
+    }
+
+    @Test
+    fun `regression -- can fetch introspection fields`() {
+        Fixture("type Query { x:Int }") {
+            // __typename
+            mkProxy(
+                "__typename, a:__typename",
+                "Query",
+                mapOf(
+                    ObjectEngineResult.Key("__typename") to "Query",
+                    ObjectEngineResult.Key("__typename", "a") to "Query",
+                )
+            ).let { proxy ->
+                assertEquals("Query", proxy.fetch("__typename"))
+                assertEquals("Query", proxy.fetch("a"))
+            }
+
+            // __schema
+            mkProxy(
+                "__schema { __typename }, a:__schema { __typename }",
+                "Query",
+                mapOf(
+                    ObjectEngineResult.Key("__schema") to emptyMap<String, Any?>(),
+                    ObjectEngineResult.Key("__schema", "a") to emptyMap<String, Any?>()
+                )
+            ).let { proxy ->
+                assertInstanceOf(ProxyEngineObjectData::class.java, proxy.fetch("__schema"))
+                assertInstanceOf(ProxyEngineObjectData::class.java, proxy.fetch("a"))
+            }
+
+            // __type
+            mkProxy(
+                "__type(name:\"__Schema\") { __typename  }, a:__type(name:\"__Schema\") { __typename  }",
+                "Query",
+                mapOf(
+                    ObjectEngineResult.Key("__type", arguments = mapOf("name" to "__Schema")) to emptyMap<String, Any?>(),
+                    ObjectEngineResult.Key("__type", "a", mapOf("name" to "__Schema")) to emptyMap<String, Any?>()
+                )
+            ).let { proxy ->
+                assertInstanceOf(ProxyEngineObjectData::class.java, proxy.fetch("__type"))
+            }
         }
     }
 
