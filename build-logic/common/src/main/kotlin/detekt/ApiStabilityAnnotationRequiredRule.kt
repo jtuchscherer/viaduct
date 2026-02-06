@@ -36,7 +36,7 @@ private val STABILITY_ANNOTATION_SIMPLE_NAMES = setOf(
 /**
  * Ensures that public API declarations are annotated with an API stability annotations.
  *
- * “Covered” means:
+ * "Covered" means:
  * - The declaration is annotated directly, OR
  * - Any enclosing class/object is annotated.
  *
@@ -217,6 +217,6 @@ class ApiStabilityAnnotationRequiredRule(config: Config) : Rule(config) {
     private fun KtDeclaration.isApiRoot(): Boolean {
         val owners = parents.filterIsInstance<KtClassOrObject>()
         val nearestOwner = owners.firstOrNull() ?: return true
-        return this == nearestOwner // solo la clase/objeto contenedor, no sus miembros
+        return this == nearestOwner
     }
 }

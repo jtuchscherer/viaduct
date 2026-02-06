@@ -1,6 +1,5 @@
 package detekt
 
-import common.GradleConstants
 import io.gitlab.arturbosch.detekt.api.CodeSmell
 import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.Debt
@@ -48,7 +47,7 @@ class NoStringDependenciesInGradleRule(config: Config = Config.empty) : Rule(con
             return
         }
 
-        // Sanity check: optionally ensure we’re inside a `dependencies {}` scope, to reduce false positives.
+        // Sanity check: optionally ensure we're inside a `dependencies {}` scope, to reduce false positives.
         // If you want to be stricter, comment this out.
         val insideDependenciesBlock = expression.parents.any { isDependenciesBlock(it) }
         if (!insideDependenciesBlock) {

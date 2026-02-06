@@ -1,4 +1,4 @@
-package common
+package detekt
 
 /**
  * Constants related to Gradle build scripts, primarily for use in custom detekt rules.

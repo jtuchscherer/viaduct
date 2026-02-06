@@ -37,7 +37,7 @@ micrometer = "1.10.8"
 # Plugins
 ktlintPluginVersion = "12.1.2"
 ktlintVersion = "1.2.1"
-detekt = "1.23.7"
+detekt = "1.23.6"
 jacoco = "0.8.12"
 dokka = "2.0.0"
 gradle-maven-publish = "0.34.0"
