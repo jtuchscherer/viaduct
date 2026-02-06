@@ -811,7 +811,7 @@ class QueryPlanTest {
 
             // Verify the ExecutionCondition is stored in the plan
             expectThat(plan.executionCondition).isEqualTo(customCondition)
-            expectThat(plan.executionCondition.shouldExecute()).isEqualTo(false)
+            expectThat(plan.executionCondition.shouldExecute(null)).isEqualTo(false)
         }
     }
 
@@ -837,7 +837,7 @@ class QueryPlanTest {
             val field = plan.selectionSet.selections.first() as QueryPlan.Field
             val childPlan = field.childPlans.first()
             expectThat(childPlan.executionCondition).isEqualTo(ALWAYS_EXECUTE)
-            expectThat(childPlan.executionCondition.shouldExecute()).isEqualTo(true)
+            expectThat(childPlan.executionCondition.shouldExecute(null)).isEqualTo(true)
         }
     }
 
@@ -847,7 +847,7 @@ class QueryPlanTest {
             val plan = buildPlan("{x}")
 
             expectThat(plan.executionCondition).isEqualTo(ALWAYS_EXECUTE)
-            expectThat(plan.executionCondition.shouldExecute()).isEqualTo(true)
+            expectThat(plan.executionCondition.shouldExecute(null)).isEqualTo(true)
         }
     }
 
