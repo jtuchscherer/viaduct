@@ -17,7 +17,6 @@ dependencies {
     testImplementation(libs.guava.testlib)
     testImplementation(libs.kotest.assertions.core.jvm)
     testImplementation(libs.kotest.property.jvm)
-    testImplementation(libs.konsist)
 
     jmh(libs.jmh.annotation.processor)
     jmh(libs.jmh.core)

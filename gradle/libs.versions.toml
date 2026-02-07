@@ -21,7 +21,6 @@ logback = "1.5.21"
 javax-inject = "1"
 jmh = "1.37"
 junit5 = "5.11.3"
-konsist = "0.16.1"
 kotest = "5.9.1"
 kotlin = "1.9.24"
 kotlinx = "1.5.2"
@@ -155,5 +154,4 @@ strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checker" }
 
 # Linting
-konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
