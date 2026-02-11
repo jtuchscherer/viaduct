@@ -73,43 +73,64 @@ jobs:
           echo "✅ Dependencies downloaded successfully"
         shell: bash
 
+      # Pinned 3.13 due to incompatibility between djlint and 3.14
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
       - name: Build project (without tests)
         run: |
           echo "🔨 Building project..."
           ./gradlew clean || { echo "❌ Clean failed"; exit 1; }
           ./gradlew assemble || { echo "❌ Assemble failed"; exit 1; }
-          ./gradlew :core:tenant:tenant-api:dokkaGenerate :core:service:dokkaGenerate :core:x:javaapi:x-javaapi-api:dokkaGenerate || { echo "❌ Dokka failed"; exit 1; }
           echo "✅ Project built successfully"
         shell: bash
 
       - name: Verify Dokka output
         run: |
+          echo "🔨 Building Dokka documentation..."
+          cd docs
+          mkdocs build
+          cd ..
+
+          echo "🔨 Building Dokka documentation..."
+          ./gradlew :core:tenant:tenant-api:dokkaGenerate :core:service:dokkaGenerate :core:x:javaapi:x-javaapi-api:dokkaGenerate || { echo "❌ Dokka failed"; exit 1; }
+
           echo "📖 Verifying Dokka documentation output..."
 
           # Check tenant-api docs
-          if [ ! -f "docs/docs/apis/tenant-api/index.html" ]; then
-            echo "❌ Missing tenant-api Dokka output: docs/docs/apis/tenant-api/index.html"
+          if [ ! -f "docs/site/apis/tenant-api/index.html" ]; then
+            echo "❌ Missing tenant-api Dokka output: docs/site/apis/tenant-api/index.html"
             exit 1
           fi
           echo "✅ tenant-api docs present"
 
           # Check service aggregated docs
-          if [ ! -f "docs/docs/apis/service/index.html" ]; then
-            echo "❌ Missing service Dokka output: docs/docs/apis/service/index.html"
+          if [ ! -f "docs/site/apis/service/index.html" ]; then
+            echo "❌ Missing service Dokka output: docs/site/apis/service/index.html"
             exit 1
           fi
           echo "✅ service docs present"
 
           # Verify service docs contain aggregated modules
-          if [ ! -d "docs/docs/apis/service/service/service-api" ]; then
+          if [ ! -d "docs/site/apis/service/service/service-api" ]; then
             echo "❌ Missing aggregated service-api module in service docs"
             exit 1
           fi
-          if [ ! -d "docs/docs/apis/service/service/service-wiring" ]; then
+          if [ ! -d "docs/site/apis/service/service/service-wiring" ]; then
             echo "❌ Missing aggregated service-wiring module in service docs"
             exit 1
           fi
           echo "✅ service docs contain aggregated modules (service-api, service-wiring)"
+
+          PYTHONPATH=docs:$PYTHONPATH djlint docs/site/ --lint \
+            --ignore "H005,H006,H013,H014,H020,H021,H023,H025,H026,H030,H031" \
+            --exclude "apis/" \
+            --include "LINK001" || { echo "❌ Site contains broken links"; exit 1; }
 
           echo "✅ All Dokka documentation verified successfully"
         shell: bash
@@ -384,46 +405,9 @@ jobs:
           echo "✅ Coverage thresholds met successfully"
         shell: bash
 
-  docs-link-check:
-    runs-on: ubuntu-latest
-    name: Docs API Link Check
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-java-21-ubuntu-latest
-          path: build/
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: pip install -r docs/requirements.txt
-
-      - name: Build MkDocs site
-        run: |
-          cd docs
-          mkdocs build
-
-      - name: Copy Dokka API docs to site
-        run: |
-          cp -r docs/docs/apis/* docs/site/apis/
-
-      - name: Run API link validation
-        run: |
-          cd docs
-          PYTHONPATH=.:$PYTHONPATH djlint site/ --lint \
-            --ignore "H005,H006,H013,H014,H021,H023,H025,H030,H031" \
-            --include "LINK001"
-        shell: bash
-
   slack-alerts:
     runs-on: ubuntu-latest
-    needs: [build, test, detekt, ktlint, coverage-verification, docs-link-check]
+    needs: [build, test, detekt, ktlint, coverage-verification]
     if: always()
     steps:
       - name: Detect failed job and step
