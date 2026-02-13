@@ -36,7 +36,7 @@ import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
 import viaduct.apiannotations.StableApi
-import viaduct.apiannotations.TestingApi
+import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
@@ -130,7 +130,7 @@ typealias TestResolverBase<T> = ResolverBase<T>
         "See FieldResolverTester, MutationResolverTester, or NodeResolverTester for the new API.",
     level = DeprecationLevel.WARNING
 )
-@OptIn(TestingApi::class)
+@OptIn(VisibleForTest::class)
 interface ResolverTestBase {
     /**
      * An ExecutionContext that can be used to construct a builder, e.g. Foo.Builder(context).
