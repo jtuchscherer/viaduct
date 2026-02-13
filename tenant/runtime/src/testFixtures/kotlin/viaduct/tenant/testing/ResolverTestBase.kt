@@ -392,7 +392,7 @@ interface ResolverTestBase {
         selections: SelectionSet<T> = mockk<SelectionSet<T>>(),
         contextQueryValues: List<Query> = emptyList()
     ): NodeExecutionContext<T> {
-        val innerCtx = mkNodeExecutionContext(id, selections, contextQueryValues)
+        val innerCtx = createNodeExecutionContext(id, selections, contextQueryValues)
         return ctxKClass.primaryConstructor?.call(innerCtx) ?: innerCtx
     }
 
@@ -405,7 +405,7 @@ interface ResolverTestBase {
         selections: SelectionSet<*> = SelectionSet.NoSelections,
         contextQueries: List<Query> = emptyList()
     ): FieldExecutionContext<*, *, *, *> {
-        val innerCtx = mkFieldExecutionContext(
+        val innerCtx = createNodeExecutionContext(
             objectValue,
             queryValue,
             arguments,
@@ -426,7 +426,7 @@ interface ResolverTestBase {
         contextQueries: List<Query> = emptyList(),
         contextMutations: List<Mutation> = emptyList()
     ): MutationFieldExecutionContext<*, *, *, *> {
-        val innerCtx = mkMutationFieldExecutionContext(
+        val innerCtx = createMutationFieldExecutionContext(
             queryValue,
             arguments,
             requestContext,
@@ -483,7 +483,7 @@ private fun <T : NodeObject> getNodeResolverContextKClass(resolver: TestNodeReso
         )
 }
 
-private fun <T : NodeObject> ResolverTestBase.mkNodeExecutionContext(
+private fun <T : NodeObject> ResolverTestBase.createNodeExecutionContext(
     id: GlobalID<T>,
     selections: SelectionSet<T>,
     requestContext: Any? = null,
@@ -553,7 +553,7 @@ inline fun <reified ctx : FieldExecutionContext<*, *, *, *>> ResolverTestBase.cr
     contextQueries: List<Query> = emptyList()
 ): ctx = createFieldResolverContext(ctx::class, objectValue, queryValue, arguments, requestContext, selections, contextQueries) as ctx
 
-private fun ResolverTestBase.mkFieldExecutionContext(
+private fun ResolverTestBase.createNodeExecutionContext(
     objectValue: Object,
     queryValue: Query,
     arguments: Arguments,
@@ -577,7 +577,7 @@ private fun ResolverTestBase.mkFieldExecutionContext(
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun ResolverTestBase.mkMutationFieldExecutionContext(
+private fun ResolverTestBase.createMutationFieldExecutionContext(
     queryValue: Query,
     arguments: Arguments,
     requestContext: Any?,
