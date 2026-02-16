@@ -20,7 +20,7 @@ import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.Value
 import viaduct.engine.runtime.execution.FieldExecutionHelpers.resolveQueryPlanVariables
 import viaduct.engine.runtime.execution.FieldExecutionHelpers.resolveRSSVariables
-import viaduct.logging.ifDebug
+import viaduct.utils.slf4j.ifDebug
 import viaduct.utils.slf4j.logger
 
 /**
