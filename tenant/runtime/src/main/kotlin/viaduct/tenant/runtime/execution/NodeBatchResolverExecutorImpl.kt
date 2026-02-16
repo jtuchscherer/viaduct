@@ -32,7 +32,7 @@ class NodeBatchResolverExecutorImpl(
     override val metadata = ResolverMetadata.forModern(resolverName)
     override val isBatching = true
 
-    override suspend fun batchResolve(
+    override suspend fun resolve(
         selectors: List<NodeResolverExecutor.Selector>,
         context: EngineExecutionContext
     ): Map<NodeResolverExecutor.Selector, Result<EngineObjectData>> {
