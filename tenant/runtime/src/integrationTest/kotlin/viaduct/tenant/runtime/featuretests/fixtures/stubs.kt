@@ -3,14 +3,14 @@ package viaduct.tenant.runtime.featuretests.fixtures
 import graphql.schema.GraphQLSchema
 import javax.inject.Provider
 import viaduct.api.FieldValue
+import viaduct.api.NodeResolverBase
+import viaduct.api.ResolverBase
 import viaduct.api.VariablesProvider
 import viaduct.api.context.BaseFieldExecutionContext
 import viaduct.api.context.FieldExecutionContext
 import viaduct.api.context.VariablesProviderContext
 import viaduct.api.internal.InternalContext
-import viaduct.api.internal.NodeResolverBase
 import viaduct.api.internal.ReflectionLoader
-import viaduct.api.internal.ResolverBase
 import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.NodeObject

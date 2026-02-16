@@ -5,11 +5,11 @@ import kotlin.reflect.full.findAnnotations
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 import viaduct.api.Resolver
+import viaduct.api.ResolverBase
 import viaduct.api.Variable
 import viaduct.api.Variables
 import viaduct.api.VariablesProvider
 import viaduct.api.internal.ReflectionLoader
-import viaduct.api.internal.ResolverBase
 import viaduct.api.types.Arguments
 import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.FromArgumentVariable

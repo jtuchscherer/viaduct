@@ -14,11 +14,11 @@ import strikt.assertions.isNotNull
 import strikt.assertions.isTrue
 import strikt.assertions.startsWith
 import viaduct.api.Resolver
+import viaduct.api.ResolverBase
 import viaduct.api.Variable
 import viaduct.api.Variables
 import viaduct.api.VariablesProvider
 import viaduct.api.context.VariablesProviderContext
-import viaduct.api.internal.ResolverBase
 import viaduct.api.mocks.mockReflectionLoader
 import viaduct.api.types.Arguments
 import viaduct.engine.api.FromArgumentVariable
