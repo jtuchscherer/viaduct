@@ -133,11 +133,11 @@ class FieldCompleter(
     @Suppress("UNCHECKED_CAST")
     private fun objectFieldMap(parameters: ExecutionParameters): Value<Map<String, Any?>> {
         val parentOER = parameters.parentEngineResult
-        val fields = collectFields(parentOER.graphQLObjectType, parameters).selections
+        val fields = collectFields(parentOER.type, parameters).selections
         val fieldValues = fields.map { field ->
             field as QueryPlan.CollectedField
 
-            val newParams = parameters.forField(parentOER.graphQLObjectType, field)
+            val newParams = parameters.forField(parentOER.type, field)
             val fieldKey = buildOERKeyForField(newParams, field)
             val bypassChecker = temporaryBypassAccessCheck.shouldBypassCheck(field.mergedField.singleField, parameters.bypassChecksDuringCompletion)
 
