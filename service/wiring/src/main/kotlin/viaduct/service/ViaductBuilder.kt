@@ -12,10 +12,29 @@ import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.runtime.SchemaConfiguration
 import viaduct.service.runtime.StandardViaduct
 
+/**
+ * Builder for constructing [Viaduct] instances with full control over SPI configuration.
+ *
+ * This is the fuller-featured API for creating a Viaduct instance, offering fine-grained
+ * control over observability, error handling, feature flags, schema configuration, and
+ * multi-tenancy. For a simpler alternative with sensible defaults, see [BasicViaductFactory].
+ *
+ * Typical usage:
+ * ```kotlin
+ * val viaduct = ViaductBuilder()
+ *     .withTenantAPIBootstrapperBuilders(builders)
+ *     .withMeterRegistry(meterRegistry)
+ *     .withResolverErrorReporter(errorReporter)
+ *     .build()
+ * ```
+ *
+ * @see BasicViaductFactory
+ * @see Viaduct
+ */
 class ViaductBuilder {
     val builder = StandardViaduct.Builder()
 
-    /** See [withTenantAPIBootstrapperBuilder]. */
+    /** Convenience for [withTenantAPIBootstrapperBuilders] with a single builder. */
     fun withTenantAPIBootstrapperBuilder(builder: TenantAPIBootstrapperBuilder<TenantModuleBootstrapper>) =
         apply {
             this.builder.withTenantAPIBootstrapperBuilders(listOf(builder))
@@ -45,11 +64,13 @@ class ViaductBuilder {
             builder.withTenantAPIBootstrapperBuilders(emptyList())
         }
 
+    /** Configures the [FlagManager] for controlling framework feature flags. */
     fun withFlagManager(flagManager: FlagManager) =
         apply {
             builder.withFlagManager(flagManager)
         }
 
+    /** Configures schema registration, including multi-tenant scoped schemas. */
     fun withSchemaConfiguration(schemaConfiguration: SchemaConfiguration) =
         apply {
             builder.withSchemaConfiguration(schemaConfiguration)
@@ -118,9 +139,9 @@ class ViaductBuilder {
         }
 
     /**
-     * Builds the Guice Module within Viaduct and gets Viaduct from the injector.
+     * Builds and returns a [Viaduct] instance ready to execute GraphQL operations.
      *
-     * @return a Viaduct Instance ready to execute
+     * @return a [Viaduct] instance configured with the supplied SPI implementations
      */
     fun build(): StandardViaduct = builder.build()
 }
