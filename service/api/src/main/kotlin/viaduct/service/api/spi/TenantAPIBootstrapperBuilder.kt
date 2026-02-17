@@ -14,5 +14,6 @@ import viaduct.apiannotations.StableApi
  */
 @StableApi
 interface TenantAPIBootstrapperBuilder<T> {
+    /** Creates and returns a new [TenantAPIBootstrapper] instance. */
     fun create(): TenantAPIBootstrapper<T>
 }
