@@ -3,7 +3,15 @@ package viaduct.service.api
 import viaduct.apiannotations.StableApi
 
 /**
- * Represents a unique identifier for a schema.
+ * Identifies which schema variant to use when executing a GraphQL operation.
+ *
+ * Viaduct supports multiple schema variants for a single service:
+ * - [Full] — the default, complete schema containing all types and fields.
+ * - [Scoped] — a subset of the full schema restricted by a set of scope IDs,
+ *   useful for multi-tenancy or permission-based field visibility.
+ * - [None] — represents a non-existent schema, used as a sentinel value.
+ *
+ * @see viaduct.service.ViaductBuilder.withSchemaConfiguration
  */
 @StableApi
 abstract class SchemaId(
