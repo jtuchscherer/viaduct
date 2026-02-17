@@ -1,20 +1,25 @@
 package viaduct.service.api
 
-import graphql.schema.GraphQLSchema
 import java.util.concurrent.CompletableFuture
 import viaduct.apiannotations.StableApi
 
 /**
- * A unified interface for configuring and executing queries against the Viaduct runtime
+ * The main entry point for executing GraphQL operations against the Viaduct runtime.
+ *
+ * Instances are created via [ViaductBuilder][viaduct.service.ViaductBuilder] (for full SPI control) or
+ * [BasicViaductFactory][viaduct.service.BasicViaductFactory] (for simpler use cases).
+ * A typical integration creates a single [Viaduct] instance at startup and routes incoming
+ * GraphQL requests through [execute] or [executeAsync].
  */
 @StableApi
 interface Viaduct {
     /**
-     *  Executes an operation on this Viaduct instance asynchronously.
+     * Executes an operation on this Viaduct instance asynchronously.
      *
-     *  @param executionInput The execution Input
-     *  @param schemaId the id of the schema for which we want to execute the operation, defaults to SchemaId.Full
-     *  @return the [CompletableFuture] of [ExecutionResult] which contains the sorted results or the error which was produced
+     * @param executionInput the execution input for this operation
+     * @param schemaId the id of the schema against which to execute, defaults to [SchemaId.Full]
+     * @return a [CompletableFuture] of [ExecutionResult] whose [errors][ExecutionResult.errors]
+     *         are sorted by path then by message
      */
     suspend fun executeAsync(
         executionInput: ExecutionInput,
@@ -22,11 +27,12 @@ interface Viaduct {
     ): CompletableFuture<ExecutionResult>
 
     /**
-     *  Executes an operation on this Viaduct instance.
+     * Executes an operation on this Viaduct instance synchronously.
      *
-     *  @param executionInput the execution input for this operation
-     *  @param schemaId the id of the schema for which we want to execute the operation, defaults to SchemaId.Full
-     *  @return the ExecutionResult which contains the sorted results
+     * @param executionInput the execution input for this operation
+     * @param schemaId the id of the schema against which to execute, defaults to [SchemaId.Full]
+     * @return the [ExecutionResult] whose [errors][ExecutionResult.errors] are sorted by path
+     *         then by message
      */
     fun execute(
         executionInput: ExecutionInput,
@@ -34,10 +40,11 @@ interface Viaduct {
     ): ExecutionResult
 
     /**
-     * This function is used to get the applied scopes for a given schemaId
+     * Returns the set of scope IDs applied to the given [schemaId], or `null` if no
+     * scopes are configured for it.
      *
-     * @param schemaId the id of the schema for which we want a [GraphQLSchema]
-     * @return Set of scopes that are applied to the schema
+     * @param schemaId the schema whose applied scopes to retrieve
+     * @return the set of applied scope IDs, or `null`
      */
     fun getAppliedScopes(schemaId: SchemaId): Set<String>?
 }
