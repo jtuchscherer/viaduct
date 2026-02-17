@@ -8,6 +8,14 @@ import viaduct.service.api.spi.TenantCodeInjector
 import viaduct.service.runtime.SchemaConfiguration
 import viaduct.service.runtime.StandardViaduct
 
+/**
+ * A simpler factory for creating [Viaduct] instances with sensible defaults.
+ *
+ * Use this when you do not need fine-grained control over SPI implementations such as
+ * error reporting, metrics, or exception handling. For full control, use [ViaductBuilder].
+ *
+ * @see ViaductBuilder
+ */
 object BasicViaductFactory {
     /**
      * A simple factory-function for [Viaduct] instances.
@@ -94,6 +102,13 @@ object BasicViaductFactory {
     }
 }
 
+/**
+ * Configuration for a tenant, specifying how to discover and instantiate tenant code.
+ *
+ * @param tenantPackagePrefix the package prefix under which tenant-generated code is found
+ * @param tenantCodeInjector the injector used to instantiate resolver and other tenant classes;
+ *        defaults to [TenantCodeInjector.Naive] which uses reflection with zero-arg constructors
+ */
 data class TenantRegistrationInfo(
     val tenantPackagePrefix: String,
     val tenantCodeInjector: TenantCodeInjector = TenantCodeInjector.Naive,
@@ -126,4 +141,5 @@ data class SchemaScopeInfo(
     val scopesToApply: Set<String>? = null,
 )
 
+/** Converts this [SchemaId.Scoped] to a [SchemaScopeInfo] for use with [BasicViaductFactory]. */
 fun SchemaId.Scoped.toSchemaScopeInfo(): SchemaScopeInfo = SchemaScopeInfo(this.id, this.scopeIds.ifEmpty { null })
