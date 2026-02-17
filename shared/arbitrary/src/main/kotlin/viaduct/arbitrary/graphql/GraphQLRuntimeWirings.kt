@@ -1,3 +1,5 @@
+@file:OptIn(InternalApi::class)
+
 package viaduct.arbitrary.graphql
 
 import graphql.TypeResolutionEnvironment
@@ -20,8 +22,11 @@ import graphql.schema.idl.RuntimeWiring
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
+import viaduct.api.internal.EngineValueConv
+import viaduct.apiannotations.InternalApi
 import viaduct.arbitrary.common.Config
 
 /**
@@ -50,7 +55,6 @@ private class ArbRuntimeWiringGen(
     private val cfg: Config
 ) {
     private val schema = viaduct.engine.api.ViaductSchema(sdl.asSchema)
-    private val scalarArbs = ScalarRawValueArbs(cfg)
 
     fun gen(): RuntimeWiring {
         val wb = RuntimeWiring.newRuntimeWiring()
@@ -125,8 +129,13 @@ private class ArbRuntimeWiringGen(
                     }
                 }
 
-            is GraphQLScalarType ->
-                scalarArbs(t.name, rs).let { RawToKotlin.invoke(t, it) }
+            is GraphQLScalarType -> {
+                Arb.ir(schema, type, cfg)
+                    .map {
+                        EngineValueConv(schema, type, null).invert(it)
+                    }
+                    .next(rs)
+            }
 
             is GraphQLEnumType ->
                 Arb.of(t.values).next(rs).name

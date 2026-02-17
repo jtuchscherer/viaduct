@@ -330,7 +330,7 @@ object DataFetchers {
 fun Arb.Companion.viaductExecutionInput(
     schema: ViaductSchema,
     cfg: Config = Config.default,
-): Arb<ExecutionInput> = Arb.graphQLExecutionInput(schema.schema, cfg).asViaductExecutionInput(schema)
+): Arb<ExecutionInput> = Arb.graphQLExecutionInput(schema, cfg).asViaductExecutionInput(schema)
 
 fun Arb<ExecutionInput>.asViaductExecutionInput(schema: ViaductSchema): Arb<ExecutionInput> =
     map { input ->

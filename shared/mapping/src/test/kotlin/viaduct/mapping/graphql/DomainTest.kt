@@ -15,12 +15,12 @@ import viaduct.arbitrary.common.KotestPropertyBase
 import viaduct.arbitrary.common.flatten
 import viaduct.arbitrary.common.randomSource
 import viaduct.arbitrary.graphql.GenInterfaceStubsIfNeeded
-import viaduct.arbitrary.graphql.graphQLSchema
-import viaduct.mapping.test.objectIR
+import viaduct.arbitrary.graphql.objectIR
+import viaduct.arbitrary.graphql.viaductSchema
 
 class DomainTest : KotestPropertyBase() {
     private val cfg = Config.default + (GenInterfaceStubsIfNeeded to true)
-    private val arbSchema = Arb.graphQLSchema(cfg)
+    private val arbSchema = Arb.viaductSchema(cfg)
 
     @Test
     fun `map -- identity`(): Unit =

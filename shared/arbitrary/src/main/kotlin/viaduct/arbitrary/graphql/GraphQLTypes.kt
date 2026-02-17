@@ -1,9 +1,8 @@
 package viaduct.arbitrary.graphql
 
+import graphql.Directives
 import graphql.Scalars
 import graphql.introspection.Introspection.DirectiveLocation
-import graphql.language.Value
-import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
@@ -14,12 +13,14 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeReference
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphQLUnmodifiedType
 import io.kotest.property.Arb
@@ -61,14 +62,6 @@ data class GraphQLTypes(
         s.toSet()
     }
 
-    private val directivesByLocation: Map<DirectiveLocation, Set<GraphQLDirective>> by lazy {
-        directives.values
-            .flatMap { dir ->
-                dir.validLocations().map { it to dir }
-            }.groupBy({ it.first }, { it.second })
-            .mapValues { it.value.toSet() }
-    }
-
     /** Try to resolve a GraphQLTypeReference into a GraphQLType */
     fun resolve(ref: GraphQLTypeReference): GraphQLUnmodifiedType? {
         ref.name.let { name ->
@@ -78,9 +71,6 @@ data class GraphQLTypes(
             return null
         }
     }
-
-    /** Get a set of GraphQLDirective's that can be used at a given location */
-    fun directivesForLocation(loc: DirectiveLocation): Set<GraphQLDirective> = directivesByLocation[loc] ?: emptySet()
 
     operator fun plus(directive: GraphQLDirective): GraphQLTypes = copy(directives = directives + (directive.name to directive))
 
@@ -116,9 +106,6 @@ fun Arb.Companion.graphQLTypes(
         GraphQLTypesGen(cfg, names, rs).gen()
     }
 
-/** Generate arbitrary GraphQLTypes from arbitrary Configs */
-fun Arb.Companion.graphQLTypes(cfg: Arb<Config>): Arb<GraphQLTypes> = cfg.flatMap(::graphQLTypes)
-
 /** Internal helper class for generating a GraphQLTypes */
 internal class GraphQLTypesGen(
     private val cfg: Config,
@@ -131,17 +118,14 @@ internal class GraphQLTypesGen(
     private fun sampleWeight(key: ConfigKey<CompoundingWeight>): Boolean = rs.sampleWeight(cfg[key].weight)
 
     fun gen(): GraphQLTypes =
-        // Most of the sub-generators called here can satisfy their type dependencies using
-        // the GraphQLNames instance. Sub-generators that require *materialized* types (as
-        // opposed to references), are indicated below.
         Arb
             .of(cfg[IncludeTypes])
             .withScalars()
             .withEnums()
-            .withInputs() // input field default depend on enums
-            .withDirectives() // most generators depend on directives
-            .withInterfaces() // depends on inputs for default args
-            .withObjects() // depends on interfaces, inputs
+            .withInputs()
+            .withDirectives()
+            .withInterfaces()
+            .withObjects()
             .withUnions()
             .finalize()
             .next(rs)
@@ -151,11 +135,11 @@ internal class GraphQLTypesGen(
     private fun Arb<GraphQLTypes>.withDirectives(): Arb<GraphQLTypes> =
         map { types ->
             types.copy(
-                directives = types.directives + genDirectives(types).associateBy { it.name }
+                directives = types.directives + genDirectives().associateBy { it.name }
             )
         }
 
-    private fun genDirectives(types: GraphQLTypes): List<GraphQLDirective> {
+    private fun genDirectives(): List<GraphQLDirective> {
         val validLocations = DirectiveLocation
             .values()
             .toSet()
@@ -168,7 +152,7 @@ internal class GraphQLTypesGen(
                         .newDirective()
                         .name(name)
                         .description(genDescription())
-                        .replaceArguments(genArguments(types, DirectiveHasArgs))
+                        .replaceArguments(genArguments(DirectiveHasArgs))
                         .repeatable(sampleWeight(DirectiveIsRepeatable))
                         .also {
                             validLocations.next(rs).forEach(it::validLocation)
@@ -181,10 +165,10 @@ internal class GraphQLTypesGen(
 
     private fun Arb<GraphQLTypes>.withScalars(): Arb<GraphQLTypes> =
         map { types ->
-            types.copy(scalars = types.scalars + genScalars(types).associateBy { it.name })
+            types.copy(scalars = types.scalars + genScalars().associateBy { it.name })
         }
 
-    private fun genScalars(types: GraphQLTypes): List<GraphQLScalarType> =
+    private fun genScalars(): List<GraphQLScalarType> =
         names.scalars.map { name ->
             when (val s = builtinScalars[name]) {
                 null ->
@@ -192,7 +176,6 @@ internal class GraphQLTypesGen(
                         .newScalar()
                         .name(name)
                         .description(genDescription())
-                        .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.SCALAR))
                         .coercing(Scalars.GraphQLString.coercing)
                         .build()
                 else -> s
@@ -203,12 +186,15 @@ internal class GraphQLTypesGen(
      * Wrap a provided type in GraphQLList and GraphQLNonNull wrapper types.
      * This function may return a type that has been wrapped multiple times
      */
-    internal fun decorate(t: GraphQLType): GraphQLType {
+    internal fun decorate(
+        t: GraphQLType,
+        allowNonNullable: Boolean = true
+    ): GraphQLType {
         tailrec fun wrap(
             type: GraphQLType,
             listBudget: Int
         ): GraphQLType =
-            if (type !is GraphQLNonNull && sampleWeight(NonNullableness)) {
+            if (type !is GraphQLNonNull && allowNonNullable && sampleWeight(NonNullableness)) {
                 wrap(GraphQLNonNull.nonNull(type), listBudget)
             } else if (listBudget > 0 && sampleWeight(Listiness)) {
                 wrap(GraphQLList.list(type), listBudget - 1)
@@ -256,7 +242,7 @@ internal class GraphQLTypesGen(
         }
     }
 
-    private fun genInputTypeDescriptor(): Arb<InputTypeDescriptor> {
+    private fun genInputTypeDescriptor(allowNonNullable: Boolean = true): Arb<InputTypeDescriptor> {
         val namePools = setOf(TypeType.Scalar, TypeType.Input, TypeType.Enum)
             .mapNotNull { tt ->
                 names.names[tt]
@@ -272,20 +258,20 @@ internal class GraphQLTypesGen(
                 InputTypeDescriptor(
                     underlyingTypeName = name,
                     underlyingTypeType = tt,
-                    type = decorate(GraphQLTypeReference.typeRef(name)) as GraphQLInputType
+                    type = decorate(GraphQLTypeReference.typeRef(name), allowNonNullable) as GraphQLInputType
                 )
             }
     }
 
     private fun Arb<GraphQLTypes>.withInterfaces(): Arb<GraphQLTypes> =
         map { types ->
-            types.copy(interfaces = types.interfaces + genInterfaces(types))
+            types.copy(interfaces = types.interfaces + genInterfaces())
         }
 
-    private fun genInterfaces(types: GraphQLTypes): Map<String, GraphQLInterfaceType> =
+    private fun genInterfaces(): Map<String, GraphQLInterfaceType> =
         names.interfaces.fold(emptyMap()) { acc, name ->
             val edges = genImplements(acc, InterfaceImplementsInterface)
-            val localFields = genFields(types, InterfaceTypeSize)
+            val localFields = genFields(InterfaceTypeSize)
             val allFields = (edges.flatMap { it.fields } + localFields)
                 .distinctBy { it.name }
 
@@ -295,7 +281,6 @@ internal class GraphQLTypesGen(
                 .description(genDescription())
                 .fields(allFields)
                 .replaceInterfaces(edges.toList())
-                .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.INTERFACE))
                 .build()
 
             acc + (name to iface)
@@ -348,10 +333,7 @@ internal class GraphQLTypesGen(
             }
     }
 
-    private fun genArguments(
-        types: GraphQLTypes,
-        key: ConfigKey<CompoundingWeight>
-    ): List<GraphQLArgument> {
+    private fun genArguments(key: ConfigKey<CompoundingWeight>): List<GraphQLArgument> {
         tailrec fun loop(acc: Map<String, GraphQLArgument>): List<GraphQLArgument> =
             if (acc.size != cfg[key].max && sampleWeight(key)) {
                 val itd = genInputTypeDescriptor().next(rs)
@@ -360,13 +342,7 @@ internal class GraphQLTypesGen(
                     .name(Arb.graphQLArgumentName(cfg).next(rs))
                     .description(genDescription())
                     .type(itd.type)
-                    .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.ARGUMENT_DEFINITION))
-                    .also {
-                        if (sampleWeight(DefaultValueWeight)) {
-                            val default = genDefaultValue(itd.type, types)
-                            it.defaultValueLiteral(default)
-                        }
-                    }.build()
+                    .build()
 
                 loop(acc = acc + (arg.name to arg))
             } else {
@@ -375,11 +351,6 @@ internal class GraphQLTypesGen(
 
         return loop(emptyMap())
     }
-
-    private fun genDefaultValue(
-        type: GraphQLInputType,
-        types: GraphQLTypes
-    ): Value<*> = Arb.graphQLValueFor(type, types = types, cfg = cfg).next(rs)
 
     private fun Arb<GraphQLTypes>.withObjects(): Arb<GraphQLTypes> =
         map { types ->
@@ -392,16 +363,15 @@ internal class GraphQLTypesGen(
                 types.interfaces,
                 ObjectImplementsInterface
             )
-            genObject(name, implements, types)
+            genObject(name, implements)
         }
 
     private fun genObject(
         name: String,
         implements: Set<GraphQLInterfaceType>,
-        types: GraphQLTypes
     ): GraphQLObjectType {
         val interfaceFields = implements.flatMap { it.fields }
-        val allFields = (interfaceFields + genFields(types, ObjectTypeSize))
+        val allFields = (interfaceFields + genFields(ObjectTypeSize))
             .distinctBy { it.name }
 
         return GraphQLObjectType
@@ -409,63 +379,37 @@ internal class GraphQLTypesGen(
             .name(name)
             .replaceInterfaces(implements.toList())
             .description(genDescription())
-            .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.OBJECT))
             .fields(allFields)
             .build()
     }
 
-    private fun genAppliedDirectives(
-        types: GraphQLTypes,
-        loc: DirectiveLocation
-    ): List<GraphQLAppliedDirective> {
-        tailrec fun loop(
-            acc: List<GraphQLAppliedDirective>,
-            pool: Set<GraphQLDirective>
-        ): List<GraphQLAppliedDirective> =
-            if (pool.isNotEmpty() && acc.size != cfg[DirectiveWeight].max && sampleWeight(DirectiveWeight)) {
-                val dir = Arb.element(pool).next(rs)
-                val applied = dir
-                    .toAppliedDirective()
-                    .transform {
-                        val args = dir.arguments.map { arg ->
-                            val value = Arb.graphQLValueFor(arg.type, types, cfg).next(rs)
-                            arg.toAppliedArgument().transform { it.valueLiteral(value) }
-                        }
-                        it.replaceArguments(args)
-                    }
-                loop(
-                    acc = acc + applied,
-                    pool = if (dir.isRepeatable) pool else (pool - dir)
-                )
-            } else {
-                acc
-            }
-
-        return loop(emptyList(), types.directivesForLocation(loc))
-    }
-
-    private fun genFields(
-        types: GraphQLTypes,
-        sizeKey: ConfigKey<IntRange>
-    ): List<GraphQLFieldDefinition> =
+    private fun genFields(sizeKey: ConfigKey<IntRange>): List<GraphQLFieldDefinition> =
         Arb
             .int(cfg[sizeKey])
             .map { size ->
-                List(size) { genField(types) }.distinctBy { it.name }
+                List(size) { genField() }.distinctBy { it.name }
             }.next(rs)
 
-    private fun genField(types: GraphQLTypes): GraphQLFieldDefinition =
+    private fun genField(): GraphQLFieldDefinition =
         GraphQLFieldDefinition
             .newFieldDefinition()
             .name(Arb.graphQLFieldName(cfg).next(rs))
             .description(genDescription())
-            .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.FIELD_DEFINITION))
-            .arguments(genArguments(types, FieldHasArgs))
+            .arguments(genArguments(FieldHasArgs))
             .type(genOutputTypeRef())
             .build()
 
     private fun Arb<GraphQLTypes>.withInputs(): Arb<GraphQLTypes> =
         map { types ->
+            // OneOf types can be arranged to form types for which values cannot be created.
+            // For example:
+            //   input A @oneOf { b:B }
+            //   input B @oneOf { a:A }
+            // In order to not generate values in this style, it helps to know all the OneOf's
+            // that we're going to generate ahead of time.
+            val oneOfTypes = names.inputs.filter { sampleWeight(OneOfWeight) }
+                .toSet()
+
             /**
              * while input _type_ generation needs to only know the names of other input objects,
              * input _field_ generation may try to generate default values that require knowing
@@ -478,13 +422,33 @@ internal class GraphQLTypesGen(
              * edges that refer to types earlier-in-the-list may be non-nullable. This assumption is also
              * baked into [isUnsatisfiableInputEdge]
              */
+
             names.inputs.sorted().fold(types) { acc, name ->
+                val isOneOf = name in oneOfTypes
+                val fields = genInputFields(name, isOneOf, InputObjectTypeSize)
+
                 val inp = GraphQLInputObjectType
                     .newInputObject()
                     .name(name)
                     .description(genDescription())
-                    .fields(genInputFields(acc, name, InputObjectTypeSize))
-                    .replaceAppliedDirectives(genAppliedDirectives(acc, DirectiveLocation.INPUT_OBJECT))
+                    .fields(fields)
+                    .apply {
+                        if (isOneOf) {
+                            withDirective(Directives.OneOfDirective)
+
+                            // If we detect that we've generated an uninhabited oneof, insert a field that allows
+                            // value creation
+                            if (isUninhabitedOneOf(name, fields, oneOfTypes)) {
+                                val reliefFieldName = Arb.graphQLFieldName(cfg).filterNot { it == name }.next(rs)
+                                field(
+                                    GraphQLInputObjectField.newInputObjectField()
+                                        .name(reliefFieldName)
+                                        .type(Scalars.GraphQLInt)
+                                        .build()
+                                )
+                            }
+                        }
+                    }
                     .build()
 
                 acc.copy(inputs = acc.inputs + (name to inp))
@@ -492,11 +456,11 @@ internal class GraphQLTypesGen(
         }
 
     private fun genInputFields(
-        types: GraphQLTypes,
         hostType: String,
+        isOneOf: Boolean,
         key: ConfigKey<IntRange>
     ): List<GraphQLInputObjectField> {
-        val arbInputField = genInputTypeDescriptor()
+        val arbInputField = genInputTypeDescriptor(allowNonNullable = !isOneOf)
             .filterNot { isUnsatisfiableInputEdge(hostType, it) }
             .zip(Arb.graphQLFieldName(cfg))
             .map { (itd, fn) ->
@@ -504,14 +468,8 @@ internal class GraphQLTypesGen(
                     .newInputObjectField()
                     .name(fn)
                     .description(genDescription())
-                    .replaceAppliedDirectives(
-                        genAppliedDirectives(types, DirectiveLocation.INPUT_FIELD_DEFINITION)
-                    ).type(itd.type)
-                    .also {
-                        if (sampleWeight(DefaultValueWeight)) {
-                            it.defaultValueLiteral(genDefaultValue(itd.type, types))
-                        }
-                    }.build()
+                    .type(itd.type)
+                    .build()
             }
 
         return Arb
@@ -550,9 +508,56 @@ internal class GraphQLTypesGen(
             inputTypeDescriptor.usedNonNullably &&
             inputTypeDescriptor.underlyingTypeType == TypeType.Input
 
+    /**
+     * OneOfs can form "uninhabited" subgraphs, where there are no possible values that can be constructed
+     * for the type.
+     * An example of this is:
+     *     input A @oneOf { a:A }
+     *
+     * These kinds of types are considered valid according to the spec, but they create problems by making types
+     * inaccessible to GraphQL values.
+     *
+     * A fix to make these types invalid is proposed here:
+     *   https://github.com/graphql/graphql-spec/pull/1211
+     *
+     * This method applies a heuristic that will allow us to create interesting cyclic OneOf types while
+     * rejecting the fewest possible type graphs.
+     *
+     * Following the convention of [isUnsatisfiableInputEdge], the rules are:
+     *   1. for an input object to be inhabited, it must define at least one inhabited field
+     *   2. if a field's type includes a List wrapper, or its unwrapped type is not a OneOf, assume that the
+     *      field's type is inhabited
+     *   2. if a field's type name is a oneOf and is lexicographically greater than hostTypeName,
+     *      assume that the field's type is inhabited
+     *   3. if a field's type name is a oneOf and is lexicographically less-than or equal-to the
+     *      hostTypeName, assume that this field is uninhabited
+     *
+     * Examples:
+     * An uninhabited graph:
+     *   input A @oneOf { a:A }   // host type A == field type A  -> edge may be uninhabited
+     *
+     * An inhabited one:
+     *   input A @oneOf { b:B }   // host type A < field type B -> edge may be uninhabited
+     *   input B @oneOf { a:A }   // host type B < field type A -> assume that A is inhabited
+     */
+    private fun isUninhabitedOneOf(
+        hostTypeName: String,
+        fields: List<GraphQLInputObjectField>,
+        oneOfTypes: Set<String>
+    ): Boolean =
+        fields.all { f ->
+            assert(f.type !is GraphQLNonNull)
+            if (f.type is GraphQLList) return@all false
+            val inner = GraphQLTypeUtil.unwrapAllAs<GraphQLNamedType>(f.type).name
+            if (inner !in oneOfTypes) return@all false
+            // if hostTypeName is smaller-than ("A" < "B") or equal to ("A" == "A") than the field's
+            // OneOf type, then assume that this field is uninhabited.
+            hostTypeName.compareTo(inner) < 1
+        }
+
     private fun Arb<GraphQLTypes>.withUnions(): Arb<GraphQLTypes> =
         map { types ->
-            types.copy(unions = types.unions + genUnions(types).associateBy { it.name })
+            types.copy(unions = types.unions + genUnions().associateBy { it.name })
         }
 
     private fun Arb<GraphQLTypes>.finalize(): Arb<GraphQLTypes> =
@@ -586,14 +591,14 @@ internal class GraphQLTypesGen(
                 val parents = iface.interfaces.map { types.interfaces[it.name]!! }
                 parents.toSet() + iface
             }
-            genObject(iname + "_STUB", ifaces, types)
+            genObject(iname + "_STUB", ifaces)
         }
         return types.copy(
             objects = types.objects + newObjects.associateBy { it.name }
         )
     }
 
-    private fun genUnions(types: GraphQLTypes): List<GraphQLUnionType> {
+    private fun genUnions(): List<GraphQLUnionType> {
         if (names.unions.isEmpty() || names.objects.isEmpty()) {
             return emptyList()
         }
@@ -620,12 +625,11 @@ internal class GraphQLTypesGen(
                 .name(name)
                 .description(genDescription())
                 .replacePossibleTypes(members)
-                .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.UNION))
                 .build()
         }
     }
 
-    private fun genEnumValues(types: GraphQLTypes): List<GraphQLEnumValueDefinition> =
+    private fun genEnumValues(): List<GraphQLEnumValueDefinition> =
         // Generating enum values using Arb.set can throw an IllegalStateException if it can't
         // generate the target size. This becomes more likely as the target size grows and collisions
         // become harder to avoid.
@@ -639,24 +643,22 @@ internal class GraphQLTypesGen(
                     GraphQLEnumValueDefinition
                         .newEnumValueDefinition()
                         .name(it)
-                        .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.ENUM_VALUE))
                         .build()
                 }
             }.next(rs)
 
     private fun Arb<GraphQLTypes>.withEnums(): Arb<GraphQLTypes> =
         map { types ->
-            types.copy(enums = types.enums + genEnums(types).associateBy { it.name })
+            types.copy(enums = types.enums + genEnums().associateBy { it.name })
         }
 
-    private fun genEnums(types: GraphQLTypes): List<GraphQLEnumType> =
+    private fun genEnums(): List<GraphQLEnumType> =
         names.enums.map { name ->
             GraphQLEnumType
                 .newEnum()
                 .name(name)
                 .description(genDescription())
-                .values(genEnumValues(types))
-                .replaceAppliedDirectives(genAppliedDirectives(types, DirectiveLocation.ENUM))
+                .values(genEnumValues())
                 .build()
         }
 }

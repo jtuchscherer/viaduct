@@ -41,10 +41,23 @@ import java.util.LinkedList
 import kotlin.math.max
 import viaduct.arbitrary.common.CompoundingWeight
 import viaduct.arbitrary.common.Config
+import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.utils.allChildren
+import viaduct.mapping.graphql.GJValueConv
+import viaduct.mapping.graphql.IR
 
 /**
- * Generate an arbitrary GraphQL [Document] for the provided schema and config.
+ * Generate an arbitrary GraphQL [Document] for the provided [ViaductSchema] and config.
+ * The returned Document is guaranteed to be valid according to the rules at
+ *   https://spec.graphql.org/draft/#sec-Documents
+ */
+fun Arb.Companion.graphQLDocument(
+    schema: ViaductSchema,
+    cfg: Config = Config.default,
+): Arb<Document> = graphQLDocument(schema.schema, cfg)
+
+/**
+ * Generate an arbitrary GraphQL [Document] for the provided [GraphQLSchema] and config.
  * The returned Document is guaranteed to be valid according to the rules at
  *   https://spec.graphql.org/draft/#sec-Documents
  */
@@ -69,7 +82,8 @@ private interface Env {
     val selectionSetGen: GraphQLSelectionSetGen
     val directiveGen: GraphQLDirectivesGen
     val argumentsGen: GraphQLArgumentsGen
-    val valueGen: ValueGen<GraphQLInputType, Value<*>>
+
+    fun genValue(type: GraphQLInputType): IR.Value = Arb.ir(schemas.viaductSchema, type, cfg).next(rs)
 
     fun checkDepth(depth: Int): Boolean = depth <= cfg[MaxSelectionSetDepth]
 
@@ -84,7 +98,6 @@ private interface Env {
             override val selectionSetGen = GraphQLSelectionSetGen(this)
             override val directiveGen = GraphQLDirectivesGen(this)
             override val argumentsGen = GraphQLArgumentsGen(this)
-            override val valueGen = ValueGens(schemas.schema, cfg, rs).gj
         }
 
         operator fun invoke(
@@ -497,7 +510,7 @@ private class GraphQLArgumentsGen(
             }
             VariableReference(variable.name)
         } else {
-            valueGen(type)
+            GJValueConv(type).invert(genValue(type))
         }
     }
 
@@ -507,7 +520,7 @@ private class GraphQLArgumentsGen(
     ): VariableDefinition {
         val default =
             if (rs.sampleWeight(cfg[DefaultValueWeight])) {
-                valueGen(forType)
+                GJValueConv(forType).invert(genValue(forType))
             } else {
                 null
             }
@@ -543,7 +556,7 @@ private class GraphQLDirectivesGen(
         ctx: Ctx,
         canUseVariables: Boolean = true,
     ): List<Directive> {
-        val directiveWeight = cfg[DirectiveWeight]
+        val directiveWeight = cfg[AppliedDirectiveWeight]
 
         tailrec fun loop(
             acc: List<Directive>,

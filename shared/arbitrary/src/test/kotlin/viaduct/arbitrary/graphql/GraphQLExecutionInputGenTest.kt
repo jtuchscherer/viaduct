@@ -28,10 +28,10 @@ class GraphQLExecutionInputGenTest : KotestPropertyBase() {
             union Union = Foo | Bar
             interface I1 { x:Int }
             interface I2 { y:Int }
-            type Query { x(a:Int!):Int, u:Union, y(inp:Input!): Union }
-            type Mutation { x:Int, y:Int }
-            type Subscription { x:Int, y:Int }
-        """.trimIndent().asSchema
+            extend type Mutation { x:Int, y:Int }
+            extend type Subscription { x:Int, y:Int }
+            extend type Query { x(a:Int!):Int, u:Union, y(inp:Input!): Union }
+        """.asViaductSchema
 
     private fun mkConfig(
         anonymousOperationWeight: Double = 0.0,
@@ -105,11 +105,11 @@ class GraphQLExecutionInputGenTest : KotestPropertyBase() {
 
     private fun Arb<ExecutionInput>.assertAllValid(iter: Int = iterCount) {
         val failure = minViolation(ExecutionInputComparator, iter) {
-            !ParseAndValidate.parseAndValidate(schema, it).isFailure
+            !ParseAndValidate.parseAndValidate(schema.schema, it).isFailure
         }
         assertNull(failure) {
             failure!!
-            val result = ParseAndValidate.parseAndValidate(schema, failure)
+            val result = ParseAndValidate.parseAndValidate(schema.schema, failure)
             buildString {
                 append("ExecutionInput failed validation:\n")
                 append("Seed: ${randomSource.seed}\n")

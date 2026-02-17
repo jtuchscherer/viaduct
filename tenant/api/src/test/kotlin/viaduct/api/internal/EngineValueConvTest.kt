@@ -24,6 +24,7 @@ import viaduct.arbitrary.common.KotestPropertyBase
 import viaduct.arbitrary.graphql.GenInterfaceStubsIfNeeded
 import viaduct.arbitrary.graphql.TypenameValueWeight
 import viaduct.arbitrary.graphql.graphQLSchema
+import viaduct.arbitrary.graphql.ir
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolvedEngineObjectData
@@ -34,7 +35,6 @@ import viaduct.engine.api.mocks.createSchema
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
-import viaduct.mapping.test.ir
 
 class EngineValueConvTest : KotestPropertyBase() {
     private val emptySchema: ViaductSchema = createSchema("extend type Query { x:Int }")
@@ -74,7 +74,7 @@ class EngineValueConvTest : KotestPropertyBase() {
                                     GraphQLNonNull.nonNull(GraphQLList.list(type)),
                                 )
                             }.bind()
-                        val ir = Arb.ir(gjSchema, type, cfg).bind()
+                        val ir = Arb.ir(vschema, type, cfg).bind()
                         Triple(vschema, type, ir)
                     }
                 }

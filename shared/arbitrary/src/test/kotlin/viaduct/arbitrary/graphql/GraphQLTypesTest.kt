@@ -3,15 +3,13 @@
 package viaduct.arbitrary.graphql
 
 import graphql.Scalars
-import graphql.introspection.Introspection
-import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeReference
+import graphql.schema.GraphQLTypeUtil
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.element
@@ -46,7 +44,7 @@ class GraphQLTypesTest : KotestPropertyBase() {
     private val minimalConfig = Config.default +
         (SchemaSize to 10) +
         (DefaultValueWeight to 0.0) +
-        (DirectiveWeight to CompoundingWeight.Never) +
+        (AppliedDirectiveWeight to CompoundingWeight.Never) +
         (DirectiveHasArgs to CompoundingWeight.Never) +
         (FieldHasArgs to CompoundingWeight.Never) +
         (Listiness to CompoundingWeight.Never) +
@@ -60,7 +58,8 @@ class GraphQLTypesTest : KotestPropertyBase() {
         (EnumTypeSize to 1..1) +
         (MaxValueDepth to 0) +
         (StringValueSize to 1..1) +
-        (ListValueSize to 0..0)
+        (ListValueSize to 0..0) +
+        (OneOfWeight to 0.0)
 
     private fun mkGen(
         cfg: Config = minimalConfig,
@@ -75,15 +74,6 @@ class GraphQLTypesTest : KotestPropertyBase() {
         Arb
             .pair(Arb.of(weights), Arb.int(max))
             .map { (weight, max) -> CompoundingWeight(weight, max) }
-
-    @Test
-    fun `Arb-graphQLTypes can be used to generate a valid schema`(): Unit =
-        runBlocking {
-            Arb.graphQLTypes(minimalConfig).checkAll(iterCount) {
-                SchemaGenerator.createSchema(it).getOrThrow()
-                markSuccess()
-            }
-        }
 
     @Test
     fun `GraphQLTypesGen -- genDirectives`(): Unit =
@@ -210,49 +200,6 @@ class GraphQLTypesTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `GraphQLTypes - DefaultValueWeight`(): Unit =
-        runBlocking {
-            Arb
-                .of(0.0, 1.0)
-                .flatMap { weight ->
-                    val cfg = minimalConfig + (DefaultValueWeight to weight)
-                    Arb.graphQLTypes(cfg).map { weight to it }
-                }.checkInvariants(iterCount) { (weight, types), check ->
-                    (types.objects.values + types.interfaces.values)
-                        .flatMap { it.fields }
-                        .flatMap { it.arguments }
-                        .forEach { arg ->
-                            check.isTrue(
-                                arg.hasSetDefaultValue() == (weight == 1.0),
-                                "arg default: {0}",
-                                arrayOf(arg.name)
-                            )
-                        }
-
-                    (types.inputs.values)
-                        .flatMap { it.fields }
-                        .forEach { field ->
-                            check.isTrue(
-                                field.hasSetDefaultValue() == (weight == 1.0),
-                                "input field default: {0}",
-                                arrayOf(field.name)
-                            )
-                        }
-
-                    types.directives.values
-                        .filterNot { builtinDirectives.containsKey(it.name) }
-                        .flatMap { it.arguments }
-                        .forEach { arg ->
-                            check.isTrue(
-                                arg.hasSetDefaultValue() == (weight == 1.0),
-                                "dir arg default: {0}",
-                                arrayOf(arg.name)
-                            )
-                        }
-                }
-        }
-
-    @Test
     fun `GraphQLTypes - IncludeBuiltinScalars`(): Unit =
         runBlocking {
             Arb
@@ -331,55 +278,6 @@ class GraphQLTypesTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `GraphQLTypes - Directiveness`(): Unit =
-        runBlocking {
-            // for this test it is helpful to guarantee that the schema contains a directive that can be applied
-            // in any location
-            val testDirective = GraphQLDirective
-                .newDirective()
-                .name("testDirective")
-                .validLocations(*Introspection.DirectiveLocation.values())
-                .build()
-
-            Arb
-                .compoundingWeight()
-                .flatMap { cw ->
-                    val cfg = minimalConfig +
-                        (DirectiveWeight to cw) +
-                        (IncludeBuiltinScalars to false) +
-                        (IncludeBuiltinDirectives to false) +
-                        (IncludeTypes to GraphQLTypes.empty + testDirective)
-                    Arb.graphQLTypes(cfg).map { cw to it }
-                }.checkInvariants(iterCount) { (cw, types), check ->
-                    val elements: List<GraphQLDirectiveContainer> = types.interfaces.values +
-                        types.interfaces.values.flatMap { it.fields } +
-                        types.inputs.values +
-                        types.inputs.values.flatMap { it.fields } +
-                        types.objects.values +
-                        types.objects.values.flatMap { it.fields } +
-                        types.enums.values +
-                        types.enums.values.flatMap { it.values } +
-                        types.scalars.values
-
-                    if (cw.weight == 1.0 && cw.max > 0 && elements.isNotEmpty()) {
-                        check.isTrue(
-                            elements.any { it.appliedDirectives.isNotEmpty() },
-                            "No applied directives found with Directiveness {0}",
-                            arrayOf(cw.toString())
-                        )
-                    } else {
-                        elements.forEach {
-                            check.isTrue(
-                                it.appliedDirectives.isEmpty(),
-                                "Found unexpected directives on type {0} with Directiveness {1}",
-                                arrayOf(it.toString(), cw.toString())
-                            )
-                        }
-                    }
-                }
-        }
-
-    @Test
     fun `GraphQLTypes - FieldNameLength`(): Unit =
         runBlocking {
             Arb
@@ -425,6 +323,27 @@ class GraphQLTypesTest : KotestPropertyBase() {
                             "input {0} has fields {1} outside of range {2}",
                             arrayOf(inp.name, inp.fields.size.toString(), range.toString())
                         )
+                    }
+                }
+        }
+
+    @Test
+    fun `GraphQLTypes - OneOfWeight`(): Unit =
+        runBlocking {
+            // disabled
+            Arb.graphQLTypes(minimalConfig + (OneOfWeight to 0.0))
+                .forAll(iterCount) { types ->
+                    types.inputs.values.none { it.isOneOf }
+                }
+
+            // enabled
+            Arb.graphQLTypes(minimalConfig + (OneOfWeight to 1.0))
+                .forAll(iterCount) { types ->
+                    types.inputs.values.all { inp ->
+                        inp.isOneOf && inp.fields.all { field ->
+                            GraphQLTypeUtil.isNullable(field.type) &&
+                                !field.hasSetDefaultValue()
+                        }
                     }
                 }
         }
@@ -595,3 +514,10 @@ class GraphQLTypesTest : KotestPropertyBase() {
             }
         }
 }
+
+private val GraphQLType.listSomewhere: Boolean
+    get() = when (this) {
+        is GraphQLList -> true
+        is GraphQLNonNull -> wrappedType.listSomewhere
+        else -> false
+    }

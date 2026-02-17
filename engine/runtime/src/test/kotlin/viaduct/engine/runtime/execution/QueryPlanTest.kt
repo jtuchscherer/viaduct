@@ -307,9 +307,6 @@ class QueryPlanTest {
         }
     }
 
-    // JMB TODO: unsure about the name of this test. Maybe find a better name, in which case also update the fragment spread cases
-    //  Maybe these are better:
-    //   inline fragments with plannable variable references
     @Test
     fun `QueryPlanBuilder -- builds child plans for inline fragments with selection-based variables`() {
         val varResolvers = VariablesResolver.fromSelectionSetVariables(

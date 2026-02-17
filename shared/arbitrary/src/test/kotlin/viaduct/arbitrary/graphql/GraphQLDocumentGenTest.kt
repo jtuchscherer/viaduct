@@ -35,6 +35,7 @@ import viaduct.arbitrary.common.CompoundingWeight
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.KotestPropertyBase
 import viaduct.arbitrary.common.minViolation
+import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.utils.GraphQLTypeRelations
 import viaduct.graphql.utils.allChildren
 import viaduct.graphql.utils.allChildrenOfType
@@ -78,7 +79,7 @@ class GraphQLDocumentGenTest : KotestPropertyBase() {
         Config.default +
             (AliasWeight to aliasWeight) +
             (AnonymousOperationWeight to anonymousOperationWeight) +
-            (DirectiveWeight to directiveWeight) +
+            (AppliedDirectiveWeight to directiveWeight) +
             (ExplicitNullValueWeight to explicitNullValueWeight) +
             (FieldNameLength to fieldNameLength.asIntRange()) +
             (FieldSelectionWeight to fieldSelectionWeight) +
@@ -148,8 +149,17 @@ class GraphQLDocumentGenTest : KotestPropertyBase() {
         // the ballpark of `iterCount`, let's use a square root value for each M/N dimension
         val iter = sqrt(iterCount.toDouble()).toInt()
 
+        // GJ schemas
         Arb
             .graphQLSchema(cfg)
+            .take(iter, randomSource)
+            .forEach { schema ->
+                assertAllDocumentsValid(schema, cfg, iter)
+            }
+
+        // viaduct schemas
+        Arb
+            .viaductSchema(cfg)
             .take(iter, randomSource)
             .forEach { schema ->
                 assertAllDocumentsValid(schema, cfg, iter)
@@ -529,7 +539,7 @@ class GraphQLDocumentGenTest : KotestPropertyBase() {
             //
             // This test ensures that we are not generating this pattern
             val cfg = Config.default +
-                (DirectiveWeight to CompoundingWeight.Once) +
+                (AppliedDirectiveWeight to CompoundingWeight.Once) +
                 (VariableWeight to 1.0)
             val schema = "type Query { x(a:Int!):Int }".asSchema
 
@@ -567,6 +577,15 @@ class GraphQLDocumentGenTest : KotestPropertyBase() {
         cfg: Config = Config.default,
         iter: Int = iterCount
     ) = assertAllDocumentsValid(sdl.asSchema, cfg, iter)
+
+    private fun assertAllDocumentsValid(
+        schema: ViaductSchema,
+        cfg: Config = Config.default,
+        iter: Int = iterCount
+    ): Unit =
+        runBlocking {
+            Arb.graphQLDocument(schema, cfg).assertAllValid(schema.schema, iter)
+        }
 
     private fun assertAllDocumentsValid(
         schema: GraphQLSchema,

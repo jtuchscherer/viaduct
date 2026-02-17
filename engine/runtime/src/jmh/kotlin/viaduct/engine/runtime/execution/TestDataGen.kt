@@ -34,8 +34,8 @@ import viaduct.arbitrary.common.CompoundingWeight
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.ConfigKey
 import viaduct.arbitrary.common.Unvalidated
+import viaduct.arbitrary.graphql.AppliedDirectiveWeight
 import viaduct.arbitrary.graphql.DescriptionLength
-import viaduct.arbitrary.graphql.DirectiveWeight
 import viaduct.arbitrary.graphql.FieldSelectionWeight
 import viaduct.arbitrary.graphql.FragmentDefinitionWeight
 import viaduct.arbitrary.graphql.FragmentSpreadWeight
@@ -53,7 +53,7 @@ import viaduct.arbitrary.graphql.asIntRange
 import viaduct.arbitrary.graphql.asSchema
 import viaduct.arbitrary.graphql.filterNotNull
 import viaduct.arbitrary.graphql.graphQLExecutionInput
-import viaduct.arbitrary.graphql.graphQLSchema
+import viaduct.arbitrary.graphql.viaductSchema
 import viaduct.graphql.utils.allChildren
 
 data class TestData(val sdl: String, val query: String, val variables: Map<String, Any?> = emptyMap()) {
@@ -112,7 +112,7 @@ object TestDataGen {
             (InlineFragmentWeight to CompoundingWeight(.3, 10)) +
             (FragmentSpreadWeight to CompoundingWeight(.7, 10)) +
             (FragmentDefinitionWeight to .5) +
-            (DirectiveWeight to CompoundingWeight(.05, 3)) +
+            (AppliedDirectiveWeight to CompoundingWeight(.05, 3)) +
             (MinQueryLength to 400_000) +
             (MinVariablesCount to 40)
 
@@ -179,14 +179,14 @@ object TestDataGen {
         cfg: Config,
         rs: RandomSource
     ): TestData {
-        val schema = Arb.graphQLSchema(cfg).next(rs)
+        val schema = Arb.viaductSchema(cfg).next(rs)
         val inp = Arb.graphQLExecutionInput(schema, cfg)
             .filter {
                 // as a simple progress bar, print a dot on every generation attempt
                 print(".")
                 it.query.length >= cfg[MinQueryLength] && it.variables.size >= cfg[MinVariablesCount]
             }.next(rs)
-        val sdl = SchemaPrinter().print(schema)
+        val sdl = SchemaPrinter().print(schema.schema)
         return TestData(sdl, inp.query, inp.variables)
     }
 }

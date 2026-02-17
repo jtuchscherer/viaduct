@@ -16,6 +16,7 @@ import viaduct.arbitrary.common.checkInvariants
 import viaduct.arbitrary.graphql.GenInterfaceStubsIfNeeded
 import viaduct.arbitrary.graphql.asSchema
 import viaduct.arbitrary.graphql.graphQLSchema
+import viaduct.engine.api.mocks.MockSchema
 import viaduct.mapping.test.DomainValidator
 import viaduct.mapping.test.RoundtripError
 import viaduct.mapping.test.ValueRoundtripError
@@ -114,12 +115,12 @@ class DomainValidatorTest : KotestPropertyBase() {
 
     @Test
     fun `checkAll -- roundTrips objects and input objects`() {
-        val schema = mkSchema(
+        val schema = MockSchema.mk(
             """
                 input Inp { x:Int }
                 extend type Query { x:Int }
             """.trimIndent()
-        )
+        ).schema
         val mappedForward = mutableSetOf<String>()
         val inverted = mutableSetOf<String>()
         val domain = object : Domain<IR.Value.Object> {

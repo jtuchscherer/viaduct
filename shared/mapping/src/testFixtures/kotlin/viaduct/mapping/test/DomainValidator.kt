@@ -4,15 +4,13 @@ package viaduct.mapping.test
 
 import graphql.schema.GraphQLSchema
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.take
 import kotlinx.coroutines.runBlocking
 import viaduct.arbitrary.common.Config
-import viaduct.arbitrary.common.flatten
 import viaduct.arbitrary.common.randomSource
-import viaduct.arbitrary.graphql.GenInterfaceStubsIfNeeded
-import viaduct.arbitrary.graphql.graphQLSchema
+import viaduct.arbitrary.graphql.objectIR
+import viaduct.engine.api.ViaductSchema
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.Domain
 import viaduct.mapping.graphql.IR
@@ -105,7 +103,7 @@ class DomainValidator<From, To> private constructor(
             equalsFn: Function2<From, From, Boolean>? = null,
         ): DomainValidator<From, IR.Value.Object> =
             DomainValidator(
-                Arb.objectIR(schema, cfg).map(domain.conv.inverse()),
+                Arb.objectIR(ViaductSchema(schema), cfg).map(domain.conv.inverse()),
                 domain.conv,
                 Equals(equalsFn),
             )
@@ -130,26 +128,6 @@ class DomainValidator<From, To> private constructor(
                 Equals(equalsFn),
             )
 
-        private fun mkValueGen(schemaGen: Arb<GraphQLSchema>): Arb<IR.Value.Object> =
-            schemaGen
-                .map { schema ->
-                    Arb
-                        .objectIR(schema)
-                        .take(100, randomSource())
-                        .toList()
-                }.flatten()
-
-        private fun mkSchemaGen(schema: GraphQLSchema?): Arb<GraphQLSchema> =
-            schema?.let(Arb.Companion::constant)
-                ?: run {
-                    val initialConfig = Config.default + (
-                        // Any type that refers to an interface needs to be able to materialize an implementation of that
-                        // interface. Ensure that the generated schema has at least one implementation for all interface types.
-                        GenInterfaceStubsIfNeeded to true
-                    )
-                    Arb.graphQLSchema(initialConfig)
-                }
-
         private fun interface Equals<T> : Function2<T, T, Boolean> {
             class Natural<T> : Equals<T> {
                 override fun invoke(
@@ -172,17 +150,6 @@ class DomainValidator<From, To> private constructor(
             }
         }
     }
-}
-
-/**
- * A naive Comparator that allows sorting IR.Value.Object's by the length of their
- * toString result.
- */
-private object MinObject : Comparator<IR.Value.Object> {
-    override fun compare(
-        o1: IR.Value.Object,
-        o2: IR.Value.Object
-    ): Int = o1.toString().length.compareTo(o2.toString().length)
 }
 
 class ValueRoundtripError(

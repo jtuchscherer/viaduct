@@ -42,6 +42,8 @@ import kotlin.math.max
 import kotlin.math.min
 import viaduct.arbitrary.common.CompoundingWeight
 import viaduct.arbitrary.common.WeightValidator
+import viaduct.engine.SchemaFactory
+import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.utils.allChildren
 
 internal fun Set<GraphQLInterfaceType>.nonConflicting(): Set<GraphQLInterfaceType> {
@@ -169,16 +171,13 @@ internal val builtinScalars: Map<String, GraphQLScalarType> =
         Scalars.GraphQLString
     ).associateBy { it.name }
 
-// @deprecated has some challenges and is filtered out
-// - GJ seems to require that the "reason" arg is non-null:
-//   https://github.com/graphql-java/graphql-java/blob/228535194df5468cda8b465d56a7624c13d6a7a7/src/main/java/graphql/schema/idl/SchemaGeneratorHelper.java#L244
-// - the spec requires that when applied to input fields or arguments, that the types
-//   of those objects be nullable or have a default value. The type generator doesn't have
-//   enough context to know this. So let's drop deprecated for now
 internal val builtinDirectives: Map<String, GraphQLDirective> =
     listOf(
+        Directives.DeferDirective,
+        Directives.DeprecatedDirective,
+        Directives.IncludeDirective,
         Directives.OneOfDirective,
-        // Directives.DeprecatedDirective,
+        Directives.SkipDirective,
         Directives.SpecifiedByDirective,
     ).associateBy { it.name }
 
@@ -273,6 +272,9 @@ fun RandomSource.count(weight: CompoundingWeight): Int {
 }
 
 /** convert this [graphql.language.Type] representation into its [graphql.schema.GraphQLType] counterpart */
+fun Type<*>.asSchemaType(schema: ViaductSchema): GraphQLType = asSchemaType(schema.schema)
+
+/** convert this [graphql.language.Type] representation into its [graphql.schema.GraphQLType] counterpart */
 fun Type<*>.asSchemaType(schema: GraphQLSchema): GraphQLType =
     when (this) {
         is ListType -> GraphQLList.list(type.asSchemaType(schema))
@@ -293,6 +295,10 @@ fun GraphQLType.asAstType(): Type<*> =
         else ->
             throw UnsupportedOperationException("unsupported schema Type: $this")
     }
+
+/** Return a mocked [ViaductSchema] described by this String value */
+val String.asViaductSchema: ViaductSchema
+    get() = SchemaFactory().fromSdl(this)
 
 /** Return a mocked [GraphQLSchema] described by this String value */
 val String.asSchema: GraphQLSchema get() = SchemaGenerator.createdMockedSchema(this)

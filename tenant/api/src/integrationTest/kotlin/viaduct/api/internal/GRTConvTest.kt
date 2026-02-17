@@ -36,7 +36,11 @@ import viaduct.api.testschema.TestType
 import viaduct.api.testschema.TestUser
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.KotestPropertyBase
+import viaduct.arbitrary.graphql.InputObjectValueWeight
+import viaduct.arbitrary.graphql.OutputObjectValueWeight
 import viaduct.arbitrary.graphql.TypenameValueWeight
+import viaduct.arbitrary.graphql.ir
+import viaduct.arbitrary.graphql.objectIR
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.RawSelectionSet
@@ -47,10 +51,6 @@ import viaduct.engine.api.mocks.createRawSelectionSet
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
-import viaduct.mapping.test.InputObjectValueWeight
-import viaduct.mapping.test.OutputObjectValueWeight
-import viaduct.mapping.test.ir
-import viaduct.mapping.test.objectIR
 
 class GRTConvTest : KotestPropertyBase() {
     private val schema = SchemaUtils.getSchema()
@@ -175,7 +175,7 @@ class GRTConvTest : KotestPropertyBase() {
         runBlocking {
             val scalars = schema.type("Scalars")
             val conv = GRTConv(internalContext, scalars)
-            Arb.ir(schema.schema, scalars).forAll { ir ->
+            Arb.ir(schema, scalars).forAll { ir ->
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
             }
@@ -243,7 +243,7 @@ class GRTConvTest : KotestPropertyBase() {
         runBlocking {
             val cfg = Config.default + (OutputObjectValueWeight to 0.0)
 
-            Arb.objectIR(schema.schema, cfg).forAll { ir ->
+            Arb.objectIR(schema, cfg).forAll { ir ->
                 val conv = GRTConv(internalContext, schema.type(ir.name))
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
@@ -362,7 +362,7 @@ class GRTConvTest : KotestPropertyBase() {
                 // the input value where possible
                 (TypenameValueWeight to 1.0)
 
-            Arb.objectIR(schema.schema, cfg).forAll { ir ->
+            Arb.objectIR(schema, cfg).forAll { ir ->
                 val conv = GRTConv(internalContext, schema.type(ir.name))
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
@@ -595,7 +595,7 @@ class GRTConvTest : KotestPropertyBase() {
 
             val typeIRPairs = arbitrary {
                 val type = Arb.of(enumTypes).bind()
-                val ir = Arb.ir(schema.schema, type).bind()
+                val ir = Arb.ir(schema, type).bind()
                 type to ir
             }
 

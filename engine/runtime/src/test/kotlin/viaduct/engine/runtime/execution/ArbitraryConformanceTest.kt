@@ -115,7 +115,7 @@ class ArbitraryConformanceTest : KotestPropertyBase() {
         Conformer("type Query {x: Int}", cfg) {
             val inputs = Arb.graphQLDocument(schema.schema, cfg)
                 .map { doc ->
-                    Arb.graphQLExecutionInput(schema.schema, doc, cfg)
+                    Arb.graphQLExecutionInput(schema, doc, cfg)
                         .asViaductExecutionInput(schema)
                         .take(10, randomSource())
                         .toList()

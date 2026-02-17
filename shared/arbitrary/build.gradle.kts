@@ -16,6 +16,10 @@ dependencies {
     api(libs.viaduct.shared.apiannotations)
 
     implementation(libs.viaduct.engine.api)
+    implementation(libs.viaduct.service.api)
+    implementation(libs.viaduct.service.wiring)
+    implementation(libs.viaduct.engine.wiring)
+    implementation(libs.viaduct.tenant.api)
     implementation(libs.viaduct.shared.utils)
     implementation(libs.kotest.common.jvm)
     implementation(libs.kotlinx.coroutines.core)

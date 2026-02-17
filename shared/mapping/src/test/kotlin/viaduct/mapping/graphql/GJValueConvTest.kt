@@ -14,7 +14,6 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLScalarType
-import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
@@ -28,10 +27,11 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.arbitrary.common.KotestPropertyBase
-import viaduct.mapping.test.ir
+import viaduct.arbitrary.graphql.ir
+import viaduct.engine.api.mocks.MockSchema
 
 class GJValueConvTest : KotestPropertyBase() {
-    private val schema = mkSchema(
+    private val schema = MockSchema.mk(
         """
             input SimpleInput {
               x:Int
@@ -50,11 +50,11 @@ class GJValueConvTest : KotestPropertyBase() {
               f2: Long
               f3: E
             }
+            extend type Query { placeholder: Int }
         """.trimIndent()
     )
 
     private fun types(
-        schema: GraphQLSchema = this@GJValueConvTest.schema,
         includeScalars: Boolean = true,
         includeBackingData: Boolean = false,
         includeInputObjects: Boolean = true,
@@ -63,7 +63,7 @@ class GJValueConvTest : KotestPropertyBase() {
         includeLists: Boolean = true
     ): List<GraphQLType> =
         // generate a list of unwrapped types
-        schema.allTypesAsList
+        schema.schema.allTypesAsList
             .filter {
                 when (it) {
                     is GraphQLScalarType -> when {
@@ -117,7 +117,7 @@ class GJValueConvTest : KotestPropertyBase() {
 
     @Test
     fun `object -- ignores unknown GJ fields`() {
-        val conv = GJValueConv(schema.getTypeAs<GraphQLInputType>("SimpleInput"))
+        val conv = GJValueConv(schema.schema.getTypeAs<GraphQLInputType>("SimpleInput"))
 
         val ir = conv(
             ObjectValue(
@@ -131,7 +131,7 @@ class GJValueConvTest : KotestPropertyBase() {
 
     @Test
     fun `object -- throws on unknown IR fields`() {
-        val conv = GJValueConv(schema.getTypeAs<GraphQLInputType>("SimpleInput"))
+        val conv = GJValueConv(schema.schema.getTypeAs<GraphQLInputType>("SimpleInput"))
 
         assertThrows<IllegalArgumentException> {
             conv.invert(
@@ -152,7 +152,7 @@ class GJValueConvTest : KotestPropertyBase() {
         typeName: String,
         range: Pair<Number, Number>
     ) {
-        val conv = GJValueConv(schema.getType(typeName)!!)
+        val conv = GJValueConv(schema.schema.getType(typeName)!!)
         checkRanges(conv, range)
     }
 

@@ -8,6 +8,7 @@ import viaduct.arbitrary.common.IntRangeValidator
 import viaduct.arbitrary.common.IntValidator
 import viaduct.arbitrary.common.Unvalidated
 import viaduct.arbitrary.common.WeightValidator
+import viaduct.mapping.graphql.IR
 
 /**
  * The approximate number of types and directives that a generated schema will define.
@@ -70,7 +71,7 @@ object DirectiveHasArgs : ConfigKey<CompoundingWeight>(
 )
 
 /** The probability that a schema element or document node will have an applied directive */
-object DirectiveWeight : ConfigKey<CompoundingWeight>(
+object AppliedDirectiveWeight : ConfigKey<CompoundingWeight>(
     CompoundingWeight(.1, 3),
     CompoundingWeightValidator
 )
@@ -107,11 +108,11 @@ object Listiness : ConfigKey<CompoundingWeight>(CompoundingWeight(.1, 2), Compou
 /** The probability that a field- or argument type will be non-nullable */
 object NonNullableness : ConfigKey<Double>(.2, WeightValidator)
 
-/** The probability that a schema element will be deprecated */
-object Deprecatedness : ConfigKey<Double>(.2, WeightValidator)
-
 /** The number of input fields that an input object type will define */
 object InputObjectTypeSize : ConfigKey<IntRange>(1..3, IntRangeValidator(1..Int.MAX_VALUE))
+
+/** The probability that a generated input object will be a OneOf type */
+object OneOfWeight : ConfigKey<Double>(0.25, WeightValidator)
 
 /**
  * The number of fields that an interface type will define.
@@ -182,7 +183,7 @@ object SelectedTypeBias : ConfigKey<Double>(.9, WeightValidator)
  * Use the provided mappings for generating scalar values,
  * on top of the generators for builtin GraphQL scalar types.
  */
-object ScalarValueOverrides : ConfigKey<Map<String, Arb<Any?>>>(emptyMap(), Unvalidated)
+object ScalarValueOverrides : ConfigKey<Map<String, Arb<IR.Value>>>(emptyMap(), Unvalidated)
 
 /**
  * If enabled, all interface definitions will be guaranteed to have at least one
@@ -250,3 +251,30 @@ object NullNonNullableWeight : ConfigKey<Double>(0.0, WeightValidator)
  * RuntimeException during execution.
  */
 object ResolverExceptionWeight : ConfigKey<Double>(0.0, WeightValidator)
+
+/**
+ * The relative weight that when an [IR.Value.Object] is generated without contextual
+ * constraints on if the value must be an input or output object, that the concrete type will
+ * be drawn from the pool of output object types.
+ *
+ * A 0.0 value means that no output object values will ever be generated, while a greater than 0
+ * means that the output object type pool will be used at least some of the time.
+ *
+ * This weight is balanced against the value of [InputObjectValueWeight]
+ */
+object OutputObjectValueWeight : ConfigKey<Double>(1.0, WeightValidator)
+
+/**
+ * The relative weight that when an [IR.Value.Object] is generated without contextual
+ * constraints on if the value must be an input or output object, that the concrete type will
+ * be drawn from the pool of input object types.
+ *
+ * A 0.0 value means that no input object values will ever be generated, while a greater than 0
+ * means that the input object type pool will be used at least some of the time.
+ *
+ * This weight is balanced against the value of [OutputObjectValueWeight]
+ */
+object InputObjectValueWeight : ConfigKey<Double>(1.0, WeightValidator)
+
+/** The probability that any generated [IR.Value.Object] will be for an introspection type */
+object IntrospectionObjectValueWeight : ConfigKey<Double>(0.0, WeightValidator)

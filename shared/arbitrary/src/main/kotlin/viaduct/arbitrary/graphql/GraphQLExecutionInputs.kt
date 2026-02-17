@@ -4,16 +4,17 @@ import graphql.ExecutionInput
 import graphql.language.AstPrinter
 import graphql.language.Document
 import graphql.language.OperationDefinition
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLTypeUtil
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
+import viaduct.api.internal.EngineValueConv
 import viaduct.arbitrary.common.Config
+import viaduct.engine.api.ViaductSchema
 
 /**
  * Generate an arbitrary GraphQL [ExecutionInput] for the provided schema and config.
@@ -22,7 +23,7 @@ import viaduct.arbitrary.common.Config
  *   https://spec.graphql.org/draft/#sec-Documents
  */
 fun Arb.Companion.graphQLExecutionInput(
-    schema: GraphQLSchema,
+    schema: ViaductSchema,
     cfg: Config = Config.default
 ): Arb<ExecutionInput> =
     Arb.graphQLDocument(schema, cfg).flatMap { doc ->
@@ -36,7 +37,7 @@ fun Arb.Companion.graphQLExecutionInput(
  *   https://spec.graphql.org/draft/#sec-Documents
  */
 fun Arb.Companion.graphQLExecutionInput(
-    schema: GraphQLSchema,
+    schema: ViaductSchema,
     doc: Document,
     cfg: Config = Config.default
 ): Arb<ExecutionInput> =
@@ -45,12 +46,10 @@ fun Arb.Companion.graphQLExecutionInput(
     }
 
 private class GraphQLExecutionInputGen(
-    val schema: GraphQLSchema,
+    val schema: ViaductSchema,
     val cfg: Config,
     val rs: RandomSource
 ) {
-    private val valueGen = ValueGens(schema, cfg, rs).kotlin
-
     fun gen(doc: Document): ExecutionInput {
         val operations = doc.getDefinitionsOfType(OperationDefinition::class.java)
         val operation = Arb.of(operations).next(rs)
@@ -68,7 +67,14 @@ private class GraphQLExecutionInputGen(
             if (canInull && rs.sampleWeight(cfg[ImplicitNullValueWeight])) {
                 acc
             } else {
-                acc + (def.name to valueGen(def.type.asSchemaType(schema) as GraphQLInputType))
+                val type = def.type.asSchemaType(schema)
+                val value = Arb.ir(schema, type, cfg)
+                    .map {
+                        val conv = EngineValueConv(schema, type, null)
+                        conv.invert(it)
+                    }
+                    .next(rs)
+                acc + (def.name to value)
             }
         }
 
