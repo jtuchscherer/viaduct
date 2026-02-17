@@ -25,7 +25,6 @@ import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.ParsedSelections
 import viaduct.engine.api.RequiredSelectionSet
-import viaduct.engine.api.RequiredSelectionSets
 import viaduct.engine.api.SelectionSetVariable
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.MockCheckerErrorResult
@@ -75,7 +74,7 @@ class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
         coord: Coordinate,
         schema: GraphQLSchema,
         reflectionLoader: ReflectionLoader
-    ): RequiredSelectionSets {
+    ): Pair<RequiredSelectionSet?, RequiredSelectionSet?> {
         val variablesProviderContextFactory = resolverFactory(ViaductSchema(schema), reflectionLoader)
 
         val factory = RequiredSelectionSetFactory(GlobalIDCodecDefault, reflectionLoader)
