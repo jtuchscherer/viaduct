@@ -4,21 +4,27 @@ import viaduct.apiannotations.StableApi
 import viaduct.service.api.spi.FlagManager.Flags.EXECUTE_ACCESS_CHECKS
 
 /**
- * Interface for managing feature flags.
+ * Interface for managing framework feature flags within the Viaduct runtime.
+ *
+ * Implementations are provided to [ViaductBuilder][viaduct.service.ViaductBuilder] via
+ * `withFlagManager` and are queried on the hot path during query execution, so
+ * [isEnabled] should return quickly.
  */
 @StableApi
 interface FlagManager {
     /**
-     * Returns a boolean representing whether [flag] is enabled. Impl should execute very quickly as it could
-     * be used in the hot path.
+     * Returns whether [flag] is enabled. Implementations should execute very quickly as this
+     * is called on the hot path during query execution.
      */
     fun isEnabled(flag: Flag): Boolean
 
+    /** A [FlagManager] that reports all flags as disabled. */
     @StableApi
     object disabled : FlagManager {
         override fun isEnabled(flag: Flag): Boolean = false
     }
 
+    /** A [FlagManager] that uses the framework-default state for each flag. */
     @StableApi
     object default : FlagManager {
         override fun isEnabled(flag: Flag): Boolean =
@@ -39,12 +45,18 @@ interface FlagManager {
         val flagName: String
     }
 
+    /** Framework-defined feature flags. */
     @StableApi
     enum class Flags(
         override val flagName: String
     ) : Flag {
+        /** Controls whether access-check directives are enforced during execution. */
         EXECUTE_ACCESS_CHECKS("execute_access_checks_in_modern_execution_strategy"),
+
+        /** Disables the query-plan cache, forcing re-planning on every request. */
         DISABLE_QUERY_PLAN_CACHE("disable_query_plan_cache"),
+
+        /** Killswitch for non-blocking enqueue flush in the coroutine dispatcher. */
         KILLSWITCH_NON_BLOCKING_ENQUEUE_FLUSH("common.kotlin.nextTickDispatcher.killswitch.nonBlockingEnqueueFlush"),
     }
 }
