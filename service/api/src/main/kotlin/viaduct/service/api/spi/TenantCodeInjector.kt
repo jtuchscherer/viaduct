@@ -14,6 +14,7 @@ import viaduct.apiannotations.StableApi
  */
 @StableApi
 interface TenantCodeInjector {
+    /** Returns a [Provider] that creates new instances of [clazz] on each call to [Provider.get]. */
     fun <T> getProvider(clazz: Class<T>): Provider<T>
 
     @StableApi
@@ -29,6 +30,12 @@ interface TenantCodeInjector {
     }
 }
 
+/**
+ * A reflection-based [TenantCodeInjector] that instantiates classes via their zero-arg constructor.
+ *
+ * Intended for testing and very simple applications. Production applications should supply a
+ * DI-backed [TenantCodeInjector] instead.
+ */
 @StableApi
 class NaiveTenantCodeInjector : TenantCodeInjector {
     val constructorCache: ConcurrentHashMap<Class<*>, Constructor<*>> =
