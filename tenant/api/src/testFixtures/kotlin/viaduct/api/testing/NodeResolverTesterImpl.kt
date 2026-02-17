@@ -29,9 +29,9 @@ import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
  * This class is package-private and should not be used directly.
  * Use [NodeResolverTester.create] instead.
  */
-internal class NodeResolverTesterImpl<T : NodeObject>(
+internal class NodeResolverTesterImpl<R : NodeObject>(
     override val config: ResolverTester.TesterConfig
-) : NodeResolverTester<T> {
+) : NodeResolverTester<R> {
     private val schema = ViaductSchema(createSchema(config.schemaSDL))
     private val reflectionLoader = mockReflectionLoader(config.grtPackage, config.classLoader)
     private val internalContext = MockInternalContext(schema, GlobalIDCodecDefault, reflectionLoader)
@@ -41,10 +41,10 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
     private val selectionSetFactory: SelectionSetFactory = MockSelectionSetFactory(schema)
 
     override suspend fun test(
-        resolver: NodeResolverBase<T>,
-        block: NodeResolverTester.NodeTestConfig<T>.() -> Unit
-    ): T {
-        val testConfig = NodeResolverTester.NodeTestConfig<T>().apply(block)
+        resolver: NodeResolverBase<R>,
+        block: NodeResolverTester.NodeTestConfig<R>.() -> Unit
+    ): R {
+        val testConfig = NodeResolverTester.NodeTestConfig<R>().apply(block)
 
         // Validate required id field - lateinit will throw if not initialized
         val id = try {
@@ -56,7 +56,7 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
             )
         }
 
-        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<T>)
+        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<R>)
 
         val ctx = createNodeContext(
             id = id,
@@ -69,17 +69,17 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
     }
 
     override suspend fun testBatch(
-        resolver: NodeResolverBase<T>,
-        block: NodeResolverTester.BatchNodeTestConfig<T>.() -> Unit
-    ): List<FieldValue<T>> {
-        val testConfig = NodeResolverTester.BatchNodeTestConfig<T>().apply(block)
+        resolver: NodeResolverBase<R>,
+        block: NodeResolverTester.BatchNodeTestConfig<R>.() -> Unit
+    ): List<FieldValue<R>> {
+        val testConfig = NodeResolverTester.BatchNodeTestConfig<R>().apply(block)
 
         require(testConfig.ids.isNotEmpty()) {
             "ids must not be empty for batch testing. " +
                 "Example: tester.testBatch(resolver) { ids = listOf(id1, id2, id3) }"
         }
 
-        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<T>)
+        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<R>)
 
         val contexts = testConfig.ids.map { id ->
             createNodeContext(
@@ -94,11 +94,11 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
     }
 
     private fun createNodeContext(
-        id: GlobalID<T>,
+        id: GlobalID<R>,
         requestContext: Any?,
-        selections: SelectionSet<T>,
+        selections: SelectionSet<R>,
         contextQueryValues: List<Query>
-    ): NodeExecutionContext<T> {
+    ): NodeExecutionContext<R> {
         val queryResults = buildContextQueryMap(contextQueryValues)
 
         return MockNodeExecutionContext(
@@ -112,9 +112,9 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
     }
 
     private suspend fun invokeResolver(
-        resolver: NodeResolverBase<T>,
-        ctx: NodeExecutionContext<T>
-    ): T {
+        resolver: NodeResolverBase<R>,
+        ctx: NodeExecutionContext<R>
+    ): R {
         // Get the Context nested class from the resolver
         val contextClass = getContextClass(resolver)
 
@@ -129,13 +129,13 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
         @Suppress("UNCHECKED_CAST")
         return resolver::class.declaredFunctions
             .first { it.name == "resolve" }
-            .callSuspend(resolver, wrappedCtx) as T
+            .callSuspend(resolver, wrappedCtx) as R
     }
 
     private suspend fun invokeBatchResolver(
-        resolver: NodeResolverBase<T>,
-        contexts: List<NodeExecutionContext<T>>
-    ): List<FieldValue<T>> {
+        resolver: NodeResolverBase<R>,
+        contexts: List<NodeExecutionContext<R>>
+    ): List<FieldValue<R>> {
         // Get the Context nested class
         val contextClass = getContextClass(resolver)
 
@@ -158,10 +158,10 @@ internal class NodeResolverTesterImpl<T : NodeObject>(
         // Call batchResolve method
         // Note: callSuspend automatically unwraps InvocationTargetException
         @Suppress("UNCHECKED_CAST")
-        return batchResolveMethod.callSuspend(resolver, wrappedContexts) as List<FieldValue<T>>
+        return batchResolveMethod.callSuspend(resolver, wrappedContexts) as List<FieldValue<R>>
     }
 
-    private fun getContextClass(resolver: NodeResolverBase<T>): KClass<*> {
+    private fun getContextClass(resolver: NodeResolverBase<R>): KClass<*> {
         val contextClass = resolver.javaClass.classes
             .firstOrNull { it.simpleName == "Context" }
             ?.kotlin

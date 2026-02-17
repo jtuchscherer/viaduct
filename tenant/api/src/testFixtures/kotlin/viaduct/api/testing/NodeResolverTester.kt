@@ -49,13 +49,13 @@ import viaduct.apiannotations.VisibleForTest
  *
  * ## Type Parameter
  *
- * - **T**: The node type being resolved (must implement [NodeObject])
+ * - **R**: The node type being resolved (must implement [NodeObject])
  *
  * @since 1.0
  */
 @StableApi
 @VisibleForTest
-interface NodeResolverTester<T : NodeObject> : ResolverTester {
+interface NodeResolverTester<R : NodeObject> : ResolverTester {
     /**
      * Test a node resolver with the provided configuration.
      *
@@ -77,9 +77,9 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
      * ```
      */
     suspend fun test(
-        resolver: NodeResolverBase<T>,
-        block: NodeTestConfig<T>.() -> Unit
-    ): T
+        resolver: NodeResolverBase<R>,
+        block: NodeTestConfig<R>.() -> Unit
+    ): R
 
     /**
      * Test a batch node resolver with the provided configuration.
@@ -100,9 +100,9 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
      * ```
      */
     suspend fun testBatch(
-        resolver: NodeResolverBase<T>,
-        block: BatchNodeTestConfig<T>.() -> Unit
-    ): List<FieldValue<T>>
+        resolver: NodeResolverBase<R>,
+        block: BatchNodeTestConfig<R>.() -> Unit
+    ): List<FieldValue<R>>
 
     /**
      * Configuration for node resolver tests.
@@ -115,7 +115,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
      * - **selections**: The selection set for the node
      * - **contextQueryValues**: Query objects for `ctx.query()` calls
      */
-    class NodeTestConfig<T : NodeObject> {
+    class NodeTestConfig<R : NodeObject> {
         /**
          * The GlobalID of the node to resolve. This is **required**.
          *
@@ -124,7 +124,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * id = tester.globalIDFor(Wishlist.Reflection, "wishlist-123")
          * ```
          */
-        lateinit var id: GlobalID<T>
+        lateinit var id: GlobalID<R>
 
         /** Optional request context passed to the resolver */
         var requestContext: Any? = null
@@ -133,7 +133,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * Selection set for the node.
          * Defaults to [SelectionSet.NoSelections] if not set.
          */
-        var selections: SelectionSet<T>? = null
+        var selections: SelectionSet<R>? = null
 
         /** Query objects for `ctx.query()` calls */
         var contextQueryValues: List<Query> = emptyList()
@@ -150,7 +150,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
      * - **selections**: The selection set for all nodes in the batch
      * - **contextQueryValues**: Query objects for `ctx.query()` calls
      */
-    class BatchNodeTestConfig<T : NodeObject> {
+    class BatchNodeTestConfig<R : NodeObject> {
         /**
          * List of GlobalIDs to resolve. This is **required** and must be non-empty.
          *
@@ -162,7 +162,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * )
          * ```
          */
-        var ids: List<GlobalID<T>> = emptyList()
+        var ids: List<GlobalID<R>> = emptyList()
 
         /** Optional request context passed to all resolvers in the batch */
         var requestContext: Any? = null
@@ -171,7 +171,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * Selection set for all nodes in the batch.
          * Defaults to [SelectionSet.NoSelections] if not set.
          */
-        var selections: SelectionSet<T>? = null
+        var selections: SelectionSet<R>? = null
 
         /** Query objects for `ctx.query()` calls */
         var contextQueryValues: List<Query> = emptyList()
@@ -185,7 +185,7 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * using the specified type parameter.
          *
          * ## Type Parameter
-         * - **T**: Node type (e.g., `Wishlist`, `User`) - must implement [NodeObject]
+         * - **R**: Node type (e.g., `Wishlist`, `User`) - must implement [NodeObject]
          *
          * ## Example
          * ```kotlin
@@ -197,6 +197,6 @@ interface NodeResolverTester<T : NodeObject> : ResolverTester {
          * @param config Configuration specifying schema and GRT package
          * @return A type-safe node resolver tester
          */
-        fun <T : NodeObject> create(config: ResolverTester.TesterConfig): NodeResolverTester<T> = NodeResolverTesterImpl(config)
+        fun <R : NodeObject> create(config: ResolverTester.TesterConfig): NodeResolverTester<R> = NodeResolverTesterImpl(config)
     }
 }

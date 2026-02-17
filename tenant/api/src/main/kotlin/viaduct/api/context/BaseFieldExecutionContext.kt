@@ -14,7 +14,7 @@ import viaduct.apiannotations.StableApi
 interface BaseFieldExecutionContext<
     Q : Query,
     A : Arguments,
-    O : CompositeOutput
+    R : CompositeOutput
 > : ResolverExecutionContext<Q> {
     /**
      * A value of [Q], with any (and only) selections from [viaduct.api.Resolver.queryValueFragment]
@@ -48,8 +48,8 @@ interface BaseFieldExecutionContext<
     val arguments: A
 
     /**
-     * The [SelectionSet] for [O] that the caller provided. If this field does not have a
+     * The [SelectionSet] for [R] that the caller provided. If this field does not have a
      * selection set (i.e. it has a scalar or enum type), this returns [SelectionSet.NoSelections].
      */
-    fun selections(): SelectionSet<O>
+    fun selections(): SelectionSet<R>
 }

@@ -10,7 +10,7 @@ import viaduct.java.api.types.NodeObject;
 /**
  * Base interface for Node resolver implementations in the Java Tenant API.
  *
- * <p>This is the Java equivalent of Kotlin's {@code NodeResolverBase<T>}. Generated node resolver
+ * <p>This is the Java equivalent of Kotlin's {@code NodeResolverBase<R>}. Generated node resolver
  * base classes implement this interface, and tenant developers extend those generated classes.
  *
  * <p>Node resolvers handle resolution for types implementing the GraphQL Node interface, which
@@ -61,12 +61,12 @@ import viaduct.java.api.types.NodeObject;
  * }
  * }</pre>
  *
- * @param <T> the Node type being resolved (must implement NodeObject)
+ * @param <R> the Node type being resolved (must implement NodeObject)
  */
-public interface NodeResolverBase<T extends NodeObject> {
+public interface NodeResolverBase<R extends NodeObject> {
 
   /** Context type alias for node resolvers, providing type-safe access to the node's global ID. */
-  interface Context<T extends NodeObject> extends NodeExecutionContext<T> {}
+  interface Context<R extends NodeObject> extends NodeExecutionContext<R> {}
 
   /**
    * Resolves a single node by its global ID.
@@ -80,7 +80,7 @@ public interface NodeResolverBase<T extends NodeObject> {
    * @param ctx the execution context containing the node's global ID
    * @return a future that completes with the resolved node, or null if not found
    */
-  default CompletableFuture<T> resolve(Context<T> ctx) {
+  default CompletableFuture<R> resolve(Context<R> ctx) {
     throw new UnsupportedOperationException(
         "Node resolver must implement either resolve() or batchResolve(), but not both");
   }
@@ -100,7 +100,7 @@ public interface NodeResolverBase<T extends NodeObject> {
    * @param contexts list of execution contexts, one per node ID
    * @return a future that completes with a map from context to resolved node (or null if not found)
    */
-  default CompletableFuture<Map<Context<T>, T>> batchResolve(List<Context<T>> contexts) {
+  default CompletableFuture<Map<Context<R>, R>> batchResolve(List<Context<R>> contexts) {
     throw new UnsupportedOperationException(
         "Node resolver must implement either resolve() or batchResolve(), but not both");
   }
@@ -118,7 +118,7 @@ public interface NodeResolverBase<T extends NodeObject> {
    * @param contexts the list of node contexts
    * @return list of internal ID strings
    */
-  default List<String> extractInternalIds(List<Context<T>> contexts) {
+  default List<String> extractInternalIds(List<Context<R>> contexts) {
     return contexts.stream().map(ctx -> ctx.getId().getInternalID()).toList();
   }
 
@@ -140,7 +140,7 @@ public interface NodeResolverBase<T extends NodeObject> {
    * @param contexts the list of node contexts
    * @return map from global ID to context
    */
-  default Map<GlobalID<T>, Context<T>> createIdToContextMap(List<Context<T>> contexts) {
+  default Map<GlobalID<R>, Context<R>> createIdToContextMap(List<Context<R>> contexts) {
     return contexts.stream()
         .collect(
             java.util.stream.Collectors.toMap(

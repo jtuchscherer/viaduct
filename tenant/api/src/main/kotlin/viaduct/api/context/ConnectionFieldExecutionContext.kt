@@ -12,10 +12,10 @@ import viaduct.apiannotations.ExperimentalApi
  * Extends [FieldExecutionContext] to provide specialized handling for
  * GraphQL Relay-style connection fields.
  *
- * @param T The parent object type containing this connection field.
+ * @param O The parent object type containing this connection field.
  * @param Q The query type for data fetching.
  * @param A The connection arguments type for pagination parameters.
- * @param O The connection output type.
+ * @param R The connection output type.
  * @see FieldExecutionContext
  * @see Connection
  * @see ConnectionArguments
@@ -23,8 +23,8 @@ import viaduct.apiannotations.ExperimentalApi
 
 @ExperimentalApi
 interface ConnectionFieldExecutionContext<
-    T : Object,
+    O : Object,
     Q : Query,
     A : ConnectionArguments,
-    O : Connection<*, *>,
-> : FieldExecutionContext<T, Q, A, O>
+    R : Connection<*, *>,
+> : FieldExecutionContext<O, Q, A, R>

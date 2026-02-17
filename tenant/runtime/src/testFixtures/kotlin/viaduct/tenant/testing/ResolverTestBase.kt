@@ -83,10 +83,10 @@ import viaduct.tenant.runtime.select.SelectionSetImpl
  * ```kotlin
  * class MyResolverTest {
  *     private val tester = FieldResolverTester.create<
- *         MyObject,           // Object type (T)
+ *         MyObject,           // Object type (O)
  *         Query,              // Query type (Q)
  *         MyArguments,        // Arguments type (A)
- *         MyOutput            // Output type (O)
+ *         MyOutput            // Output type (R)
  *     >(
  *         ResolverTester.TesterConfig(schemaSDL = MY_SCHEMA_SDL)
  *     )

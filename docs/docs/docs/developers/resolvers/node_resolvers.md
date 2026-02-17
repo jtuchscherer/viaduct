@@ -76,12 +76,12 @@ Alternatively, if the user service provides a batch endpoint, you should impleme
 Both `resolve` and `batchResolve` take `Context` objects as input. This class is an instance of {{ kdoc("viaduct.api.context.NodeExecutionContext") }}:
 
 ```kotlin
-interface NodeExecutionContext<T: NodeObject>: ResolverExecutionContext {
-  val id: GlobalID<T>
-  fun selections(): SelectionSet<T>
+interface NodeExecutionContext<R: NodeObject>: ResolverExecutionContext {
+  val id: GlobalID<R>
+  fun selections(): SelectionSet<R>
 }
 ```
-For the example `User` type, the `T` type would be the User [GRT](../generated_code/index.md).
+For the example `User` type, the `R` type would be the User [GRT](../generated_code/index.md).
 
 `NodeExecutionContext` includes the ID of the node to be resolved, and the selection set for the node being requested by the query. Most node resolvers are not "selective," i.e., they ignore this selection set and thus don’t call this function. In this case, as discussed above, it’s important that the node resolver returns its entire responsibility set.
 

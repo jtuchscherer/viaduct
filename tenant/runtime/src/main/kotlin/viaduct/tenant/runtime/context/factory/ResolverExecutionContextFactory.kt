@@ -108,8 +108,8 @@ class NodeExecutionContextFactory(
     }
 
     @VisibleForTest
-    class FakeResolverBase<T : NodeObject> : NodeResolverBase<T> {
-        class Context<T : NodeObject>(ctx: NodeExecutionContext<T>) : NodeExecutionContext<T> by ctx, InternalContext by (ctx as InternalContext)
+    class FakeResolverBase<R : NodeObject> : NodeResolverBase<R> {
+        class Context<R : NodeObject>(ctx: NodeExecutionContext<R>) : NodeExecutionContext<R> by ctx, InternalContext by (ctx as InternalContext)
     }
 }
 
@@ -188,9 +188,9 @@ class FieldExecutionContextFactory internal constructor(
     }
 
     @VisibleForTest
-    class FakeResolverBase<O : CompositeOutput> : ResolverBase<O> {
-        class Context<T : Object, Q : Query, A : Arguments, O : CompositeOutput>(ctx: FieldExecutionContext<T, Q, A, O>) :
-            FieldExecutionContext<T, Q, A, O> by ctx, InternalContext by (ctx as InternalContext)
+    class FakeResolverBase<R : CompositeOutput> : ResolverBase<R> {
+        class Context<O : Object, Q : Query, A : Arguments, R : CompositeOutput>(ctx: FieldExecutionContext<O, Q, A, R>) :
+            FieldExecutionContext<O, Q, A, R> by ctx, InternalContext by (ctx as InternalContext)
     }
 
     companion object {

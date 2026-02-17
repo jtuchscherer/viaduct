@@ -13,8 +13,8 @@ interface MutationFieldExecutionContext<
     Q : Query,
     M : Mutation,
     A : Arguments,
-    O : CompositeOutput
-> : BaseFieldExecutionContext<Q, A, O> {
+    R : CompositeOutput
+> : BaseFieldExecutionContext<Q, A, R> {
     /**
      * Loads the provided selections on the root Mutation type, and returns the response typed as [M].
      * This is a convenience method that combines [selectionsFor] and [mutation].

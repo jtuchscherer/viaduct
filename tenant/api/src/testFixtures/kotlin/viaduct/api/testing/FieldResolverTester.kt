@@ -29,10 +29,10 @@ import viaduct.apiannotations.VisibleForTest
  * ```kotlin
  * class WishlistNameResolverTest {
  *     private val tester = FieldResolverTester.create<
- *         Wishlist,                    // T: Object type
+ *         Wishlist,                    // O: Object type
  *         Query,                       // Q: Query type
  *         Wishlist_Name_Arguments,     // A: Arguments type
- *         String                       // O: Output type
+ *         String                       // R: Return type
  *     >(
  *         ResolverTester.TesterConfig(
  *             schemaSDL = MY_SCHEMA_SDL
@@ -57,16 +57,16 @@ import viaduct.apiannotations.VisibleForTest
  *
  * ## Type Parameters
  *
- * - **T**: The Object type that this field belongs to (e.g., `Wishlist`, `User`)
+ * - **O**: The Object type that this field belongs to (e.g., `Wishlist`, `User`)
  * - **Q**: The Query type (usually just `Query`)
  * - **A**: The Arguments type for this field (e.g., `Wishlist_Name_Arguments`)
- * - **O**: The output/return type of the field (e.g., `String`, `User`, `List<Item>`)
+ * - **R**: The return/selection set type of the field (e.g., `String`, `User`, `List<Item>`)
  *
  * @since 1.0
  */
 @StableApi
 @VisibleForTest
-interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : CompositeOutput> : ResolverTester {
+interface FieldResolverTester<O : Object, Q : Query, A : Arguments, R : CompositeOutput> : ResolverTester {
     /**
      * Test a field resolver with the provided configuration.
      *
@@ -89,9 +89,9 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
      * ```
      */
     suspend fun test(
-        resolver: ResolverBase<O>,
-        block: FieldTestConfig<T, Q, A, O>.() -> Unit
-    ): O
+        resolver: ResolverBase<R>,
+        block: FieldTestConfig<O, Q, A, R>.() -> Unit
+    ): R
 
     /**
      * Test a batch field resolver with the provided configuration.
@@ -116,9 +116,9 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
      * ```
      */
     suspend fun testBatch(
-        resolver: ResolverBase<O>,
-        block: BatchFieldTestConfig<T, Q, A, O>.() -> Unit
-    ): List<FieldValue<O>>
+        resolver: ResolverBase<R>,
+        block: BatchFieldTestConfig<O, Q, A, R>.() -> Unit
+    ): List<FieldValue<R>>
 
     /**
      * Configuration for field resolver tests.
@@ -133,7 +133,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
      * - **selections**: The selection set for the field's return type
      * - **contextQueryValues**: Query objects for `ctx.query()` calls
      */
-    class FieldTestConfig<T : Object, Q : Query, A : Arguments, O : CompositeOutput> {
+    class FieldTestConfig<O : Object, Q : Query, A : Arguments, R : CompositeOutput> {
         /**
          * The object containing the field being resolved.
          * This is **required** and must be set before calling `test()`.
@@ -145,7 +145,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          *     .build()
          * ```
          */
-        var objectValue: T? = null
+        var objectValue: O? = null
 
         /**
          * Query-level data accessible via `ctx.queryValue`.
@@ -175,7 +175,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          * Selection set for the field's return type.
          * Defaults to [SelectionSet.NoSelections] which indicates no specific fields are selected.
          */
-        var selections: SelectionSet<O>? = null
+        var selections: SelectionSet<R>? = null
 
         /** Query objects for `ctx.query()` calls */
         var contextQueryValues: List<Query> = emptyList()
@@ -195,12 +195,12 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
      *
      * **Note:** Batch resolvers do not support per-item arguments.
      */
-    class BatchFieldTestConfig<T : Object, Q : Query, A : Arguments, O : CompositeOutput> {
+    class BatchFieldTestConfig<O : Object, Q : Query, A : Arguments, R : CompositeOutput> {
         /**
          * List of objects for batch resolution.
          * This is **required** and must contain at least one element.
          */
-        var objectValues: List<T> = emptyList()
+        var objectValues: List<O> = emptyList()
 
         /**
          * List of query values (one per object).
@@ -216,7 +216,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          * Selection set for all items in the batch.
          * Defaults to [SelectionSet.NoSelections] if not set.
          */
-        var selections: SelectionSet<O>? = null
+        var selections: SelectionSet<R>? = null
 
         /** Query objects for `ctx.query()` calls */
         var contextQueryValues: List<Query> = emptyList()
@@ -231,10 +231,10 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          *
          * ## Type Parameters
          * All four type parameters must be specified explicitly:
-         * - **T**: Object type (e.g., `Wishlist`)
+         * - **O**: Object type (e.g., `Wishlist`)
          * - **Q**: Query type (usually just `Query`)
          * - **A**: Arguments type (e.g., `Wishlist_Name_Arguments` or `Arguments.NoArguments`)
-         * - **O**: Output type (e.g., `String`, `User`, etc.)
+         * - **R**: Return type (e.g., `String`, `User`, etc.)
          *
          * ## Example
          * ```kotlin
@@ -242,7 +242,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          *     Wishlist,                   // Object type
          *     Query,                      // Query type
          *     Wishlist_Name_Arguments,    // Arguments type
-         *     String                      // Output type
+         *     String                      // Return type
          * >(
          *     ResolverTester.TesterConfig(schemaSDL = schemaSDL)
          * )
@@ -251,7 +251,7 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
          * @param config Configuration specifying schema and GRT package
          * @return A type-safe field resolver tester
          */
-        fun <T : Object, Q : Query, A : Arguments, O : CompositeOutput> create(config: ResolverTester.TesterConfig): FieldResolverTester<T, Q, A, O> = FieldResolverTesterImpl(config)
+        fun <O : Object, Q : Query, A : Arguments, R : CompositeOutput> create(config: ResolverTester.TesterConfig): FieldResolverTester<O, Q, A, R> = FieldResolverTesterImpl(config)
     }
 }
 

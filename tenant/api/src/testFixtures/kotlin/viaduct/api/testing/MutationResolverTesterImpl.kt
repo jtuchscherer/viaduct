@@ -29,9 +29,9 @@ import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
  * This class is package-private and should not be used directly.
  * Use [MutationResolverTester.create] instead.
  */
-internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments, O : CompositeOutput>(
+internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments, R : CompositeOutput>(
     override val config: ResolverTester.TesterConfig
-) : MutationResolverTester<Q, M, A, O> {
+) : MutationResolverTester<Q, M, A, R> {
     private val schema = ViaductSchema(createSchema(config.schemaSDL))
     private val reflectionLoader = mockReflectionLoader(config.grtPackage, config.classLoader)
     private val internalContext = MockInternalContext(schema, GlobalIDCodecDefault, reflectionLoader)
@@ -41,10 +41,10 @@ internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments
     private val selectionSetFactory: SelectionSetFactory = MockSelectionSetFactory(schema)
 
     override suspend fun test(
-        resolver: ResolverBase<O>,
-        block: MutationResolverTester.MutationTestConfig<Q, M, A, O>.() -> Unit
-    ): O {
-        val testConfig = MutationResolverTester.MutationTestConfig<Q, M, A, O>().apply(block)
+        resolver: ResolverBase<R>,
+        block: MutationResolverTester.MutationTestConfig<Q, M, A, R>.() -> Unit
+    ): R {
+        val testConfig = MutationResolverTester.MutationTestConfig<Q, M, A, R>().apply(block)
 
         // Validate required fields
         val arguments = testConfig.arguments
@@ -54,7 +54,7 @@ internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments
             )
 
         val queryValue = testConfig.queryValue ?: NullQuery as Q
-        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<O>)
+        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<R>)
 
         val ctx = createMutationContext(
             queryValue = queryValue,
@@ -72,10 +72,10 @@ internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments
         queryValue: Q,
         arguments: A,
         requestContext: Any?,
-        selections: SelectionSet<O>,
+        selections: SelectionSet<R>,
         contextQueryValues: List<Query>,
         contextMutationValues: List<Mutation>
-    ): MutationFieldExecutionContext<Q, M, A, O> {
+    ): MutationFieldExecutionContext<Q, M, A, R> {
         val queryResults = buildContextQueryMap(contextQueryValues)
         val mutationResults = buildContextMutationMap(contextMutationValues)
 
@@ -92,9 +92,9 @@ internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments
     }
 
     private suspend fun invokeResolver(
-        resolver: ResolverBase<O>,
-        ctx: MutationFieldExecutionContext<Q, M, A, O>
-    ): O {
+        resolver: ResolverBase<R>,
+        ctx: MutationFieldExecutionContext<Q, M, A, R>
+    ): R {
         // Get the Context nested class from the resolver
         val contextClass = getContextClass(resolver)
 
@@ -109,10 +109,10 @@ internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments
         @Suppress("UNCHECKED_CAST")
         return resolver::class.declaredFunctions
             .first { it.name == "resolve" }
-            .callSuspend(resolver, wrappedCtx) as O
+            .callSuspend(resolver, wrappedCtx) as R
     }
 
-    private fun getContextClass(resolver: ResolverBase<O>): KClass<*> {
+    private fun getContextClass(resolver: ResolverBase<R>): KClass<*> {
         val contextClass = resolver.javaClass.classes
             .firstOrNull { it.simpleName == "Context" }
             ?.kotlin

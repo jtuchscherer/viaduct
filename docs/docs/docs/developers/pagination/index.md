@@ -163,11 +163,11 @@ Connection field resolvers receive a {{ kdoc("viaduct.api.context.ConnectionFiel
 
 ```kotlin
 interface ConnectionFieldExecutionContext<
-    T : Object,
+    O : Object,
     Q : Query,
     A : ConnectionArguments,
-    O : Connection<*, *>,
-> : FieldExecutionContext<T, Q, A, O>
+    R : Connection<*, *>,
+> : FieldExecutionContext<O, Q, A, R>
 ```
 
 This provides type-safe access to pagination arguments and ensures compatibility with builder utilities.

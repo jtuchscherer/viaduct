@@ -30,9 +30,9 @@ import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
  * This class is package-private and should not be used directly.
  * Use [FieldResolverTester.create] instead.
  */
-internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O : CompositeOutput>(
+internal class FieldResolverTesterImpl<O : Object, Q : Query, A : Arguments, R : CompositeOutput>(
     override val config: ResolverTester.TesterConfig
-) : FieldResolverTester<T, Q, A, O> {
+) : FieldResolverTester<O, Q, A, R> {
     private val schema = ViaductSchema(createSchema(config.schemaSDL))
     private val reflectionLoader = mockReflectionLoader(config.grtPackage, config.classLoader)
     private val internalContext = MockInternalContext(schema, GlobalIDCodecDefault, reflectionLoader)
@@ -42,10 +42,10 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
     private val selectionSetFactory: SelectionSetFactory = MockSelectionSetFactory(schema)
 
     override suspend fun test(
-        resolver: ResolverBase<O>,
-        block: FieldResolverTester.FieldTestConfig<T, Q, A, O>.() -> Unit
-    ): O {
-        val testConfig = FieldResolverTester.FieldTestConfig<T, Q, A, O>().apply(block)
+        resolver: ResolverBase<R>,
+        block: FieldResolverTester.FieldTestConfig<O, Q, A, R>.() -> Unit
+    ): R {
+        val testConfig = FieldResolverTester.FieldTestConfig<O, Q, A, R>().apply(block)
 
         // Validate required fields
         val objectValue = testConfig.objectValue
@@ -63,7 +63,7 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
 
         @Suppress("UNCHECKED_CAST")
         val queryValue = testConfig.queryValue ?: NullQuery as Q
-        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<O>)
+        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<R>)
 
         val ctx = createFieldContext(
             objectValue = objectValue,
@@ -78,10 +78,10 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
     }
 
     override suspend fun testBatch(
-        resolver: ResolverBase<O>,
-        block: FieldResolverTester.BatchFieldTestConfig<T, Q, A, O>.() -> Unit
-    ): List<FieldValue<O>> {
-        val testConfig = FieldResolverTester.BatchFieldTestConfig<T, Q, A, O>().apply(block)
+        resolver: ResolverBase<R>,
+        block: FieldResolverTester.BatchFieldTestConfig<O, Q, A, R>.() -> Unit
+    ): List<FieldValue<R>> {
+        val testConfig = FieldResolverTester.BatchFieldTestConfig<O, Q, A, R>().apply(block)
 
         require(testConfig.objectValues.isNotEmpty()) {
             "objectValues must not be empty for batch testing. " +
@@ -100,7 +100,7 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
             testConfig.queryValues
         }
 
-        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<O>)
+        val selections = testConfig.selections ?: (SelectionSet.NoSelections as SelectionSet<R>)
 
         val contexts = testConfig.objectValues.zip(queryValues) { obj, query ->
             createFieldContext(
@@ -117,13 +117,13 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
     }
 
     private fun createFieldContext(
-        objectValue: T,
+        objectValue: O,
         queryValue: Q,
         arguments: A,
         requestContext: Any?,
-        selections: SelectionSet<O>,
+        selections: SelectionSet<R>,
         contextQueryValues: List<Query>
-    ): FieldExecutionContext<T, Q, A, O> {
+    ): FieldExecutionContext<O, Q, A, R> {
         val queryResults = buildContextQueryMap(contextQueryValues)
 
         return MockFieldExecutionContext(
@@ -139,9 +139,9 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
     }
 
     private suspend fun invokeResolver(
-        resolver: ResolverBase<O>,
-        ctx: FieldExecutionContext<T, Q, A, O>
-    ): O {
+        resolver: ResolverBase<R>,
+        ctx: FieldExecutionContext<O, Q, A, R>
+    ): R {
         // Get the Context nested class from the resolver
         val contextClass = getContextClass(resolver)
 
@@ -156,13 +156,13 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
         @Suppress("UNCHECKED_CAST")
         return resolver::class.declaredFunctions
             .first { it.name == "resolve" }
-            .callSuspend(resolver, wrappedCtx) as O
+            .callSuspend(resolver, wrappedCtx) as R
     }
 
     private suspend fun invokeBatchResolver(
-        resolver: ResolverBase<O>,
-        contexts: List<FieldExecutionContext<T, Q, A, O>>
-    ): List<FieldValue<O>> {
+        resolver: ResolverBase<R>,
+        contexts: List<FieldExecutionContext<O, Q, A, R>>
+    ): List<FieldValue<R>> {
         // Get the Context nested class
         val contextClass = getContextClass(resolver)
 
@@ -185,10 +185,10 @@ internal class FieldResolverTesterImpl<T : Object, Q : Query, A : Arguments, O :
         // Call batchResolve method
         // Note: callSuspend automatically unwraps InvocationTargetException
         @Suppress("UNCHECKED_CAST")
-        return batchResolveMethod.callSuspend(resolver, wrappedContexts) as List<FieldValue<O>>
+        return batchResolveMethod.callSuspend(resolver, wrappedContexts) as List<FieldValue<R>>
     }
 
-    private fun getContextClass(resolver: ResolverBase<O>): KClass<*> {
+    private fun getContextClass(resolver: ResolverBase<R>): KClass<*> {
         val contextClass = resolver.javaClass.classes
             .firstOrNull { it.simpleName == "Context" }
             ?.kotlin

@@ -8,6 +8,6 @@ import viaduct.apiannotations.StableApi
  * This is used to resolve variables dynamically based on the current request context.
  */
 @StableApi
-interface VariablesProviderContext<T : Arguments> : ExecutionContext {
-    val arguments: T
+interface VariablesProviderContext<A : Arguments> : ExecutionContext {
+    val arguments: A
 }

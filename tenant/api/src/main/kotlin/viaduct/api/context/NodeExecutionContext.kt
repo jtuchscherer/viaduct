@@ -17,11 +17,11 @@ import viaduct.apiannotations.StableApi
  * @see viaduct.api.SelectiveResolver marker interface for selective resolvers
  */
 @StableApi
-interface NodeExecutionContext<T : NodeObject> : ResolverExecutionContext<Query> {
+interface NodeExecutionContext<R : NodeObject> : ResolverExecutionContext<Query> {
     /**
      * ID of the node that is being resolved
      */
-    val id: GlobalID<T>
+    val id: GlobalID<R>
 }
 
 /**
@@ -35,9 +35,9 @@ interface NodeExecutionContext<T : NodeObject> : ResolverExecutionContext<Query>
  * @see viaduct.api.SelectiveResolver marker interface for selective resolvers
  */
 @StableApi
-interface SelectiveNodeExecutionContext<T : NodeObject> : NodeExecutionContext<T> {
+interface SelectiveNodeExecutionContext<R : NodeObject> : NodeExecutionContext<R> {
     /**
-     * The [SelectionSet] for [T] that the caller provided
+     * The [SelectionSet] for [R] that the caller provided
      */
-    fun selections(): SelectionSet<T>
+    fun selections(): SelectionSet<R>
 }

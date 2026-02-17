@@ -31,7 +31,7 @@ import viaduct.apiannotations.VisibleForTest
  *         Query,                              // Q: Query type
  *         Mutation,                           // M: Mutation type
  *         Mutation_CreateWishlist_Arguments,  // A: Arguments type
- *         CreateWishlistPayload               // O: Output type
+ *         CreateWishlistPayload               // R: Return type
  *     >(
  *         ResolverTester.TesterConfig(
  *             schemaSDL = MY_SCHEMA_SDL
@@ -57,13 +57,13 @@ import viaduct.apiannotations.VisibleForTest
  * - **Q**: The Query type (usually just `Query`)
  * - **M**: The Mutation type (usually just `Mutation`)
  * - **A**: The Arguments type for this mutation (e.g., `Mutation_CreateWishlist_Arguments`)
- * - **O**: The output/return type of the mutation (e.g., `CreateWishlistPayload`)
+ * - **R**: The return/selection set type of the mutation (e.g., `CreateWishlistPayload`)
  *
  * @since 1.0
  */
 @StableApi
 @VisibleForTest
-interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : CompositeOutput> : ResolverTester {
+interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, R : CompositeOutput> : ResolverTester {
     /**
      * Test a mutation resolver with the provided configuration.
      *
@@ -86,9 +86,9 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
      * ```
      */
     suspend fun test(
-        resolver: ResolverBase<O>,
-        block: MutationTestConfig<Q, M, A, O>.() -> Unit
-    ): O
+        resolver: ResolverBase<R>,
+        block: MutationTestConfig<Q, M, A, R>.() -> Unit
+    ): R
 
     /**
      * Configuration for mutation resolver tests.
@@ -103,7 +103,7 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
      * - **contextQueryValues**: Query objects for `ctx.query()` calls
      * - **contextMutationValues**: Mutation objects for `ctx.mutation()` calls
      */
-    class MutationTestConfig<Q : Query, M : Mutation, A : Arguments, O : CompositeOutput> {
+    class MutationTestConfig<Q : Query, M : Mutation, A : Arguments, R : CompositeOutput> {
         /**
          * Query-level data accessible via `ctx.queryValue`.
          * Optional - defaults to an empty query placeholder if not set.
@@ -129,7 +129,7 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
          * Selection set for the mutation's return type.
          * Defaults to [SelectionSet.NoSelections] which indicates no specific fields are selected.
          */
-        var selections: SelectionSet<O>? = null
+        var selections: SelectionSet<R>? = null
 
         /** Query objects for `ctx.query()` calls */
         var contextQueryValues: List<Query> = emptyList()
@@ -150,7 +150,7 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
          * - **Q**: Query type (usually just `Query`)
          * - **M**: Mutation type (usually just `Mutation`)
          * - **A**: Arguments type (e.g., `Mutation_CreateWishlist_Arguments`)
-         * - **O**: Output type (e.g., `CreateWishlistPayload`)
+         * - **R**: Return type (e.g., `CreateWishlistPayload`)
          *
          * ## Example
          * ```kotlin
@@ -158,7 +158,7 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
          *     Query,                              // Query type
          *     Mutation,                           // Mutation type
          *     Mutation_CreateWishlist_Arguments,  // Arguments type
-         *     CreateWishlistPayload               // Output type
+         *     CreateWishlistPayload               // Return type
          * >(
          *     ResolverTester.TesterConfig(schemaSDL = schemaSDL)
          * )
@@ -167,6 +167,6 @@ interface MutationResolverTester<Q : Query, M : Mutation, A : Arguments, O : Com
          * @param config Configuration specifying schema and GRT package
          * @return A type-safe mutation resolver tester
          */
-        fun <Q : Query, M : Mutation, A : Arguments, O : CompositeOutput> create(config: ResolverTester.TesterConfig): MutationResolverTester<Q, M, A, O> = MutationResolverTesterImpl(config)
+        fun <Q : Query, M : Mutation, A : Arguments, R : CompositeOutput> create(config: ResolverTester.TesterConfig): MutationResolverTester<Q, M, A, R> = MutationResolverTesterImpl(config)
     }
 }

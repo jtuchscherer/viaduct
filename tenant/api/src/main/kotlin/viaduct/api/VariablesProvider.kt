@@ -25,11 +25,11 @@ import viaduct.apiannotations.StableApi
  * ```
  */
 @StableApi
-fun interface VariablesProvider<T : Arguments> {
+fun interface VariablesProvider<A : Arguments> {
     /**
      * Return a Map with provided variable values.
      * The map must contain exactly the keys in the [Variables] annotation on the containing
      * VariablesProvider class.
      */
-    suspend fun provide(context: VariablesProviderContext<T>): Map<String, Any?>
+    suspend fun provide(context: VariablesProviderContext<A>): Map<String, Any?>
 }

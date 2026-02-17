@@ -63,7 +63,7 @@ class MyResolverTest {
         MyObject,       // Object type
         Query,          // Query type
         MyArguments,    // Arguments type
-        MyOutput        // Output type
+        MyOutput        // Return type
     >(
         TesterConfig(schemaSDL = MY_SCHEMA_SDL)
     )
@@ -83,10 +83,10 @@ class MyResolverTest {
 
 The new API requires explicit type parameters. Here's how to find them:
 
-1. **Object type (T)**: The type containing the field (e.g., `Wishlist`, `User`)
+1. **Object type (O)**: The type containing the field (e.g., `Wishlist`, `User`)
 2. **Query type (Q)**: Usually just `Query`
 3. **Arguments type (A)**: Generated arguments class (e.g., `Wishlist_Name_Arguments`)
-4. **Output type (O)**: Return type of the resolver (e.g., `String`, `User`)
+4. **Return type (R)**: Return type of the resolver (e.g., `String`, `User`)
 
 Look at your resolver class signature for hints:
 
@@ -99,7 +99,7 @@ class Wishlist_NameResolver : WishlistResolvers.Name() {
 // Extract these types:
 // - Object type: Wishlist (the parent type)
 // - Arguments type: Wishlist_Name_Arguments
-// - Output type: String (from resolve return type)
+// - Return type: String (from resolve return type)
 ```
 
 ## Migration Examples
@@ -317,15 +317,15 @@ class Wishlist_NameResolver : ResolverBase<String> {
 ### FieldResolverTester
 
 ```kotlin
-interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : CompositeOutput> {
+interface FieldResolverTester<O : Object, Q : Query, A : Arguments, R : CompositeOutput> {
     val context: ExecutionContext
     val config: TesterConfig
 
-    suspend fun test(resolver: ResolverBase<O>, block: FieldTestConfig.() -> Unit): O
-    suspend fun testBatch(resolver: ResolverBase<O>, block: BatchFieldTestConfig.() -> Unit): List<FieldValue<O>>
+    suspend fun test(resolver: ResolverBase<R>, block: FieldTestConfig.() -> Unit): R
+    suspend fun testBatch(resolver: ResolverBase<R>, block: BatchFieldTestConfig.() -> Unit): List<FieldValue<R>>
 
     companion object {
-        fun <T, Q, A, O> create(config: TesterConfig): FieldResolverTester<T, Q, A, O>
+        fun <O, Q, A, R> create(config: TesterConfig): FieldResolverTester<O, Q, A, R>
     }
 }
 ```
@@ -333,14 +333,14 @@ interface FieldResolverTester<T : Object, Q : Query, A : Arguments, O : Composit
 ### MutationResolverTester
 
 ```kotlin
-interface MutationResolverTester<Q : Query, A : Arguments, O : CompositeOutput> {
+interface MutationResolverTester<Q : Query, A : Arguments, R : CompositeOutput> {
     val context: ExecutionContext
     val config: TesterConfig
 
-    suspend fun test(resolver: ResolverBase<O>, block: MutationTestConfig.() -> Unit): O
+    suspend fun test(resolver: ResolverBase<R>, block: MutationTestConfig.() -> Unit): R
 
     companion object {
-        fun <Q, A, O> create(config: TesterConfig): MutationResolverTester<Q, A, O>
+        fun <Q, A, R> create(config: TesterConfig): MutationResolverTester<Q, A, R>
     }
 }
 ```
@@ -348,15 +348,15 @@ interface MutationResolverTester<Q : Query, A : Arguments, O : CompositeOutput> 
 ### NodeResolverTester
 
 ```kotlin
-interface NodeResolverTester<T : NodeObject> {
+interface NodeResolverTester<R : NodeObject> {
     val context: ExecutionContext
     val config: TesterConfig
 
-    suspend fun test(resolver: NodeResolverBase<T>, block: NodeTestConfig.() -> Unit): T
-    suspend fun testBatch(resolver: NodeResolverBase<T>, block: BatchNodeTestConfig.() -> Unit): List<FieldValue<T>>
+    suspend fun test(resolver: NodeResolverBase<R>, block: NodeTestConfig.() -> Unit): R
+    suspend fun testBatch(resolver: NodeResolverBase<R>, block: BatchNodeTestConfig.() -> Unit): List<FieldValue<R>>
 
     companion object {
-        fun <T> create(config: TesterConfig): NodeResolverTester<T>
+        fun <R> create(config: TesterConfig): NodeResolverTester<R>
     }
 }
 ```

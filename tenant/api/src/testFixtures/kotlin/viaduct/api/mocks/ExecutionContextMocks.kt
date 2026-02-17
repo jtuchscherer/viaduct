@@ -176,37 +176,37 @@ open class MockResolverExecutionContext<Q : Query>(
 }
 
 @Suppress("DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES")
-class MockFieldExecutionContext<T : Object, Q : Query, A : Arguments, O : CompositeOutput>(
-    override val objectValue: T,
+class MockFieldExecutionContext<O : Object, Q : Query, A : Arguments, R : CompositeOutput>(
+    override val objectValue: O,
     override val queryValue: Q,
     override val arguments: A,
     override val requestContext: Any?,
-    private val selectionsValue: SelectionSet<O>,
+    private val selectionsValue: SelectionSet<R>,
     internalContext: InternalContext,
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     selectionSetFactory: SelectionSetFactory? = null,
 ) : MockResolverExecutionContext<Q>(internalContext, queryResults, selectionSetFactory),
-    FieldExecutionContext<T, Q, A, O> {
+    FieldExecutionContext<O, Q, A, R> {
     override fun selections() = selectionsValue
 
     // In mock contexts, sync and lazy values are the same
-    override suspend fun getObjectValue(): T = objectValue
+    override suspend fun getObjectValue(): O = objectValue
 
     override suspend fun getQueryValue(): Q = queryValue
 }
 
 @Suppress("DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES")
-class MockMutationFieldExecutionContext<Q : Query, M : Mutation, A : Arguments, O : CompositeOutput>(
+class MockMutationFieldExecutionContext<Q : Query, M : Mutation, A : Arguments, R : CompositeOutput>(
     override val queryValue: Q,
     override val arguments: A,
     override val requestContext: Any?,
-    private val selectionsValue: SelectionSet<O>,
+    private val selectionsValue: SelectionSet<R>,
     internalContext: InternalContext,
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     private val mutationResults: PrebakedResults<Mutation> = EmptyPrebakedResults<Mutation>(),
     selectionSetFactory: SelectionSetFactory? = null,
 ) : MockResolverExecutionContext<Q>(internalContext, queryResults, selectionSetFactory),
-    MutationFieldExecutionContext<Q, M, A, O> {
+    MutationFieldExecutionContext<Q, M, A, R> {
     override fun selections() = selectionsValue
 
     // In mock contexts, sync and lazy values are the same
@@ -228,14 +228,14 @@ class MockMutationFieldExecutionContext<Q : Query, M : Mutation, A : Arguments, 
 }
 
 @Suppress("DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES")
-class MockNodeExecutionContext<T : NodeObject>(
-    override val id: GlobalID<T>,
+class MockNodeExecutionContext<R : NodeObject>(
+    override val id: GlobalID<R>,
     override val requestContext: Any? = null,
-    private val selectionsValue: SelectionSet<T>,
+    private val selectionsValue: SelectionSet<R>,
     internalContext: InternalContext,
     queryResults: PrebakedResults<Query> = EmptyPrebakedResults<Query>(),
     selectionSetFactory: SelectionSetFactory? = null,
 ) : MockResolverExecutionContext<Query>(internalContext, queryResults, selectionSetFactory),
-    SelectiveNodeExecutionContext<T> {
+    SelectiveNodeExecutionContext<R> {
     override fun selections() = selectionsValue
 }

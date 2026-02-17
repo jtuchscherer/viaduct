@@ -11,9 +11,9 @@ import viaduct.apiannotations.StableApi
  * An [ExecutionContext] provided to field resolvers
  */
 @StableApi
-interface FieldExecutionContext<T : Object, Q : Query, A : Arguments, O : CompositeOutput> : BaseFieldExecutionContext<Q, A, O> {
+interface FieldExecutionContext<O : Object, Q : Query, A : Arguments, R : CompositeOutput> : BaseFieldExecutionContext<Q, A, R> {
     /**
-     * A value of [T], with any (and only) selections from [viaduct.api.Resolver.objectValueFragment]
+     * A value of [O], with any (and only) selections from [viaduct.api.Resolver.objectValueFragment]
      * populated.
      * Attempting to access fields not declared in [viaduct.api.Resolver.objectValueFragment] will
      * throw a runtime exception.
@@ -21,19 +21,19 @@ interface FieldExecutionContext<T : Object, Q : Query, A : Arguments, O : Compos
      * This property provides lazy access to object selections. For synchronous access where all
      * selections are pre-resolved, use [getObjectValue] instead.
      */
-    val objectValue: T
+    val objectValue: O
 
     /**
      * Returns a synchronously-accessible version of [objectValue] where all selections have
      * been eagerly resolved.
      *
      * Unlike [objectValue] which resolves selections lazily on access, this method awaits
-     * the resolution of all selections upfront, returning a [T] that can be accessed
+     * the resolution of all selections upfront, returning a [O] that can be accessed
      * synchronously without suspending.
      *
      * Use this when you need to ensure all object value data is available before proceeding,
      * or when passing the object value to non-suspending code.
      */
     @ExperimentalApi
-    suspend fun getObjectValue(): T
+    suspend fun getObjectValue(): O
 }
