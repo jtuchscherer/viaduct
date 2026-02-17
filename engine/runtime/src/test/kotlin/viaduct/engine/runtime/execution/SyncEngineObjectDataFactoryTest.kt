@@ -17,7 +17,7 @@ import viaduct.engine.runtime.FieldErrorsException
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue
-import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setRawValue
+import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setEngineValue
 import viaduct.engine.runtime.ObjectEngineResultTestHelper
 import viaduct.engine.runtime.SyncEngineObjectDataFactory
 import viaduct.engine.runtime.SyncProxyEngineObjectData
@@ -204,7 +204,7 @@ class SyncEngineObjectDataFactoryTest {
             val accessError = IllegalAccessException("no access")
 
             oer.computeIfAbsent(ObjectEngineResult.Key("stringField")) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             "foo",
@@ -238,7 +238,7 @@ class SyncEngineObjectDataFactoryTest {
             val oer = ObjectEngineResultImpl.newForType(schema.schema.getObjectType("Query"))
 
             oer.computeIfAbsent(ObjectEngineResult.Key("stringField")) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             "allowed",
@@ -269,7 +269,7 @@ class SyncEngineObjectDataFactoryTest {
             val oer = ObjectEngineResultImpl.newForType(schema.schema.getObjectType("Query"))
 
             oer.computeIfAbsent(ObjectEngineResult.Key("field", null, mapOf("x" to 1))) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             42,
@@ -296,7 +296,7 @@ class SyncEngineObjectDataFactoryTest {
             val oer = ObjectEngineResultImpl.newForType(schema.schema.getObjectType("Query"))
 
             oer.computeIfAbsent(ObjectEngineResult.Key("field", "f1", mapOf("x" to 1))) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             11,
@@ -310,7 +310,7 @@ class SyncEngineObjectDataFactoryTest {
                 slotSetter.setCheckerValue(Value.fromValue(CheckerResult.Success))
             }
             oer.computeIfAbsent(ObjectEngineResult.Key("field", "f2", mapOf("x" to 2))) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             22,
@@ -339,7 +339,7 @@ class SyncEngineObjectDataFactoryTest {
             val oer = ObjectEngineResultImpl.newForType(schema.schema.getObjectType("Query"))
 
             oer.computeIfAbsent(ObjectEngineResult.Key("field", null, mapOf("x" to 99))) { slotSetter ->
-                slotSetter.setRawValue(
+                slotSetter.setEngineValue(
                     Value.fromValue(
                         FieldResolutionResult(
                             99,

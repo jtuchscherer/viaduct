@@ -35,9 +35,9 @@ import viaduct.engine.runtime.FetchedValueWithExtensions
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.LazyEngineObjectData
 import viaduct.engine.runtime.ObjectEngineResultImpl
-import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.RAW_VALUE_SLOT
+import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue
-import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setRawValue
+import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setEngineValue
 import viaduct.engine.runtime.Value
 import viaduct.engine.runtime.exceptions.FieldFetchingException
 import viaduct.engine.runtime.execution.FieldExecutionHelpers.buildDataFetchingEnvironment
@@ -319,7 +319,7 @@ class FieldResolver(
                 debug("Field @ {} with OER key: {} is not being fetched, fetching now...", parameters.path, oerKey)
             }
             val (result, checkerResult) = fetchField(field, parameters, dataFetchingEnvironmentProvider)
-            slotSetter.setRawValue(result)
+            slotSetter.setEngineValue(result)
             slotSetter.setCheckerValue(checkerResult)
         } as Value<FieldResolutionResult>
 
@@ -417,7 +417,7 @@ class FieldResolver(
                             itemFV,
                             effectiveResolutionPolicy
                         )
-                        slotSetter.setRawValue(Value.fromValue(itemFieldResolutionResult))
+                        slotSetter.setEngineValue(Value.fromValue(itemFieldResolutionResult))
 
                         // If this list item is an object, execute and store its type check in the checker slot
                         val oer = itemFieldResolutionResult.engineResult as? ObjectEngineResultImpl
@@ -514,15 +514,15 @@ class FieldResolver(
     }
 
     private fun extractFieldResolutionResult(cell: Cell): FieldResolutionResult {
-        val rawValue = cell.getValue(RAW_VALUE_SLOT)
-        return when (rawValue) {
+        val engineValue = cell.getValue(ENGINE_VALUE_SLOT)
+        return when (engineValue) {
             is Value.Sync<*> -> {
-                val result = rawValue.getOrThrow()
+                val result = engineValue.getOrThrow()
                 result as? FieldResolutionResult ?: throw IllegalStateException("Expected FieldResolutionResult but got ${result!!::class}")
             }
 
             else -> throw IllegalStateException(
-                "Expected the raw value slot to contain a Value.Sync<FieldResolutionResult>, but got ${rawValue::class}"
+                "Expected the engine value slot to contain a Value.Sync<FieldResolutionResult>, but got ${engineValue::class}"
             )
         }
     }

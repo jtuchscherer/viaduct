@@ -8,7 +8,7 @@ import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.RawSelection
 import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ACCESS_CHECK_SLOT
-import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.RAW_VALUE_SLOT
+import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 
 /**
  * Factory for creating [SyncProxyEngineObjectData] by eagerly resolving all selections
@@ -145,7 +145,7 @@ object SyncEngineObjectDataFactory {
             }
 
             is Cell -> {
-                val cellRaw = value.fetch(RAW_VALUE_SLOT)
+                val cellRaw = value.fetch(ENGINE_VALUE_SLOT)
                 val cellChecker = value.fetch(ACCESS_CHECK_SLOT)
                 val checkerException = extractCheckerException(cellChecker)
                 if (checkerException != null) {
@@ -163,7 +163,7 @@ object SyncEngineObjectDataFactory {
         // To understand why the above is correct:
         //
         // During query execution, field resolvers run and their results are wrapped
-        // in FieldResolutionResult before being stored in the RAW_VALUE_SLOT of a Cell.
+        // in FieldResolutionResult before being stored in the ENGINE_VALUE_SLOT of a Cell.
         // The FieldResolutionResult contains:
         //    - engineResult - the actual value (which could be an ObjectEngineResultImpl
         //      for nested objects)
