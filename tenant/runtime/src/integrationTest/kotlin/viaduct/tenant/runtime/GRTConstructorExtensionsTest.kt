@@ -14,7 +14,7 @@ import viaduct.api.internal.ObjectBase
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.MockReflectionLoader
 import viaduct.api.mocks.testGlobalId
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.api.mocks.createEngineObjectData
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.globalid.CreateUserInput
@@ -112,7 +112,7 @@ class GRTConstructorExtensionsTest {
         val data = mapOf(
             "id" to User.Reflection.testGlobalId("user123"), // GlobalIDCodecDefault uses Base64-encoded format
             "name" to "John Doe"
-            // Intentionally not providing email to test UnsetSelectionException
+            // Intentionally not providing email to test UnsetFieldException
         )
         val gqlType = schema.schema.getObjectType("User")
         val eod = createEngineObjectData(gqlType, data)
@@ -144,6 +144,6 @@ class GRTConstructorExtensionsTest {
                 user.getEmail()
             }
         }
-        assertInstanceOf(UnsetSelectionException::class.java, exception.cause)
+        assertInstanceOf(UnsetFieldException::class.java, exception.cause)
     }
 }

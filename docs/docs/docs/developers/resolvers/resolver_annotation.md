@@ -100,7 +100,7 @@ ctx.objectValue.getFirstName()
 ctx.queryValue.getListing().getCoverImage(alias = "cover")
 ```
 
-If the resolver tries to access a field not included within its required selection set, it results in an `UnsetSelectionException` at runtime.
+If the resolver tries to access a field not included within its required selection set, it results in an `UnsetFieldException` at runtime.
 
 In the Kotlin API, each of the field getters are suspend functions. Your resolver may begin execution before the selections have been fully resolved via their corresponding resolvers. If that happens, the field getter will suspend until the field is resolved.
 

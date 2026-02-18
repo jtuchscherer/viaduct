@@ -25,7 +25,7 @@ class ResolvedEngineObjectDataTest {
         assertSame(obj, eod.type)
         assertEquals(1, eod.get("x"))
         assertEquals(null, eod.get("y"))
-        assertThrows<UnsetSelectionException> {
+        assertThrows<UnsetFieldException> {
             eod.get("unset")
         }
         assertEquals(null, eod.getOrNull("unset"))

@@ -84,7 +84,7 @@ class UserDisplayNameResolver : UserResolvers.DisplayName() {
 }
 ```
 
-As this example illustrates, the `@Resolver` annotation can contain an optional fragment on the parent type of the field being resolved. We call this fragment the *required selection set* of the resolver. In this case, the required selection set asks for the `firstName` and `lastName` fields of `User`, which are combined to generate the user's display name. If a resolver attempts to access a field that’s not in its required selection set, an `UnsetSelectionException` is thrown at runtime.
+As this example illustrates, the `@Resolver` annotation can contain an optional fragment on the parent type of the field being resolved. We call this fragment the *required selection set* of the resolver. In this case, the required selection set asks for the `firstName` and `lastName` fields of `User`, which are combined to generate the user's display name. If a resolver attempts to access a field that’s not in its required selection set, an `UnsetFieldException` is thrown at runtime.
 
 The `@Resolver` annotation can also be used to declare data dependencies on the root Query type. Learn more about the annotation [here](resolver_annotation.md).
 
@@ -98,7 +98,7 @@ Both `resolve` and `batchResolve` take `Context` objects as input. This class is
 {{ codefile("tenant/api/src/main/kotlin/viaduct/api/context/FieldExecutionContext.kt", lang="kotlin") }}
 
 
-* `objectValue` gives access to the object that contains the field being resolved. Fields of that object can be accessed, but only if those fields are in the resolver’s required selection set. If the resolver tries to access a field not included within its required selection set, it results in an `UnsetSelectionException` at runtime.
+* `objectValue` gives access to the object that contains the field being resolved. Fields of that object can be accessed, but only if those fields are in the resolver’s required selection set. If the resolver tries to access a field not included within its required selection set, it results in an `UnsetFieldException` at runtime.
 
 * `queryValue` is similar to `objectValue`, but applies to the root query object of the Viaduct central schema. Like `objectValue`, fields on `queryValue` can only be accessed if they are in the resolver's required selection set.
 

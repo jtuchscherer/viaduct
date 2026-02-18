@@ -25,7 +25,7 @@ class ResolvedEngineObjectData(
 
     override fun get(selection: String): Any? {
         if (!data.containsKey(selection)) {
-            throw UnsetSelectionException(
+            throw UnsetFieldException(
                 selection,
                 type,
                 "Please set a value for $selection using the builder for ${type.name}"

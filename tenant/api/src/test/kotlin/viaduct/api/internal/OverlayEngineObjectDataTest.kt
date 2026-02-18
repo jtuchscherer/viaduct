@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.ResolvedEngineObjectData
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.api.mocks.MockSchema
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -76,7 +76,7 @@ class OverlayEngineObjectDataTest {
 
             val combined = OverlayEngineObjectData(overlay, base)
 
-            assertThrows<UnsetSelectionException> {
+            assertThrows<UnsetFieldException> {
                 runBlockingTest {
                     combined.fetch(FIELD_1)
                 }

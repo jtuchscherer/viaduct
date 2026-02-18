@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.api.mocks.createSchema
 
 class SyncProxyEngineObjectDataTest {
@@ -47,13 +47,13 @@ class SyncProxyEngineObjectDataTest {
     }
 
     @Test
-    fun `get -- throws UnsetSelectionException for missing selection`() {
+    fun `get -- throws UnsetFieldException for missing selection`() {
         val eod = SyncProxyEngineObjectData(
             obj,
             mapOf("x" to 1)
         )
 
-        assertThrows<UnsetSelectionException> {
+        assertThrows<UnsetFieldException> {
             eod.get("missing")
         }
     }
@@ -67,7 +67,7 @@ class SyncProxyEngineObjectDataTest {
             customMessage
         )
 
-        val exception = assertThrows<UnsetSelectionException> {
+        val exception = assertThrows<UnsetFieldException> {
             eod.get("missing")
         }
         assert(exception.message!!.contains(customMessage)) {
@@ -232,14 +232,14 @@ class SyncProxyEngineObjectDataTest {
         }
 
     @Test
-    fun `fetch -- throws UnsetSelectionException for missing selection`() =
+    fun `fetch -- throws UnsetFieldException for missing selection`() =
         runBlocking {
             val eod = SyncProxyEngineObjectData(
                 obj,
                 mapOf("x" to 1)
             )
 
-            assertThrows<UnsetSelectionException> {
+            assertThrows<UnsetFieldException> {
                 eod.fetch("missing")
             }
         }

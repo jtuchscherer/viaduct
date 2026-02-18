@@ -4,27 +4,27 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import viaduct.engine.api.mocks.MockSchema
 
-class UnsetSelectionExceptionTest {
+class UnsetFieldExceptionTest {
     private val obj = MockSchema.mk("extend type Query { x: Int }").schema.queryType
 
     @Test
     fun `message -- field`() {
         assertTrue(
-            UnsetSelectionException("x", obj).message.contains("field Query.x")
+            UnsetFieldException("x", obj).message.contains("field Query.x")
         )
     }
 
     @Test
     fun `message -- selection`() {
         assertTrue(
-            UnsetSelectionException("y", obj).message.contains("aliased field y")
+            UnsetFieldException("y", obj).message.contains("aliased field y")
         )
     }
 
     @Test
     fun `message -- details`() {
         assertTrue(
-            UnsetSelectionException("x", obj, "DETAILS").message.contains("DETAILS")
+            UnsetFieldException("x", obj, "DETAILS").message.contains("DETAILS")
         )
     }
 }

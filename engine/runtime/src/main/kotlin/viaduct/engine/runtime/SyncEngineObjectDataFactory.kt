@@ -31,7 +31,7 @@ object SyncEngineObjectDataFactory {
      * this resolution phase.
      *
      * @param objectEngineResult The engine result containing the raw data
-     * @param errorMessage The error message template for UnsetSelectionException
+     * @param errorMessage The error message template for UnsetFieldException
      * @param selectionSet The selections to resolve; if null, returns empty data
      * @return A [SyncProxyEngineObjectData] with all selections resolved
      */

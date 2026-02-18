@@ -30,7 +30,7 @@ import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineObject
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 
 /**
  * Base class for object type GRTs
@@ -89,7 +89,7 @@ abstract class ObjectBase(
                         if (selection == "id") {
                             engineObject.id
                         } else {
-                            throw UnsetSelectionException(
+                            throw UnsetFieldException(
                                 selection,
                                 objectType,
                                 "only id can be accessed on an unresolved Node reference created using Context.nodeFor"
@@ -102,7 +102,7 @@ abstract class ObjectBase(
             } catch (ex: Exception) {
                 if (ex is CancellationException) currentCoroutineContext().ensureActive()
                 when (ex) {
-                    is UnsetSelectionException -> throw ViaductTenantUsageException(ex.message, ex)
+                    is UnsetFieldException -> throw ViaductTenantUsageException(ex.message, ex)
                     is ViaductTenantException, is ViaductFrameworkException -> throw ex
                     else -> throw EngineObjectDataFetchException("engineObjectData.fetch failed on field $fieldName", ex)
                 }

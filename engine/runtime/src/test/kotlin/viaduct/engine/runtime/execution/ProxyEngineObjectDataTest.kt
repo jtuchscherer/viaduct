@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.api.mocks.MockCheckerErrorResult
 import viaduct.engine.runtime.CheckerProxyEngineObjectData
 import viaduct.engine.runtime.FieldErrorsException
@@ -147,9 +147,9 @@ class ProxyEngineObjectDataTest {
                 ),
             )
             assertEquals("hello", o1.fetch("stringField"))
-            assertThrows<UnsetSelectionException> { o1.fetch("listField") }
+            assertThrows<UnsetFieldException> { o1.fetch("listField") }
             assertEquals(1, (o1.fetch("object2") as ProxyEngineObjectData).fetch("intField"))
-            assertThrows<UnsetSelectionException> { (o1.fetch("object2") as ProxyEngineObjectData).fetch("object1") }
+            assertThrows<UnsetFieldException> { (o1.fetch("object2") as ProxyEngineObjectData).fetch("object1") }
 
             // fetchSelections should return only the selected fields
             assertEquals(setOf("stringField", "object2"), o1.fetchSelections().toSet())
@@ -198,7 +198,7 @@ class ProxyEngineObjectDataTest {
             val obj2 = innerList1[1]!!
             val obj1 = obj2.fetch("object1") as ProxyEngineObjectData
             assertEquals("hello", obj1.fetch("stringField"))
-            assertThrows<UnsetSelectionException> { obj1.fetch("listField") }
+            assertThrows<UnsetFieldException> { obj1.fetch("listField") }
             assertEquals(null, listField[1])
         }
     }
@@ -218,9 +218,9 @@ class ProxyEngineObjectDataTest {
             assertEquals(2, o.fetch("x1"))
             assertEquals(2, o.fetch("x2"))
             // alias x3 is not selected
-            assertThrows<UnsetSelectionException> { o.fetch("x3") }
+            assertThrows<UnsetFieldException> { o.fetch("x3") }
             // the unaliased "x" field is not selected
-            assertThrows<UnsetSelectionException> { o.fetch("x") }
+            assertThrows<UnsetFieldException> { o.fetch("x") }
 
             // fetchSelections should return the aliases, not the field name
             assertEquals(setOf("x1", "x2"), o.fetchSelections().toSet())
@@ -318,8 +318,8 @@ class ProxyEngineObjectDataTest {
                 "Query",
                 mapOf("f1" to 1, "f2" to 2)
             )
-            assertThrows<UnsetSelectionException> { o.fetch("f1") }
-            assertThrows<UnsetSelectionException> { o.fetch("f2") }
+            assertThrows<UnsetFieldException> { o.fetch("f1") }
+            assertThrows<UnsetFieldException> { o.fetch("f2") }
 
             // fetchSelections should not include directives that evaluate to false
             assertEquals(emptySet<String>(), o.fetchSelections().toSet())
@@ -364,8 +364,8 @@ class ProxyEngineObjectDataTest {
                 emptyList(),
                 mapOf("skipIf" to true, "includeIf" to false)
             )
-            assertThrows<UnsetSelectionException> { o.fetch("f1") }
-            assertThrows<UnsetSelectionException> { o.fetch("f2") }
+            assertThrows<UnsetFieldException> { o.fetch("f1") }
+            assertThrows<UnsetFieldException> { o.fetch("f2") }
 
             // fetchSelections should not include dynamic directives that evaluate to false
             assertEquals(emptySet<String>(), o.fetchSelections().toSet())
@@ -388,7 +388,7 @@ class ProxyEngineObjectDataTest {
             assertEquals(11, o.fetch("f1"))
             assertEquals(12, o.fetch("f2"))
             // unaliased field is not selected
-            assertThrows<UnsetSelectionException> { o.fetch("field") }
+            assertThrows<UnsetFieldException> { o.fetch("field") }
         }
     }
 
@@ -396,7 +396,7 @@ class ProxyEngineObjectDataTest {
     fun `fetch invalid field`() {
         Fixture("type Query { x: Int }") {
             val o1 = mkProxy(null, "Query", emptyMap<String, Any>())
-            val e = assertThrows<UnsetSelectionException> { o1.fetch("invalidField") }
+            val e = assertThrows<UnsetFieldException> { o1.fetch("invalidField") }
             assertContains(e.message, "error msg")
 
             // fetchSelections should return empty when no fragment is provided

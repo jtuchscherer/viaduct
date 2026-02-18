@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.ResolvedEngineObjectData
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 
 class MkEngineObjectDataTest {
     val schema = MockSchema.mk(
@@ -122,7 +122,7 @@ class MkEngineObjectDataTest {
     fun `accessing unset field fails`() {
         val data = mapOf<String, Any?>("int" to 1)
         val result = createEngineObjectData(type("Test"), data)
-        assertThrows<UnsetSelectionException> {
+        assertThrows<UnsetFieldException> {
             result.get("foo")
         }
     }
@@ -131,7 +131,7 @@ class MkEngineObjectDataTest {
     fun `accessing unset field in nested object fails`() {
         val data = mapOf<String, Any?>("nested" to emptyMap<String, Any?>())
         val result = createEngineObjectData(type("Test"), data)
-        assertThrows<UnsetSelectionException> {
+        assertThrows<UnsetFieldException> {
             (result.get("nested") as ResolvedEngineObjectData).get("unsetField")
         }
     }
@@ -141,7 +141,7 @@ class MkEngineObjectDataTest {
         val nestedData = mapOf<String, Any?>("leaf" to emptyMap<String, Any?>())
         val data = mapOf<String, Any?>("nested" to nestedData)
         val result = createEngineObjectData(type("Test"), data)
-        assertThrows<UnsetSelectionException> {
+        assertThrows<UnsetFieldException> {
             ((result.get("nested") as ResolvedEngineObjectData).get("leaf") as ResolvedEngineObjectData).get("nonExistentField")
         }
     }

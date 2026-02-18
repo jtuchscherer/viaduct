@@ -44,7 +44,7 @@ interface EngineObjectData : EngineObject {
      * Fetch a value that was selected with the provided [selection]
      *
      * @param selection a field or alias name
-     * @throws UnsetSelectionException if the selection is unset
+     * @throws UnsetFieldException if the selection is unset
      */
     suspend fun fetch(selection: String): Any?
 
@@ -69,7 +69,7 @@ interface EngineObjectData : EngineObject {
          * Get a value that was selected with the provided [selection]
          *
          * @param selection a field or alias name
-         * @throws UnsetSelectionException if the selection is unset
+         * @throws UnsetFieldException if the selection is unset
          */
         fun get(selection: String): Any?
 

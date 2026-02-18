@@ -27,7 +27,7 @@ import viaduct.engine.api.EngineObject
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineObjectDataBuilder
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.UnsetSelectionException
+import viaduct.engine.api.UnsetFieldException
 
 @OptIn(ExperimentalCoroutinesApi::class, VisibleForTest::class)
 class ObjectBaseTest {
@@ -598,7 +598,7 @@ class ObjectBaseTest {
             assertEquals("foo", globalId.internalID)
             assertThrows<ViaductFrameworkException> { o1.get("thisFieldDoesNotExist", String::class) }
             assertInstanceOf(
-                UnsetSelectionException::class.java,
+                UnsetFieldException::class.java,
                 assertThrows<ViaductTenantUsageException> { o1.getStringField() }.cause
             )
         }
