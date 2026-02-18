@@ -28,12 +28,12 @@ import viaduct.engine.api.CheckerResultContext
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.ParsedSelections
 import viaduct.engine.api.QueryPlanExecutionCondition
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolvedEngineObjectData
 import viaduct.engine.api.ResolverMetadata
@@ -47,18 +47,18 @@ import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.execution.DefaultCoroutineInterop
 import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.engine.runtime.mocks.createDispatcherRegistry
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
-import viaduct.engine.runtime.select.RawSelectionSetImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetImpl
 import viaduct.graphql.utils.DefaultSchemaProvider
 
 typealias CheckerFn = suspend (arguments: Map<String, Any?>, objectDataMap: Map<String, EngineObjectData>) -> Unit
 typealias NodeBatchResolverFn = suspend (selectors: List<NodeResolverExecutor.Selector>, context: EngineExecutionContext) -> Map<NodeResolverExecutor.Selector, Result<EngineObjectData>>
-typealias NodeUnbatchedResolverFn = suspend (id: String, selections: RawSelectionSet?, context: EngineExecutionContext) -> EngineObjectData
+typealias NodeUnbatchedResolverFn = suspend (id: String, selections: EngineSelectionSet?, context: EngineExecutionContext) -> EngineObjectData
 typealias FieldUnbatchedResolverFn = suspend (
     arguments: Map<String, Any?>,
     objectValue: EngineObjectData,
     queryValue: EngineObjectData,
-    selections: RawSelectionSet?,
+    selections: EngineSelectionSet?,
     context: EngineExecutionContext
 ) -> Any?
 
@@ -71,20 +71,20 @@ fun createExecutionStrategy(): ExecutionStrategy = AsyncExecutionStrategy(Simple
 
 fun createInstrumentation(): Instrumentation = ChainedInstrumentation(listOf<Instrumentation>())
 
-fun RawSelectionSet.variables() = (this as RawSelectionSetImpl).ctx.variables
+fun EngineSelectionSet.variables() = (this as EngineSelectionSetImpl).ctx.variables
 
-fun createRawSelectionSet(
+fun createEngineSelectionSet(
     parsedSelections: ParsedSelections,
     viaductSchema: ViaductSchema,
     variables: Map<String, Any?>
-): RawSelectionSet =
-    RawSelectionSetImpl.create(
+): EngineSelectionSet =
+    EngineSelectionSetImpl.create(
         parsedSelections,
         variables,
         viaductSchema
     )
 
-fun createRawSelectionSetFactory(viaductSchema: ViaductSchema) = RawSelectionSetFactoryImpl(viaductSchema)
+fun createEngineSelectionSetFactory(viaductSchema: ViaductSchema) = EngineSelectionSetFactoryImpl(viaductSchema)
 
 fun createRSS(
     typeName: String,
@@ -198,7 +198,7 @@ fun FieldResolverExecutor.invoke(
     arguments: Map<String, Any?> = emptyMap(),
     objectValue: Map<String, Any?> = emptyMap(),
     queryValue: Map<String, Any?> = emptyMap(),
-    selections: RawSelectionSet? = null,
+    selections: EngineSelectionSet? = null,
     context: EngineExecutionContext = ContextMocks(fullSchema).engineExecutionContext,
 ) = runBlocking(MockNextTickDispatcher()) {
     val selector = FieldResolverExecutor.Selector(
@@ -336,7 +336,7 @@ class MockTenantModuleBootstrapper(
         arguments: Map<String, Any?> = emptyMap(),
         objectValue: Map<String, Any?> = emptyMap(),
         queryValue: Map<String, Any?> = emptyMap(),
-        selections: RawSelectionSet? = null,
+        selections: EngineSelectionSet? = null,
         context: EngineExecutionContext = contextMocks.engineExecutionContext,
     ) = resolverAt(coord).invoke(fullSchema, coord, arguments, objectValue, queryValue, selections, context)
 

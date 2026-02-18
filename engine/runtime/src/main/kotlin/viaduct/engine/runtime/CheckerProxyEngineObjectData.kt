@@ -1,7 +1,7 @@
 package viaduct.engine.runtime
 
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 
 /**
@@ -13,12 +13,12 @@ import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 class CheckerProxyEngineObjectData(
     val objectEngineResult: ObjectEngineResult,
     private val errorMessage: String,
-    private val selectionSet: RawSelectionSet? = null,
+    private val selectionSet: EngineSelectionSet? = null,
 ) : ProxyEngineObjectData(objectEngineResult, errorMessage, selectionSet) {
     override fun createInstance(
         objectEngineResult: ObjectEngineResult,
         errorMessage: String,
-        selectionSet: RawSelectionSet?
+        selectionSet: EngineSelectionSet?
     ): CheckerProxyEngineObjectData {
         return CheckerProxyEngineObjectData(objectEngineResult, errorMessage, selectionSet)
     }

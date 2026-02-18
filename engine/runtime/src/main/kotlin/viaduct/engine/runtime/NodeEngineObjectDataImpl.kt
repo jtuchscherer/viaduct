@@ -11,9 +11,9 @@ import kotlinx.coroutines.supervisorScope
 import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeEngineObjectData
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.runtime.EngineExecutionContextExtensions.executeAccessChecksInModstrat
 
 class NodeEngineObjectDataImpl(
@@ -48,7 +48,7 @@ class NodeEngineObjectDataImpl(
      * @return true if the data was resolved by this call, false if it was already called previously
      */
     override suspend fun resolveData(
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         context: EngineExecutionContext
     ): Boolean {
         if (!resolveDataCalled.compareAndSet(false, true)) {

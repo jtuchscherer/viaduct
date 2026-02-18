@@ -36,7 +36,7 @@ interface FieldResolverExecutor {
         val arguments: Map<String, Any?>,
         val objectValue: EngineObjectData,
         val queryValue: EngineObjectData,
-        val selections: RawSelectionSet?,
+        val selections: EngineSelectionSet?,
         val syncObjectValueGetter: (suspend () -> EngineObjectData.Sync)? = null,
         val syncQueryValueGetter: (suspend () -> EngineObjectData.Sync)? = null,
     ) {

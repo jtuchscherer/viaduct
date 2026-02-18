@@ -4,8 +4,8 @@ import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.future.await
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
 import viaduct.java.api.context.FieldExecutionContext
@@ -59,7 +59,7 @@ class JavaFieldResolverExecutor(
         arguments: Map<String, Any?>,
         objectValue: EngineObjectData,
         queryValue: EngineObjectData,
-        selections: RawSelectionSet?,
+        selections: EngineSelectionSet?,
         context: EngineExecutionContext,
     ): Any? {
         // Create a minimal Java context adapter

@@ -163,7 +163,7 @@ class ResolverExecutionContextFactoryTest {
 
         val result = factory(
             engineExecutionContext = contextMocks.engineExecutionContext,
-            rawSelections = null,
+            engineSelections = null,
             requestContext = null,
             rawArguments = emptyMap(),
             rawObjectValue = createEngineObjectData(queryType, emptyMap()),
@@ -191,7 +191,7 @@ class ResolverExecutionContextFactoryTest {
 
         val result = factory(
             engineExecutionContext = contextMocks.engineExecutionContext,
-            rawSelections = null,
+            engineSelections = null,
             requestContext = null,
             rawArguments = emptyMap(),
             rawObjectValue = createEngineObjectData(queryType, emptyMap()),
@@ -270,7 +270,7 @@ class ResolverExecutionContextFactoryTest {
 
         val result = factory(
             engineExecutionContext = contextMocks.engineExecutionContext,
-            rawSelections = null,
+            engineSelections = null,
             requestContext = null,
             rawArguments = emptyMap(),
             rawObjectValue = createEngineObjectData(queryType, emptyMap()),
@@ -299,7 +299,7 @@ class ResolverExecutionContextFactoryTest {
 
         val result = factory(
             engineExecutionContext = contextMocks.engineExecutionContext,
-            rawSelections = null,
+            engineSelections = null,
             requestContext = null,
             rawArguments = emptyMap(),
             rawObjectValue = createEngineObjectData(queryType, emptyMap()),

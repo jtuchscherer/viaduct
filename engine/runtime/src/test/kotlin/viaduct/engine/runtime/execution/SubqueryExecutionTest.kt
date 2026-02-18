@@ -28,7 +28,7 @@ import viaduct.engine.runtime.EngineExecutionContextImpl
  * The subquery execution flow uses ExecutionHandle to maintain execution context:
  * 1. Resolver calls ctx.query(resolverId, selections)
  * 2. ExecutionHandle provides access to ExecutionParameters (opaque to tenant code)
- * 3. Engine builds QueryPlan from RawSelectionSet
+ * 3. Engine builds QueryPlan from EngineSelectionSet
  * 4. Engine resolves fields with proper access checks and variable scoping
  * 5. Returns EngineObjectData with resolved fields
  *
@@ -71,9 +71,9 @@ class SubqueryExecutionTest {
             field("Container" to "derivedFromQuery") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        // Create RawSelectionSet to fetch from Query root
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "rootValue", emptyMap())
+                        // Create EngineSelectionSet to fetch from Query root
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "rootValue", emptyMap())
 
                         // Execute subquery via ctx.query()
                         val queryResult = ctx.query(
@@ -126,8 +126,8 @@ class SubqueryExecutionTest {
                 resolver {
                     fn { _, _, _, _, ctx ->
                         // Fetch multiple fields from Query root in one subquery
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "firstName lastName", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "firstName lastName", emptyMap())
 
                         val queryResult = ctx.query(
                             resolverId = "User.fullName",
@@ -185,8 +185,8 @@ class SubqueryExecutionTest {
                         val input = args.getAs<Int>("input")
 
                         // Execute subquery with field arguments
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "multiply(n: $input)", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "multiply(n: $input)", emptyMap())
 
                         val queryResult = ctx.query(
                             resolverId = "Calculator.double",
@@ -241,8 +241,8 @@ class SubqueryExecutionTest {
                     fn { args, _, _, _, ctx ->
                         val input = args.getAs<Int>("input")
 
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to input))
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to input))
 
                         val queryResult = ctx.query(
                             resolverId = "Calculator.double",
@@ -304,8 +304,8 @@ class SubqueryExecutionTest {
                     fn { args, _, _, _, ctx ->
                         val value = args.getAs<Int>("value")
 
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "addToCounter(amount: \$amt)", mapOf("amt" to value))
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "addToCounter(amount: \$amt)", mapOf("amt" to value))
 
                         val mutationResult = ctx.mutation(
                             resolverId = "Container.addAmount",
@@ -367,8 +367,8 @@ class SubqueryExecutionTest {
                 resolver {
                     fn { _, _, _, _, ctx ->
                         // Execute mutation subquery via ctx.mutation()
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "incrementCounter", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "incrementCounter", emptyMap())
 
                         val mutationResult = ctx.mutation(
                             resolverId = "Container.triggerMutation",
@@ -423,8 +423,8 @@ class SubqueryExecutionTest {
                     fn { _, _, _, _, ctx ->
                         // Execute mutation subquery from a query resolver
                         // This is not recommended but the engine supports it
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "incrementCounter", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "incrementCounter", emptyMap())
 
                         val mutationResult = ctx.mutation(
                             resolverId = "Query.queryFieldThatMutates",
@@ -491,8 +491,8 @@ class SubqueryExecutionTest {
             field("Container" to "viaCtxQuery") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "rootValue", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "rootValue", emptyMap())
 
                         val result = ctx.query(
                             resolverId = "Container.viaCtxQuery",
@@ -556,8 +556,8 @@ class SubqueryExecutionTest {
                 resolver {
                     fn { _, _, _, _, ctx ->
                         // Nested resolver executing subquery
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "baseValue", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "baseValue", emptyMap())
 
                         val result = ctx.query(
                             resolverId = "Level2.derivedValue",
@@ -611,8 +611,8 @@ class SubqueryExecutionTest {
             field("Container" to "tryMutation") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "nonExistentMutation", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "nonExistentMutation", emptyMap())
 
                         ctx.mutation(
                             resolverId = "Container.tryMutation",
@@ -672,8 +672,8 @@ class SubqueryExecutionTest {
             field("Container" to "callFailingField") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "failingField", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "failingField", emptyMap())
 
                         val result = ctx.query(
                             resolverId = "Container.callFailingField",
@@ -729,9 +729,9 @@ class SubqueryExecutionTest {
             field("Container" to "tryMismatchedSelection") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        // Create a RawSelectionSet for User type, but try to execute as Query
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("User", "id name", emptyMap())
+                        // Create a EngineSelectionSet for User type, but try to execute as Query
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("User", "id name", emptyMap())
 
                         ctx.query(
                             resolverId = "Container.tryMismatchedSelection",
@@ -811,8 +811,8 @@ class SubqueryExecutionTest {
             field("Container" to "triggerMutations") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "field1 field2", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "field1 field2", emptyMap())
 
                         val mutationResult = ctx.mutation(
                             resolverId = "Container.triggerMutations",
@@ -878,8 +878,8 @@ class SubqueryExecutionTest {
             field("Container" to "first") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to 10))
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to 10))
 
                         val result = ctx.query(
                             resolverId = "Container.first",
@@ -894,8 +894,8 @@ class SubqueryExecutionTest {
             field("Container" to "second") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to 25))
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "multiply(n: \$myVar)", mapOf("myVar" to 25))
 
                         val result = ctx.query(
                             resolverId = "Container.second",
@@ -948,8 +948,8 @@ class SubqueryExecutionTest {
             field("Container" to "useSubqueryVar") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "valueFromVar(v: \$subVar)", mapOf("subVar" to 42))
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "valueFromVar(v: \$subVar)", mapOf("subVar" to 42))
 
                         val result = ctx.query(
                             resolverId = "Container.useSubqueryVar",
@@ -1029,7 +1029,7 @@ class SubqueryExecutionTest {
 
                         // Use fragment spreads with variables in subquery selection
                         // Fragment spreads are inlined by toSelectionSet()
-                        val rss = ctx.rawSelectionSetFactory.rawSelectionSet(
+                        val rss = ctx.engineSelectionSetFactory.engineSelectionSet(
                             "Query",
                             """
                             fragment UserBasicInfo on User { id name }
@@ -1121,8 +1121,8 @@ class SubqueryExecutionTest {
             field("Container" to "derivedFromQuery") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "rootValue", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "rootValue", emptyMap())
                         val queryResult = ctx.query(
                             resolverId = "Container.derivedFromQuery",
                             selectionSet = rss

@@ -10,9 +10,9 @@ import viaduct.api.internal.ReflectionLoader
 import viaduct.api.wrapResolveException
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeReference
 import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolverMetadata
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.NodeExecutionContextFactory
@@ -42,7 +42,7 @@ class NodeUnbatchedResolverExecutorImpl(
 
     private suspend fun resolve(
         id: String,
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         context: EngineExecutionContext
     ): EngineObjectData {
         val ctx = factory(context, selections, context.requestContext, id)

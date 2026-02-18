@@ -13,7 +13,7 @@ import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.Object
 import viaduct.api.types.Query as QueryType
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.globalid.GlobalIdFeatureAppTest
@@ -59,14 +59,14 @@ class ResolverExecutionContextFactoryBaseTest {
 
         val nodeFactory = NodeExecutionContextFactory(resolverBase, globalIDCodec, reflectionLoader, notCompositeType)
 
-        // Create a mock RawSelectionSet (non-null) to trigger the validation
-        val mockRawSelectionSet = mockk<RawSelectionSet>()
+        // Create a mock EngineSelectionSet (non-null) to trigger the validation
+        val mockEngineSelectionSet = mockk<EngineSelectionSet>()
 
         val exception = assertThrows<IllegalArgumentException> {
             // Call the factory to trigger toSelectionSet validation
             nodeFactory(
                 ContextMocks(GlobalIdFeatureAppTest.schema).engineExecutionContext,
-                mockRawSelectionSet, // This non-null selection set should cause validation failure
+                mockEngineSelectionSet, // This non-null selection set should cause validation failure
                 null, // requestContext
                 "test-id"
             )

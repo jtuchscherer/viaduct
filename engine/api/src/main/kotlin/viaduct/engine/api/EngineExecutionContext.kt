@@ -19,7 +19,7 @@ interface EngineExecutionContext {
     val fullSchema: ViaductSchema
     val scopedSchema: ViaductSchema
     val activeSchema: ViaductSchema
-    val rawSelectionSetFactory: RawSelectionSet.Factory
+    val engineSelectionSetFactory: EngineSelectionSet.Factory
 
     /**
      * The GlobalIDCodec shared across all tenant-API implementations in this Viaduct instance.
@@ -154,7 +154,7 @@ interface EngineExecutionContext {
      * execution hasn't started yet), it will throw [SubqueryExecutionException].
      *
      * @param resolverId Identifier for instrumentation and tracing
-     * @param selectionSet The [RawSelectionSet] containing the fields to resolve
+     * @param selectionSet The [EngineSelectionSet] containing the fields to resolve
      * @param options Execution options controlling behavior. Default executes as a Query.
      * @return The resolved [EngineObjectData]
      * @throws SubqueryExecutionException if [executionHandle] is null, the schema doesn't support the
@@ -163,7 +163,7 @@ interface EngineExecutionContext {
      */
     suspend fun resolveSelectionSet(
         resolverId: String,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions = ResolveSelectionSetOptions.DEFAULT,
     ): EngineObjectData
 

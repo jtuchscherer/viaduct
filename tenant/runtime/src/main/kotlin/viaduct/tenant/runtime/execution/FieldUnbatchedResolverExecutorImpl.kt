@@ -54,7 +54,7 @@ class FieldUnbatchedResolverExecutorImpl(
         val ctx = resolverContextFactory(
             engineExecutionContext = context,
             requestContext = context.requestContext, // TODO - get rid of this argument
-            rawSelections = selector.selections,
+            engineSelections = selector.selections,
             rawArguments = selector.arguments,
             rawObjectValue = selector.objectValue,
             rawQueryValue = selector.queryValue,

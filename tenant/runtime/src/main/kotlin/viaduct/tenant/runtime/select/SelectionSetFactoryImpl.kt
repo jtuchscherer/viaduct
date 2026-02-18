@@ -6,11 +6,11 @@ import viaduct.api.select.SelectionSet
 import viaduct.api.select.Selections
 import viaduct.api.types.CompositeOutput
 import viaduct.apiannotations.VisibleForTest
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 
 @VisibleForTest
 class SelectionSetFactoryImpl(
-    private val rawSelectionSetFactory: RawSelectionSet.Factory
+    private val engineSelectionSetFactory: EngineSelectionSet.Factory
 ) : SelectionSetFactory {
     override fun <T : CompositeOutput> selectionsOn(
         type: Type<T>,
@@ -19,6 +19,6 @@ class SelectionSetFactoryImpl(
     ): SelectionSet<T> =
         SelectionSetImpl(
             type,
-            rawSelectionSetFactory.rawSelectionSet(typeName = type.name, selections, variables)
+            engineSelectionSetFactory.engineSelectionSet(typeName = type.name, selections, variables)
         )
 }

@@ -42,7 +42,7 @@ import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.ResolveSelectionSetOptions
@@ -409,7 +409,7 @@ object CheckerDispatchers {
  */
 suspend fun EngineExecutionContext.query(
     resolverId: String,
-    selectionSet: RawSelectionSet
+    selectionSet: EngineSelectionSet
 ): EngineObjectData =
     resolveSelectionSet(
         resolverId,
@@ -426,7 +426,7 @@ suspend fun EngineExecutionContext.query(
  */
 suspend fun EngineExecutionContext.mutation(
     resolverId: String,
-    selectionSet: RawSelectionSet
+    selectionSet: EngineSelectionSet
 ): EngineObjectData =
     resolveSelectionSet(
         resolverId,

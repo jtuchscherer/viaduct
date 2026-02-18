@@ -32,14 +32,14 @@ interface Engine {
      * within the same request. Do not cache, construct custom implementations, or share across requests.
      *
      * @param executionHandle The opaque handle from the current execution context.
-     * @param selectionSet The [RawSelectionSet] containing the fields to resolve.
+     * @param selectionSet The [EngineSelectionSet] containing the fields to resolve.
      * @param options The [ResolveSelectionSetOptions] controlling execution behavior.
      * @return The resolved [EngineObjectData] wrapping the target result.
      * @throws SubqueryExecutionException on execution failures. See subquery-execution.md for details.
      */
     suspend fun resolveSelectionSet(
         executionHandle: EngineExecutionContext.ExecutionHandle,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions,
     ): EngineObjectData
 

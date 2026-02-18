@@ -498,7 +498,7 @@ class FieldResolver(
                 parameters.launchOnRootScope {
                     try {
                         val dataFetchingEnvironment = env.get()
-                        val selections = parameters.engineExecutionContext.rawSelectionSetFactory.rawSelectionSet(dataFetchingEnvironment)
+                        val selections = parameters.engineExecutionContext.engineSelectionSetFactory.engineSelectionSet(dataFetchingEnvironment)
                             ?: throw IllegalStateException(
                                 "Attempting to resolve LazyEngineObjectData but no selection set found"
                             )

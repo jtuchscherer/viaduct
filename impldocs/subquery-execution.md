@@ -13,7 +13,7 @@ This document follows a selection execution from the resolver's `ctx.query()` ca
 - **Selection Execution**: An internal engine call issued from a resolver that runs against the same request and execution state, rather than starting a new GraphQL-Java execution. Sometimes called "subquery" in informal discussion.
 - **Tenant vs Engine**: "Tenant" refers to the generated resolver layer and its types (`Context`, `SelectionSet<Query>`). "Engine" refers to the shared execution core (planning, field resolution, access checks) that powers all tenants.
 - **ExecutionHandle**: An opaque reference to the parent request's `ExecutionParameters`. Used to recover engine state when running selection executions.
-- **RawSelectionSet**: The engine's untyped representation of selections, variables, and fragments—what the planner actually consumes.
+- **EngineSelectionSet**: The engine's untyped representation of selections, variables, and fragments—what the planner actually consumes.
 - **GRT objects**: Generated, strongly-typed GraphQL Representational Types (e.g., `Query`, `Mutation`) returned to tenant resolvers.
 - **EEC**: `EngineExecutionContext`, the request-scoped context that provides access to schema, execution state, and the `resolveSelectionSet()` API.
 
@@ -107,11 +107,11 @@ The `Context` type that resolvers see is generated from the resolver base class.
 When a resolver calls `ctx.query(selections)`, the call flows through the bridge:
 
 1. `ResolverExecutionContextImpl.query()` delegates to `EngineExecutionContextWrapperImpl.query()`
-2. The wrapper converts the tenant's `SelectionSet<T>` into a `RawSelectionSet`
-3. It calls `EngineExecutionContext.resolveSelectionSet(resolverId, rawSelectionSet, options)`
+2. The wrapper converts the tenant's `SelectionSet<T>` into an `EngineSelectionSet`
+3. It calls `EngineExecutionContext.resolveSelectionSet(resolverId, engineSelectionSet, options)`
 
 This bridge is the only place the tenant runtime touches the engine. It converts:
-- **To engine**: `SelectionSet<Query>` → `RawSelectionSet` (the `ExecutionHandle` is accessed internally)
+- **To engine**: `SelectionSet<Query>` → `EngineSelectionSet` (the `ExecutionHandle` is accessed internally)
 - **Back to tenant**: `EngineObjectData` → typed GRT objects (via `toObjectGRT()`)
 
 **Key files:**
@@ -143,7 +143,7 @@ All options require a valid `executionHandle`. If the handle is not available (e
 
 ## Step 4: The Wiring Layer
 
-The wiring layer is `EngineImpl.resolveSelectionSet()`. It takes the opaque `ExecutionHandle`, a `RawSelectionSet`, and an `ResolveSelectionSetOptions` instance that carries the operation type and optional target `ObjectEngineResult`.
+The wiring layer is `EngineImpl.resolveSelectionSet()`. It takes the opaque `ExecutionHandle`, an `EngineSelectionSet`, and a `ResolveSelectionSetOptions` instance that carries the operation type and optional target `ObjectEngineResult`.
 
 This method:
 
@@ -171,7 +171,7 @@ Subqueries always use `fullSchema`, not `activeSchema`. The active schema can be
 
 ### Variable Scoping
 
-Subqueries do not inherit variables from the parent request. Variables come only from the subquery's own `RawSelectionSet`, which is derived from the tenant's `SelectionSet<T>`.
+Subqueries do not inherit variables from the parent request. Variables come only from the subquery's own `EngineSelectionSet`, which is derived from the tenant's `SelectionSet<T>`.
 
 This means:
 - Two subqueries with identical selection strings but different `variables` maps remain independent
@@ -189,7 +189,7 @@ The tenant-facing `ctx.query()` and `ctx.mutation()` always create fresh instanc
 
 ### Building the QueryPlan
 
-Subqueries don't start from a full GraphQL document—they start from a `RawSelectionSet` that already contains the parent type, selection AST, fragment definitions, and variables. `QueryPlan.buildFromSelections()` feeds this directly into the plan builder, skipping re-parsing and document construction.
+Subqueries don't start from a full GraphQL document—they start from an `EngineSelectionSet` that already contains the parent type, selection AST, fragment definitions, and variables. `QueryPlan.buildFromSelections()` feeds this directly into the plan builder, skipping re-parsing and document construction.
 
 Plan caching keys on selection text, document key, schema hash, and `executeAccessChecksInModstrat`. Variables are not part of the cache key—the plan only depends on field/argument structure, not specific values.
 
@@ -218,11 +218,11 @@ Selection execution wraps failures in `SubqueryExecutionException`:
 
 - **Missing handle**: `resolveSelectionSet()` throws immediately if `executionHandle` is null
 - **Invalid handle**: `asExecutionParameters()` throws `invalidExecutionHandle()` if the handle isn't an `ExecutionParameters`
-- **Selection type mismatch**: If the `RawSelectionSet.type` doesn't match the root type for the operation (e.g., passing a `User` selection to a Query subquery)
+- **Selection type mismatch**: If the `EngineSelectionSet.type` doesn't match the root type for the operation (e.g., passing a `User` selection to a Query subquery)
 - **Plan build issues**: Wrapped in `queryPlanBuildFailed(e)`
 - **Field resolution failures**: Wrapped in `fieldResolutionFailed(e)`
 
-Note that `RawSelectionSet.Empty` throws `IllegalArgumentException` (not `SubqueryExecutionException`) since it represents a programmer error rather than a runtime failure.
+Note that `EngineSelectionSet.Empty` throws `IllegalArgumentException` (not `SubqueryExecutionException`) since it represents a programmer error rather than a runtime failure.
 
 Each `ExecutionParameters` has its own `ErrorAccumulator`, so selection errors flow back into `EngineResult.errors` with correct attribution. From the tenant side, failures surface as errors on the returned GRT object's result, just like top-level execution errors.
 

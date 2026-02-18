@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import viaduct.engine.api.mocks.MockSchema
-import viaduct.engine.api.mocks.createRawSelectionSet
+import viaduct.engine.api.mocks.createEngineSelectionSet
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.ConvMemo
@@ -142,7 +142,7 @@ class ConvUtilsTest {
         val map = createSelectionConvs(
             schema,
             schema.schema.getObjectType("Obj"),
-            createRawSelectionSet(
+            createEngineSelectionSet(
                 SelectionsParser.parse(
                     "Obj",
                     "x1:x, x2:x, type1:__typename, type2:__typename"

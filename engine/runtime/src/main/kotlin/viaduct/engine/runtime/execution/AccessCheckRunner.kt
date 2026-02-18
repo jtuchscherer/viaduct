@@ -201,7 +201,7 @@ class AccessCheckRunner(
                         parameters.executionContext.graphQLContext,
                         parameters.executionContext.locale,
                     )
-                    localExecutionContext.rawSelectionSetFactory.rawSelectionSet(it.selections, variables.toMap())
+                    localExecutionContext.engineSelectionSetFactory.engineSelectionSet(it.selections, variables.toMap())
                 }
                 val oerToWrap = if (rss != null && rss.selections.typeName == parameters.graphQLSchema.queryType.name) {
                     parameters.queryEngineResult

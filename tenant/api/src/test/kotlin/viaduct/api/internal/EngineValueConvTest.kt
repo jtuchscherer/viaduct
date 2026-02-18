@@ -26,11 +26,11 @@ import viaduct.arbitrary.graphql.TypenameValueWeight
 import viaduct.arbitrary.graphql.graphQLSchema
 import viaduct.arbitrary.graphql.ir
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ResolvedEngineObjectData
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.engineObjectsAreEquivalent
-import viaduct.engine.api.mocks.createRawSelectionSet
+import viaduct.engine.api.mocks.createEngineSelectionSet
 import viaduct.engine.api.mocks.createSchema
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
@@ -290,7 +290,7 @@ class EngineValueConvTest : KotestPropertyBase() {
         val conv = EngineValueConv(
             schema,
             obj,
-            mkRawSelectionSet(schema, "Obj", "a:x")
+            mkEngineSelectionSet(schema, "Obj", "a:x")
         )
 
         assertRoundtrip(
@@ -307,7 +307,7 @@ class EngineValueConvTest : KotestPropertyBase() {
         val conv = EngineValueConv(
             schema,
             obj,
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 schema,
                 "Obj",
                 "a:x, obj { b:x }"
@@ -338,7 +338,7 @@ class EngineValueConvTest : KotestPropertyBase() {
     fun `object with selections -- a field can be selected multiple times`() {
         val schema = createSchema("type Obj { x:Int }")
         val obj = schema.schema.getObjectType("Obj")
-        val conv = EngineValueConv(schema, obj, mkRawSelectionSet(schema, "Obj", "a:x, b:x"))
+        val conv = EngineValueConv(schema, obj, mkEngineSelectionSet(schema, "Obj", "a:x, b:x"))
 
         assertRoundtrip(
             conv,
@@ -422,13 +422,13 @@ internal fun valuesEqual(
         else -> (a == b)
     }
 
-private fun mkRawSelectionSet(
+private fun mkEngineSelectionSet(
     schema: ViaductSchema,
     selectionsType: String,
     selections: String,
     variables: Map<String, Any?> = emptyMap()
-): RawSelectionSet =
-    createRawSelectionSet(
+): EngineSelectionSet =
+    createEngineSelectionSet(
         SelectionsParser.parse(selectionsType, selections),
         schema,
         variables

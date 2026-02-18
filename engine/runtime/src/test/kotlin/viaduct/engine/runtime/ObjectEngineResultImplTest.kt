@@ -739,7 +739,7 @@ class ObjectEngineResultImplTest {
                     errors,
                     emptyList(),
                     schema,
-                    createRss("User", "id name friends { id name } posts { id title }", emptyMap(), schema)
+                    createEngineSelectionSet("User", "id name friends { id name } posts { id title }", emptyMap(), schema)
                 )
 
                 // Test successful fields
@@ -795,7 +795,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "User",
                         """
                             id
@@ -851,7 +851,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Foo",
                         """
                             b1: bar(id: 1) { a }
@@ -881,7 +881,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "__typename",
                         emptyMap(),
@@ -912,7 +912,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Foo",
                         "... on I { x }",
                         emptyMap(),
@@ -944,7 +944,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "I",
                         "... on Foo { y }",
                         emptyMap(),
@@ -974,7 +974,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "i { ... on Foo { y } }",
                         emptyMap(),
@@ -1007,7 +1007,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "u { ... on Foo { x } }",
                         emptyMap(),
@@ -1041,7 +1041,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "u { ... on Foo { bar { x } } }",
                         emptyMap(),
@@ -1075,7 +1075,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "i { ... on Bar { x } }",
                         emptyMap(),
@@ -1105,7 +1105,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Query",
                         "u { __typename }",
                         emptyMap(),
@@ -1139,7 +1139,7 @@ class ObjectEngineResultImplTest {
                     emptyList<Pair<String, Throwable>>().toMutableList(),
                     emptyList(),
                     schema,
-                    createRss(
+                    createEngineSelectionSet(
                         "Foo",
                         """
                             ... on U2 {
@@ -1169,7 +1169,7 @@ class ObjectEngineResultImplTest {
                     mutableListOf(),
                     emptyList(),
                     schema,
-                    createRss("Query", "x", emptyMap(), schema)
+                    createEngineSelectionSet("Query", "x", emptyMap(), schema)
                 )
 
                 // Test the selected field

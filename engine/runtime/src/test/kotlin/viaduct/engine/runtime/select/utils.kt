@@ -5,7 +5,7 @@ import graphql.schema.GraphQLCompositeType
 import viaduct.graphql.utils.GraphQLTypeRelation
 
 /**
- * Return a Map of selected [Field]s of a RawSelectionSet that are defined on the selected
+ * Return a Map of selected [Field]s of a EngineSelectionSet that are defined on the selected
  * type.
  *
  * The keys in this map are field names and always correspond to a field defined on the
@@ -14,9 +14,9 @@ import viaduct.graphql.utils.GraphQLTypeRelation
  * The [Field] values in this map are not merged -- values in this map may have different
  * aliases, arguments, query directives, or originate from fragments with different
  * type conditions. Field values in this map are guaranteed to be defined on the underlying
- * GraphQL type that this RawSelectionSet is on.
+ * GraphQL type that this EngineSelectionSet is on.
  */
-internal val RawSelectionSetImpl.typeFields: Map<String, List<Field>>
+internal val EngineSelectionSetImpl.typeFields: Map<String, List<Field>>
     get() {
         return selections
             .filter { (_, t) ->

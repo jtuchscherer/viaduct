@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 import org.junit.jupiter.api.Test
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.EngineExecutionContextExtensions.copy
@@ -219,7 +219,7 @@ class EngineExecutionContextExtensionsTest {
             override val fullSchema: ViaductSchema get() = mockk()
             override val scopedSchema: ViaductSchema get() = mockk()
             override val activeSchema: ViaductSchema get() = mockk()
-            override val rawSelectionSetFactory get() = mockk<viaduct.engine.api.RawSelectionSet.Factory>()
+            override val engineSelectionSetFactory get() = mockk<viaduct.engine.api.EngineSelectionSet.Factory>()
             override val globalIDCodec: GlobalIDCodec get() = mockk<GlobalIDCodec>()
             override val requestContext: Any? get() = null
             override val engine get() = mockk<viaduct.engine.api.Engine>()
@@ -228,7 +228,7 @@ class EngineExecutionContextExtensionsTest {
 
             override suspend fun resolveSelectionSet(
                 resolverId: String,
-                selectionSet: RawSelectionSet,
+                selectionSet: EngineSelectionSet,
                 options: ResolveSelectionSetOptions
             ): EngineObjectData = mockk()
 

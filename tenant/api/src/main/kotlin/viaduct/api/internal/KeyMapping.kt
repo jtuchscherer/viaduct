@@ -1,7 +1,7 @@
 package viaduct.api.internal
 
 import kotlin.collections.Map as KMap
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 
 /**
  * A [KeyMapping] describes the nature of keys between 2 representations.
@@ -65,7 +65,7 @@ data class KeyMapping(val fromType: KeyType, val toType: KeyType) {
          * Get a default [KeyMapping] that can support the provided [selectionSet]
          * @return [SelectionToSelection] if [selectionSet] is not null, otherwise [FieldNameToFieldName]
          */
-        fun defaultKeyMapping(selectionSet: RawSelectionSet?): KeyMapping =
+        fun defaultKeyMapping(selectionSet: EngineSelectionSet?): KeyMapping =
             if (selectionSet != null) {
                 SelectionToSelection
             } else {
@@ -75,7 +75,7 @@ data class KeyMapping(val fromType: KeyType, val toType: KeyType) {
         /** Create a [Map] for the given [keyMapping] and [selectionSet] */
         fun map(
             keyMapping: KeyMapping,
-            selectionSet: RawSelectionSet?
+            selectionSet: EngineSelectionSet?
         ): Map =
             if (keyMapping.fromType == keyMapping.toType) {
                 Map.Identity

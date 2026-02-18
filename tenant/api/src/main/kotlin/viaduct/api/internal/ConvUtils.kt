@@ -7,7 +7,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeUtil
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.gj
 import viaduct.mapping.graphql.Conv
@@ -52,8 +52,8 @@ internal val GraphQLCompositeType.mappableFields: List<GraphQLFieldDefinition> g
 internal fun <From, To> createSelectionConvs(
     schema: ViaductSchema,
     type: GraphQLObjectType,
-    selectionSet: RawSelectionSet?,
-    buildFieldConv: (GraphQLType, RawSelectionSet?) -> Conv<From, To>,
+    selectionSet: EngineSelectionSet?,
+    buildFieldConv: (GraphQLType, EngineSelectionSet?) -> Conv<From, To>,
 ): Map<String, Conv<From, To>> =
     if (selectionSet != null) {
         selectionSet.selections().associate { sel ->

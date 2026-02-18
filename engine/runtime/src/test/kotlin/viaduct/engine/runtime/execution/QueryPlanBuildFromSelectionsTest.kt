@@ -13,20 +13,20 @@ import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
 import strikt.assertions.isNotSameInstanceAs
 import strikt.assertions.isSameInstanceAs
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.mocks.MockSchema
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.engine.runtime.execution.ExecutionTestHelpers.runExecutionTest
-import viaduct.engine.runtime.select.RawSelectionSetImpl
+import viaduct.engine.runtime.select.EngineSelectionSetImpl
 
 /**
- * Tests for [QueryPlan.buildFromSelections] which builds a QueryPlan from a RawSelectionSet
+ * Tests for [QueryPlan.buildFromSelections] which builds a QueryPlan from a EngineSelectionSet
  * for subquery execution.
  *
  * These tests validate:
- * - Basic QueryPlan building from RawSelectionSet
- * - Error handling for RawSelectionSet.Empty
+ * - Basic QueryPlan building from EngineSelectionSet
+ * - Error handling for EngineSelectionSet.Empty
  * - Caching behavior for identical selections
  * - Proper extraction of parent type and fragments
  */
@@ -70,8 +70,8 @@ class QueryPlanBuildFromSelectionsTest {
         typename: String,
         selections: String,
         vars: Map<String, Any?> = emptyMap()
-    ): RawSelectionSetImpl =
-        RawSelectionSetImpl.create(
+    ): EngineSelectionSetImpl =
+        EngineSelectionSetImpl.create(
             SelectionsParser.parse(typename, selections),
             vars,
             schema
@@ -88,7 +88,7 @@ class QueryPlanBuildFromSelectionsTest {
     private fun QueryPlan.parentTypeName(): String = (parentType as GraphQLNamedType).name
 
     @Test
-    fun `builds QueryPlan from simple RawSelectionSet`(): Unit =
+    fun `builds QueryPlan from simple EngineSelectionSet`(): Unit =
         runExecutionTest {
             val rss = mkRss("Query", "user { id name }")
             val params = mkParameters()
@@ -96,7 +96,7 @@ class QueryPlanBuildFromSelectionsTest {
             val plan = QueryPlan.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("Query")
-            // RawSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
+            // EngineSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
             expectThat(plan.selectionSet.selections).hasSize(1)
 
             // The selections are wrapped in an InlineFragment
@@ -108,7 +108,7 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `builds QueryPlan from RawSelectionSet with multiple fields`(): Unit =
+    fun `builds QueryPlan from EngineSelectionSet with multiple fields`(): Unit =
         runExecutionTest {
             val rss = mkRss("User", "id name email")
             val params = mkParameters()
@@ -116,7 +116,7 @@ class QueryPlanBuildFromSelectionsTest {
             val plan = QueryPlan.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("User")
-            // RawSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
+            // EngineSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
             // So we get one InlineFragment containing 3 fields
             expectThat(plan.selectionSet.selections).hasSize(1)
 
@@ -141,9 +141,9 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `throws IllegalArgumentException for RawSelectionSet Empty`(): Unit =
+    fun `throws IllegalArgumentException for EngineSelectionSet Empty`(): Unit =
         runExecutionTest {
-            val emptyRss = RawSelectionSet.empty("Query")
+            val emptyRss = EngineSelectionSet.empty("Query")
             val params = mkParameters()
 
             val exception = assertThrows<IllegalArgumentException> {
@@ -153,7 +153,7 @@ class QueryPlanBuildFromSelectionsTest {
             }
 
             expectThat(exception.message).isNotNull().and {
-                contains("RawSelectionSet.Empty")
+                contains("EngineSelectionSet.Empty")
                 contains("not supported")
             }
         }
@@ -190,7 +190,7 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `handles RawSelectionSet with inline fragments`(): Unit =
+    fun `handles EngineSelectionSet with inline fragments`(): Unit =
         runExecutionTest {
             val rss = mkRss("Item", "id ... on User { name email }")
             val params = mkParameters()
@@ -203,7 +203,7 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `handles RawSelectionSet with variables`(): Unit =
+    fun `handles EngineSelectionSet with variables`(): Unit =
         runExecutionTest {
             // Variables are stored in the RSS context but don't affect QueryPlan structure
             val rss = mkRss("Query", "item(id: \$itemId) { id }", mapOf("itemId" to "123"))
@@ -221,7 +221,7 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `handles RawSelectionSet with aliased fields`(): Unit =
+    fun `handles EngineSelectionSet with aliased fields`(): Unit =
         runExecutionTest {
             val rss = mkRss("User", "userId: id userName: name")
             val params = mkParameters()
@@ -258,7 +258,7 @@ class QueryPlanBuildFromSelectionsTest {
         }
 
     @Test
-    fun `handles RawSelectionSet with fragment spreads`(): Unit =
+    fun `handles EngineSelectionSet with fragment spreads`(): Unit =
         runExecutionTest {
             // Fragment spreads are inlined by toSelectionSet(), so the QueryPlan
             // should be built correctly without needing fragment definitions
@@ -274,7 +274,7 @@ class QueryPlanBuildFromSelectionsTest {
             val plan = QueryPlan.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("User")
-            // RawSelectionSet.toSelectionSet() inlines fragment spreads, so we should
+            // EngineSelectionSet.toSelectionSet() inlines fragment spreads, so we should
             // see all fields from both the main selection and the spread fragment
             expectThat(plan.selectionSet.selections).hasSize(1)
 

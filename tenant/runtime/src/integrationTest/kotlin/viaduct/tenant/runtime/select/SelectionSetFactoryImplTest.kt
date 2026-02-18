@@ -5,18 +5,18 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 
 @ExperimentalCoroutinesApi
 class SelectionSetFactoryImplTest : Assertions() {
     @Test
     fun `selectionsOn -- simple`() {
-        val emptyRawSelectionSet = RawSelectionSet.empty("id")
+        val emptyEngineSelectionSet = EngineSelectionSet.empty("id")
         val factory = SelectionSetFactoryImpl(
             mockk {
                 every {
-                    rawSelectionSet(any(), any(), any())
-                } returns emptyRawSelectionSet
+                    engineSelectionSet(any(), any(), any())
+                } returns emptyEngineSelectionSet
             }
         )
 

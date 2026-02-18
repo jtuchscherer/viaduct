@@ -56,7 +56,7 @@ class EngineExecutionContextWrapperImpl(
     ): T =
         engineExecutionContext.resolveSelectionSet(
             resolverId,
-            selections.getRawSelectionSet(),
+            selections.getEngineSelectionSet(),
             ResolveSelectionSetOptions.DEFAULT
         ).toObjectGRT(ctx, selections.type.kcls)
 
@@ -67,12 +67,12 @@ class EngineExecutionContextWrapperImpl(
     ): T =
         engineExecutionContext.resolveSelectionSet(
             resolverId,
-            selections.getRawSelectionSet(),
+            selections.getEngineSelectionSet(),
             ResolveSelectionSetOptions.MUTATION
         ).toObjectGRT(ctx, selections.type.kcls)
 
-    private fun SelectionSet<*>.getRawSelectionSet() =
-        (this as? SelectionSetImpl)?.rawSelectionSet
+    private fun SelectionSet<*>.getEngineSelectionSet() =
+        (this as? SelectionSetImpl)?.engineSelectionSet
             ?: throw IllegalStateException("Unexpected implementation of SelectionSet: $this")
 
     override fun <T : CompositeOutput> selectionsFor(
@@ -82,7 +82,7 @@ class EngineExecutionContextWrapperImpl(
     ): SelectionSet<T> =
         SelectionSetImpl(
             type,
-            engineExecutionContext.rawSelectionSetFactory.rawSelectionSet(typeName = type.name, selections, variables)
+            engineExecutionContext.engineSelectionSetFactory.engineSelectionSet(typeName = type.name, selections, variables)
         )
 
     override fun <T : NodeObject> nodeFor(

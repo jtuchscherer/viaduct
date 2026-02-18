@@ -20,7 +20,7 @@ interface NodeResolverExecutor {
      */
     data class Selector(
         val id: String,
-        val selections: RawSelectionSet
+        val selections: EngineSelectionSet
     )
 
     val isBatching: Boolean

@@ -5,11 +5,11 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLUnionType
 import kotlin.collections.plus
 import viaduct.engine.api.Coordinate
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.engine.runtime.validation.Validator
 
 /**
@@ -34,7 +34,7 @@ import viaduct.engine.runtime.validation.Validator
 class RequiredSelectionsAreAcyclic(
     private val schema: ViaductSchema,
 ) : Validator<RequiredSelectionsValidationCtx> {
-    private val rawSelectionSetFactory = RawSelectionSetFactoryImpl(schema)
+    private val engineSelectionSetFactory = EngineSelectionSetFactoryImpl(schema)
 
     /**
      * Validates all RSS's of the given field.
@@ -134,7 +134,7 @@ class RequiredSelectionsAreAcyclic(
          * All interface and union coordinates and types are replaced by coordinates of its object type implementations.
          */
         private fun RequiredSelectionSet.objectCoords(registry: RequiredSelectionSetRegistry): Set<TypeOrFieldCoordinate> {
-            val coords = rawSelectionSetFactory.rawSelectionSet(selections, emptyMap()).objectCoords().toMutableSet()
+            val coords = engineSelectionSetFactory.engineSelectionSet(selections, emptyMap()).objectCoords().toMutableSet()
             variablesResolvers.forEach { variablesResolver ->
                 variablesResolver.requiredSelectionSet?.objectCoords(registry)?.let { coords.addAll(it) }
             }
@@ -142,10 +142,10 @@ class RequiredSelectionsAreAcyclic(
         }
 
         /**
-         * Returns all field coordinates and field object types referenced by this [RawSelectionSet].
+         * Returns all field coordinates and field object types referenced by this [EngineSelectionSet].
          * All interface and union coordinates and types are replaced by coordinates of its object type implementations.
          */
-        private fun RawSelectionSet.objectCoords(): Set<TypeOrFieldCoordinate> =
+        private fun EngineSelectionSet.objectCoords(): Set<TypeOrFieldCoordinate> =
             buildSet {
                 // start with all selections. This will include scalar fields and other selections
                 // that do not support sub-selections

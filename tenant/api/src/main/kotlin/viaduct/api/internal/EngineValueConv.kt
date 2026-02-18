@@ -13,7 +13,7 @@ import java.time.temporal.TemporalAccessor
 import viaduct.api.internal.EngineValueConv.invoke
 import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ResolvedEngineObjectData
 import viaduct.engine.api.ViaductSchema
 import viaduct.mapping.graphql.Conv
@@ -52,7 +52,7 @@ object EngineValueConv {
     operator fun invoke(
         schema: ViaductSchema,
         type: GraphQLType,
-        selectionSet: RawSelectionSet?
+        selectionSet: EngineSelectionSet?
     ): Conv<Any?, IR.Value> = Builder(schema).build(type, selectionSet)
 
     internal fun nullable(inner: Conv<Any?, IR.Value>): Conv<Any?, IR.Value> =
@@ -272,12 +272,12 @@ object EngineValueConv {
 
         fun build(
             type: GraphQLType,
-            selectionSet: RawSelectionSet?
+            selectionSet: EngineSelectionSet?
         ): Conv<Any?, IR.Value> = mk(type, selectionSet).also { memo.finalize() }
 
         private fun mk(
             type: GraphQLType,
-            selectionSet: RawSelectionSet?,
+            selectionSet: EngineSelectionSet?,
             isNullable: Boolean = true
         ): Conv<Any?, IR.Value> {
             val conv = when (type) {

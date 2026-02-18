@@ -38,7 +38,7 @@ import viaduct.api.types.Query
 import viaduct.apiannotations.InternalApi
 import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.select.SelectionSetFactoryImpl
 import viaduct.tenant.runtime.select.SelectionSetImpl
@@ -438,7 +438,7 @@ interface ResolverTestBase {
 
     fun mkSelectionSetFactory(): SelectionSetFactory =
         SelectionSetFactoryImpl(
-            RawSelectionSetFactoryImpl(getSchema())
+            EngineSelectionSetFactoryImpl(getSchema())
         )
 
     /**
@@ -607,7 +607,7 @@ private fun ResolverTestBase.createMutationFieldExecutionContext(
  */
 private fun createSelectionSetKey(selectionSet: SelectionSet<*>): String {
     return when (selectionSet) {
-        is SelectionSetImpl -> selectionSet.rawSelectionSet.printAsFieldSet()
+        is SelectionSetImpl -> selectionSet.engineSelectionSet.printAsFieldSet()
         SelectionSet.NoSelections -> BLANK_CONTEXT_QUERY_SELECTION_KEY
         else -> selectionSet.toString()
     }

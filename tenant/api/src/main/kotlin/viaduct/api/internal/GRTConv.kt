@@ -22,7 +22,7 @@ import viaduct.api.types.NodeCompositeOutput
 import viaduct.api.types.Object
 import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.gj
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.ConvMemo
@@ -43,7 +43,7 @@ object GRTConv {
      * prefer using the overloads of [invoke] that operate on fields.
      *
      * @param type the GraphQL type for which a [Conv] will be created.
-     * @param selectionSet A [RawSelectionSet] possible projection of [type].
+     * @param selectionSet A [EngineSelectionSet] possible projection of [type].
      *   [selectionSet] may not be null if any type in [keyMapping] is [KeyMapping.KeyType.Selection].
      *   The returned [Conv] will only be able to map the selections in [selectionSet].
      *   Any aliases used in [selectionSet] will be used as object keys in both the JSON and IR Values
@@ -53,7 +53,7 @@ object GRTConv {
     operator fun invoke(
         internalCtx: InternalContext,
         type: GraphQLType,
-        selectionSet: RawSelectionSet? = null,
+        selectionSet: EngineSelectionSet? = null,
         keyMapping: KeyMapping? = null
     ): Conv<Any?, IR.Value> =
         Builder(internalCtx, keyMapping ?: KeyMapping.defaultKeyMapping(selectionSet))
@@ -86,7 +86,7 @@ object GRTConv {
         internalCtx: InternalContext,
         field: GraphQLFieldDefinition,
         parentType: GraphQLCompositeType,
-        selectionSet: RawSelectionSet?,
+        selectionSet: EngineSelectionSet?,
         keyMapping: KeyMapping? = null
     ): Conv<Any?, IR.Value> =
         Builder(internalCtx, keyMapping ?: KeyMapping.defaultKeyMapping(selectionSet))
@@ -221,7 +221,7 @@ object GRTConv {
             val type: GraphQLType,
             val isNullable: Boolean = true,
             val parentContext: ParentContext = None,
-            val selectionSet: RawSelectionSet?,
+            val selectionSet: EngineSelectionSet?,
             val wrapGRTs: Boolean = true
         ) {
             fun push(
@@ -233,7 +233,7 @@ object GRTConv {
         fun build(
             type: GraphQLType,
             parentContext: ParentContext,
-            selectionSet: RawSelectionSet?,
+            selectionSet: EngineSelectionSet?,
         ): Conv<Any?, IR.Value> =
             mk(Ctx(type, parentContext = parentContext, selectionSet = selectionSet)).also {
                 memo.finalize()

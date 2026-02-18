@@ -7,8 +7,8 @@ import graphql.schema.GraphQLTypeUtil
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.CheckerResultContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ACCESS_CHECK_SLOT
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
@@ -24,14 +24,14 @@ import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 open class ProxyEngineObjectData(
     private val objectEngineResult: ObjectEngineResult,
     private val errorMessage: String,
-    private val selectionSet: RawSelectionSet? = null,
+    private val selectionSet: EngineSelectionSet? = null,
 ) : EngineObjectData {
     override val type = objectEngineResult.type
 
     protected open fun createInstance(
         objectEngineResult: ObjectEngineResult,
         errorMessage: String,
-        selectionSet: RawSelectionSet?
+        selectionSet: EngineSelectionSet?
     ): ProxyEngineObjectData {
         return ProxyEngineObjectData(objectEngineResult, errorMessage, selectionSet)
     }
@@ -80,16 +80,16 @@ open class ProxyEngineObjectData(
      */
     private fun buildOerKey(
         selection: String,
-        selections: RawSelectionSet
+        selections: EngineSelectionSet
     ): ObjectEngineResult.Key {
-        val rawSelection = selections.resolveSelection(objectEngineResult.type.name, selection)
-        val args = selections.argumentsOfSelection(rawSelection.typeCondition, rawSelection.selectionName)
+        val engineSelection = selections.resolveSelection(objectEngineResult.type.name, selection)
+        val args = selections.argumentsOfSelection(engineSelection.typeCondition, engineSelection.selectionName)
             ?: emptyMap()
-        return ObjectEngineResult.Key(rawSelection.fieldName, rawSelection.selectionName, args)
+        return ObjectEngineResult.Key(engineSelection.fieldName, engineSelection.selectionName, args)
     }
 
     /** @throws UnsetFieldException if the field is not in the selection set */
-    private fun checkSelectionIsInSelectionSet(selection: String): RawSelectionSet {
+    private fun checkSelectionIsInSelectionSet(selection: String): EngineSelectionSet {
         if (selectionSet == null || !selectionSet.containsSelection(type.name, selection)) {
             throw UnsetFieldException(
                 selection,
@@ -106,10 +106,10 @@ open class ProxyEngineObjectData(
      */
     private fun maybeSubselections(
         resultKey: String,
-        selections: RawSelectionSet
-    ): RawSelectionSet? {
-        val rawSelection = selections.resolveSelection(objectEngineResult.type.name, resultKey)
-        val field = requireNotNull(objectEngineResult.type.getField(rawSelection.fieldName) ?: introspectionFields[rawSelection.fieldName])
+        selections: EngineSelectionSet
+    ): EngineSelectionSet? {
+        val engineSelection = selections.resolveSelection(objectEngineResult.type.name, resultKey)
+        val field = requireNotNull(objectEngineResult.type.getField(engineSelection.fieldName) ?: introspectionFields[engineSelection.fieldName])
         return if (GraphQLTypeUtil.unwrapAll(field.type) is GraphQLCompositeType) {
             selections.selectionSetForSelection(objectEngineResult.type.name, resultKey)
         } else {
@@ -122,7 +122,7 @@ open class ProxyEngineObjectData(
      */
     private suspend fun marshal(
         value: Any?,
-        subselections: RawSelectionSet?
+        subselections: EngineSelectionSet?
     ): Any? {
         return when (value) {
             null -> null

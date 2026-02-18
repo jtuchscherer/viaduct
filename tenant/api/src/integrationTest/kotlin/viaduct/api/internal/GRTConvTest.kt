@@ -43,11 +43,11 @@ import viaduct.arbitrary.graphql.ir
 import viaduct.arbitrary.graphql.objectIR
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.engineObjectsAreEquivalent
 import viaduct.engine.api.gj
-import viaduct.engine.api.mocks.createRawSelectionSet
+import viaduct.engine.api.mocks.createEngineSelectionSet
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
@@ -374,7 +374,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("O1"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "O1",
                 """
                     obj: objectField {
@@ -410,7 +410,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("RecursiveObject"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "RecursiveObject",
                 "x:int, nested { y:int }"
             ),
@@ -441,7 +441,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("O2"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "O2",
                 "a:intField, b:intField"
             )
@@ -465,7 +465,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("O2"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "O2",
                 "x:intField"
             ),
@@ -481,7 +481,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("O2"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "O2",
                 "x:intField"
             ),
@@ -499,7 +499,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("O2"),
-            mkRawSelectionSet(
+            mkEngineSelectionSet(
                 "O2",
                 "x:intField"
             ),
@@ -528,7 +528,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("I0"),
-            mkRawSelectionSet("I0", "x:commonField"),
+            mkEngineSelectionSet("I0", "x:commonField"),
             KeyMapping.FieldNameToSelection
         )
         assertRoundtrip(
@@ -559,7 +559,7 @@ class GRTConvTest : KotestPropertyBase() {
         val conv = GRTConv(
             internalContext,
             schema.type("U1"),
-            mkRawSelectionSet("U1", "... on I1 { x:commonField }"),
+            mkEngineSelectionSet("U1", "... on I1 { x:commonField }"),
             KeyMapping.FieldNameToSelection
         )
         assertRoundtrip(
@@ -642,12 +642,12 @@ class GRTConvTest : KotestPropertyBase() {
 
     private fun ViaductSchema.inputField(coord: Coordinate): GraphQLInputObjectField = typeAs<GraphQLInputObjectType>(coord.first).getField(coord.second)
 
-    private fun mkRawSelectionSet(
+    private fun mkEngineSelectionSet(
         selectionsType: String,
         selections: String,
         variables: Map<String, Any?> = emptyMap()
-    ): RawSelectionSet =
-        createRawSelectionSet(
+    ): EngineSelectionSet =
+        createEngineSelectionSet(
             SelectionsParser.parse(selectionsType, selections),
             schema,
             variables

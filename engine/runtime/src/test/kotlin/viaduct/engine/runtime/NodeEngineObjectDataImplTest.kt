@@ -15,7 +15,7 @@ import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.mocks.MockCheckerErrorResult
 import viaduct.engine.api.mocks.MockSchema
 import viaduct.engine.runtime.mocks.ContextMocks
@@ -31,7 +31,7 @@ class NodeEngineObjectDataImplTest {
     )
     private val testType = schema.schema.getObjectType("TestType")
     private lateinit var context: EngineExecutionContext
-    private lateinit var selections: RawSelectionSet
+    private lateinit var selections: EngineSelectionSet
     private lateinit var dispatcherRegistry: DispatcherRegistry
     private lateinit var nodeResolver: NodeResolverDispatcher
     private lateinit var nodeReference: NodeEngineObjectDataImpl
@@ -40,7 +40,7 @@ class NodeEngineObjectDataImplTest {
 
     @BeforeEach
     fun setUp() {
-        selections = mockk<RawSelectionSet>()
+        selections = mockk<EngineSelectionSet>()
         dispatcherRegistry = mockk<DispatcherRegistry>()
         context = ContextMocks(
             myFullSchema = schema,

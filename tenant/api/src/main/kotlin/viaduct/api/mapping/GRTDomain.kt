@@ -12,7 +12,7 @@ import viaduct.api.select.SelectionSet
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.GRT
 import viaduct.apiannotations.ExperimentalApi
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.Domain
 import viaduct.mapping.graphql.IR
@@ -21,7 +21,7 @@ import viaduct.mapping.graphql.IR
 @ExperimentalApi
 class GRTDomain<T : GRT> private constructor(
     private val ctx: InternalContext,
-    private val selectionSet: RawSelectionSet?,
+    private val selectionSet: EngineSelectionSet?,
     private val keyMapping: KeyMapping
 ) : Domain<T> {
     override val conv: Conv<T, IR.Value.Object> =
@@ -66,7 +66,7 @@ class GRTDomain<T : GRT> private constructor(
         ): Domain<T> =
             GRTDomain(
                 ctx.internal,
-                (selectionSet as InternalSelectionSet).rawSelectionSet,
+                (selectionSet as InternalSelectionSet).engineSelectionSet,
                 keyMapping
             )
 

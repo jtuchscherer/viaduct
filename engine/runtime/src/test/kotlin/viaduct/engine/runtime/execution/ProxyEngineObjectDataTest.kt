@@ -28,16 +28,16 @@ import viaduct.engine.runtime.ObjectEngineResultTestHelper
 import viaduct.engine.runtime.ProxyEngineObjectData
 import viaduct.engine.runtime.Value
 import viaduct.engine.runtime.context.CompositeLocalContext
-import viaduct.engine.runtime.createRss
+import viaduct.engine.runtime.createEngineSelectionSet
 import viaduct.engine.runtime.createSchema
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProxyEngineObjectDataTest {
     private inner class Fixture(sdl: String, test: suspend Fixture.() -> Unit) {
         val schema = createSchema(sdl)
 
-        private val selectionSetFactory = RawSelectionSetFactoryImpl(schema)
+        private val selectionSetFactory = EngineSelectionSetFactoryImpl(schema)
 
         fun mkOER(
             typename: String,
@@ -52,7 +52,7 @@ class ProxyEngineObjectDataTest {
                 errors.toMutableList(),
                 emptyList(),
                 schema,
-                createRss(typename, selections, variables, schema)
+                createEngineSelectionSet(typename, selections, variables, schema)
             )
 
         fun mkProxy(
@@ -64,7 +64,7 @@ class ProxyEngineObjectDataTest {
         ): ProxyEngineObjectData {
             val selectionSet =
                 fragment?.let {
-                    selectionSetFactory.rawSelectionSet(typename, fragment, variables)
+                    selectionSetFactory.engineSelectionSet(typename, fragment, variables)
                 }
             val oer = ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
@@ -72,7 +72,7 @@ class ProxyEngineObjectDataTest {
                 errors.toMutableList(),
                 emptyList(),
                 schema,
-                selectionSet ?: createRss(typename, "id", emptyMap(), schema)
+                selectionSet ?: createEngineSelectionSet(typename, "id", emptyMap(), schema)
             )
             return ProxyEngineObjectData(oer, "error msg", selectionSet)
         }
@@ -87,7 +87,7 @@ class ProxyEngineObjectDataTest {
         ): ProxyEngineObjectData {
             val selectionSet =
                 fragment?.let {
-                    selectionSetFactory.rawSelectionSet(typename, fragment, variables)
+                    selectionSetFactory.engineSelectionSet(typename, fragment, variables)
                 }
             val oer = ObjectEngineResultTestHelper.newFromMap(
                 schema.schema.getObjectType(typename),
@@ -95,7 +95,7 @@ class ProxyEngineObjectDataTest {
                 errors.toMutableList(),
                 emptyList(),
                 schema,
-                selectionSet ?: createRss(typename, "id", emptyMap(), schema)
+                selectionSet ?: createEngineSelectionSet(typename, "id", emptyMap(), schema)
             )
             return ProxyEngineObjectData(oer, "error", selectionSet)
         }
@@ -109,7 +109,7 @@ class ProxyEngineObjectDataTest {
         ): ProxyEngineObjectData {
             val selectionSet =
                 fragment?.let {
-                    selectionSetFactory.rawSelectionSet(oer.type.name, fragment, variables)
+                    selectionSetFactory.engineSelectionSet(oer.type.name, fragment, variables)
                 }
             if (!applyAccessChecks) {
                 return CheckerProxyEngineObjectData(oer, "error", selectionSet)

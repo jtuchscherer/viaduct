@@ -12,8 +12,8 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.gj
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ACCESS_CHECK_SLOT
@@ -49,7 +49,7 @@ object ObjectEngineResultTestHelper {
         errors: MutableList<Pair<String, Throwable>>,
         currentPath: List<String> = emptyList(),
         schema: ViaductSchema,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
     ): ObjectEngineResultImpl =
         newFromMap(
             type = type,
@@ -67,7 +67,7 @@ object ObjectEngineResultTestHelper {
         errors: MutableList<Pair<ObjectEngineResult.Key, Throwable>>,
         currentPath: List<String> = emptyList(),
         schema: ViaductSchema,
-        selectionSet: RawSelectionSet
+        selectionSet: EngineSelectionSet
     ): ObjectEngineResultImpl {
         val result = newForType(type)
         // Since this OER is created from existing data, its resolution is already complete
@@ -123,7 +123,7 @@ object ObjectEngineResultTestHelper {
         errors: MutableList<Pair<ObjectEngineResult.Key, Throwable>>,
         currentPath: List<String>,
         schema: ViaductSchema,
-        selectionSet: RawSelectionSet
+        selectionSet: EngineSelectionSet
     ): Any? {
         if (value == null) return null
 
@@ -208,7 +208,7 @@ object ObjectEngineResultTestHelper {
      */
     private fun Map<*, Any?>.rekey(
         type: GraphQLObjectType,
-        selectionSet: RawSelectionSet
+        selectionSet: EngineSelectionSet
     ): Map<ObjectEngineResult.Key, Any?> {
         if (keys.all { it is ObjectEngineResult.Key }) {
             @Suppress("UNCHECKED_CAST")

@@ -2,8 +2,8 @@ package viaduct.engine.runtime
 
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolverMetadata
 
 /**
@@ -23,7 +23,7 @@ class NodeResolverDispatcherImpl(
 
     override suspend fun resolve(
         id: String,
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         context: EngineExecutionContext
     ): EngineObjectData {
         context as? EngineExecutionContextImpl ?: throw IllegalArgumentException(

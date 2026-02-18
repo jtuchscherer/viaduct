@@ -22,14 +22,14 @@ import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.engine.runtime.select.loader.SelectTestSchemaFixture
 
-class RawSelectionSetFactoryImplTest {
-    private val factory = RawSelectionSetFactoryImpl(
+class EngineSelectionSetFactoryImplTest {
+    private val factory = EngineSelectionSetFactoryImpl(
         ViaductSchema(SelectTestSchemaFixture.schema)
     )
 
     @Test
     fun `empty`() {
-        val ss = factory.rawSelectionSet(
+        val ss = factory.engineSelectionSet(
             "Query",
             "__typename @skip(if:true)",
             emptyMap()
@@ -40,27 +40,27 @@ class RawSelectionSetFactoryImplTest {
     @Test
     fun `throws on empty selections string`() {
         assertThrows<IllegalArgumentException> {
-            factory.rawSelectionSet("Query", "", emptyMap())
+            factory.engineSelectionSet("Query", "", emptyMap())
         }
     }
 
     @Test
     fun `throws on unknown type`() {
         assertThrows<IllegalArgumentException> {
-            factory.rawSelectionSet("UnknownType", "__typename", emptyMap())
+            factory.engineSelectionSet("UnknownType", "__typename", emptyMap())
         }
     }
 
     @Test
     fun `throws on unparseasble selections`() {
         assertThrows<IllegalArgumentException> {
-            factory.rawSelectionSet("Query", "{", emptyMap())
+            factory.engineSelectionSet("Query", "{", emptyMap())
         }
     }
 
     @Test
     fun `create from String`() {
-        val ss = factory.rawSelectionSet(
+        val ss = factory.engineSelectionSet(
             "Foo",
             "id fooSelf { fooId }",
             emptyMap()
@@ -108,7 +108,7 @@ class RawSelectionSetFactoryImplTest {
                     .type(type)
                     .build()
             )
-            val ss = factory.rawSelectionSet(env)
+            val ss = factory.engineSelectionSet(env)
             assertNotNull(ss)
             ss!!
 
@@ -130,12 +130,12 @@ class RawSelectionSetFactoryImplTest {
                 )
                 .build()
         )
-        assertNull(factory.rawSelectionSet(env))
+        assertNull(factory.engineSelectionSet(env))
     }
 
     @Test
     fun `create from ParsedSelections`() {
-        val ss = factory.rawSelectionSet(
+        val ss = factory.engineSelectionSet(
             SelectionsParser.parse("Query", "__typename"),
             emptyMap()
         )
@@ -145,7 +145,7 @@ class RawSelectionSetFactoryImplTest {
 
     @Test
     fun `create from ParsedSelections -- with variables`() {
-        val ss = factory.rawSelectionSet(
+        val ss = factory.engineSelectionSet(
             SelectionsParser.parse("Query", "__typename @skip(if:${'$'}skipIf)"),
             mapOf("skipIf" to true)
         )
@@ -157,7 +157,7 @@ class RawSelectionSetFactoryImplTest {
     fun `create from ParsedSelections -- not in schema`() {
         val parsed = SelectionsParser.parse("Other", "__typename")
         assertThrows<IllegalArgumentException> {
-            factory.rawSelectionSet(parsed, emptyMap())
+            factory.engineSelectionSet(parsed, emptyMap())
         }
     }
 }

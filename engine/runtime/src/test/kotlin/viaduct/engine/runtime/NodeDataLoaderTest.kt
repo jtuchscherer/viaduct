@@ -8,7 +8,7 @@ import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.mocks.MockTenantModuleBootstrapper
 import viaduct.engine.api.mocks.createEngineObjectData
 import viaduct.engine.api.mocks.runFeatureTest
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 
 class NodeDataLoaderTest {
     private val id1 = "1"
@@ -21,13 +21,13 @@ class NodeDataLoaderTest {
         type Foo { a: String }
         """.trimIndent()
     )
-    private val selectionSetFactory = RawSelectionSetFactoryImpl(schema)
+    private val selectionSetFactory = EngineSelectionSetFactoryImpl(schema)
 
     @Test
     fun `covers returns true for exact match`() {
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id bar", emptyMap())
         )
         assertTrue(selector.covers(selector, isSelective = false))
     }
@@ -36,18 +36,18 @@ class NodeDataLoaderTest {
     fun `covers returns true for larger selection set`() {
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id bar foo { a }", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id bar foo { a }", emptyMap())
         )
         val other = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "foo { a } bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "foo { a } bar", emptyMap())
         )
         assertTrue(selector.covers(other, isSelective = false))
     }
 
     @Test
     fun `covers returns false for different ID`() {
-        val selections = selectionSetFactory.rawSelectionSet("Test", "id bar", emptyMap())
+        val selections = selectionSetFactory.engineSelectionSet("Test", "id bar", emptyMap())
         val selector = NodeResolverExecutor.Selector("id1", selections)
         val other = NodeResolverExecutor.Selector("id2", selections)
         assertFalse(selector.covers(other, isSelective = false))
@@ -58,11 +58,11 @@ class NodeDataLoaderTest {
         // Non-selective resolvers always return their full output, so ID match is sufficient
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id foo { a }", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id foo { a }", emptyMap())
         )
         val other = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id foo { a } bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id foo { a } bar", emptyMap())
         )
         assertTrue(selector.covers(other, isSelective = false))
     }
@@ -73,11 +73,11 @@ class NodeDataLoaderTest {
         // so cached entry must cover all requested fields
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id foo { a }", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id foo { a }", emptyMap())
         )
         val other = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id foo { a } bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id foo { a } bar", emptyMap())
         )
         assertFalse(selector.covers(other, isSelective = true))
     }
@@ -87,11 +87,11 @@ class NodeDataLoaderTest {
         // When cached entry has more fields than requested, it's a valid cache hit
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id bar foo { a }", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id bar foo { a }", emptyMap())
         )
         val other = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "foo { a } bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "foo { a } bar", emptyMap())
         )
         assertTrue(selector.covers(other, isSelective = true))
     }
@@ -100,14 +100,14 @@ class NodeDataLoaderTest {
     fun `covers returns true for exact match when selective`() {
         val selector = NodeResolverExecutor.Selector(
             id = "id1",
-            selections = selectionSetFactory.rawSelectionSet("Test", "id bar", emptyMap())
+            selections = selectionSetFactory.engineSelectionSet("Test", "id bar", emptyMap())
         )
         assertTrue(selector.covers(selector, isSelective = true))
     }
 
     @Test
     fun `covers returns false for different ID when selective`() {
-        val selections = selectionSetFactory.rawSelectionSet("Test", "id bar", emptyMap())
+        val selections = selectionSetFactory.engineSelectionSet("Test", "id bar", emptyMap())
         val selector = NodeResolverExecutor.Selector("id1", selections)
         val other = NodeResolverExecutor.Selector("id2", selections)
         assertFalse(selector.covers(other, isSelective = true))

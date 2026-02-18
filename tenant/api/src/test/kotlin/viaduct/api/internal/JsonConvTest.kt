@@ -32,9 +32,9 @@ import viaduct.arbitrary.graphql.TypenameValueWeight
 import viaduct.arbitrary.graphql.ir
 import viaduct.arbitrary.graphql.objectIR
 import viaduct.arbitrary.graphql.viaductSchema
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.api.mocks.createRawSelectionSet
+import viaduct.engine.api.mocks.createEngineSelectionSet
 import viaduct.engine.api.mocks.createSchema
 import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.IR
@@ -415,7 +415,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("Obj"),
-                mkRawSelectionSet("Obj", "x"),
+                mkEngineSelectionSet("Obj", "x"),
                 JsonConv.AddJsonTypenameField.Never
             )
 
@@ -436,7 +436,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("Obj"),
-                mkRawSelectionSet("Obj", "a:x, b:x"),
+                mkEngineSelectionSet("Obj", "a:x, b:x"),
                 JsonConv.AddJsonTypenameField.Never
             )
 
@@ -459,7 +459,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("Obj"),
-                mkRawSelectionSet("Obj", "a:x, obj { b:x }"),
+                mkEngineSelectionSet("Obj", "a:x, obj { b:x }"),
                 JsonConv.AddJsonTypenameField.Never
             )
 
@@ -484,7 +484,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("Obj"),
-                mkRawSelectionSet("Obj", "a:x, b:x"),
+                mkEngineSelectionSet("Obj", "a:x, b:x"),
                 JsonConv.AddJsonTypenameField.Never
             )
             assertRoundtrip(
@@ -549,7 +549,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("U"),
-                mkRawSelectionSet("U", "... on A { a:x }")
+                mkEngineSelectionSet("U", "... on A { a:x }")
             )
             assertRoundtrip(
                 conv,
@@ -608,7 +608,7 @@ class JsonConvTest : KotestPropertyBase() {
             val conv = JsonConv(
                 schema,
                 graphQLType("I"),
-                mkRawSelectionSet("I", "... on A { a:x }")
+                mkEngineSelectionSet("I", "... on A { a:x }")
             )
             assertRoundtrip(
                 conv,
@@ -692,12 +692,12 @@ class JsonConvTest : KotestPropertyBase() {
 
         fun graphQLType(name: String): GraphQLType = schema.schema.getType(name)!!
 
-        fun mkRawSelectionSet(
+        fun mkEngineSelectionSet(
             selectionsType: String,
             selections: String,
             variables: Map<String, Any?> = emptyMap()
-        ): RawSelectionSet =
-            createRawSelectionSet(
+        ): EngineSelectionSet =
+            createEngineSelectionSet(
                 SelectionsParser.parse(selectionsType, selections),
                 schema,
                 variables

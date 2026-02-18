@@ -4,9 +4,9 @@ import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLTypeUtil
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.CheckerResultContext
+import viaduct.engine.api.EngineSelection
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.RawSelection
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ACCESS_CHECK_SLOT
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.ENGINE_VALUE_SLOT
 
@@ -38,7 +38,7 @@ object SyncEngineObjectDataFactory {
     suspend fun resolve(
         objectEngineResult: ObjectEngineResult,
         errorMessage: String,
-        selectionSet: RawSelectionSet? = null,
+        selectionSet: EngineSelectionSet? = null,
     ): SyncProxyEngineObjectData {
         if (selectionSet == null) {
             return SyncProxyEngineObjectData(
@@ -62,7 +62,7 @@ object SyncEngineObjectDataFactory {
     private suspend fun resolveImpl(
         objectEngineResult: ObjectEngineResultImpl,
         errorMessage: String,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
     ): SyncProxyEngineObjectData {
         val data = mutableMapOf<String, Any?>()
 
@@ -73,7 +73,7 @@ object SyncEngineObjectDataFactory {
         for (selection in selections) {
             val selectionName = selection.selectionName
 
-            val rawSelection = selectionSet.resolveSelection(
+            val engineSelection = selectionSet.resolveSelection(
                 objectEngineResult.type.name,
                 selectionName
             )
@@ -81,11 +81,11 @@ object SyncEngineObjectDataFactory {
             val subselections = maybeSelections(
                 objectEngineResult,
                 selectionSet,
-                rawSelection.fieldName,
+                engineSelection.fieldName,
                 selectionName
             )
 
-            val cell = objectEngineResult.getCellOptimistically(oerKey(selectionSet, rawSelection))
+            val cell = objectEngineResult.getCellOptimistically(oerKey(selectionSet, engineSelection))
             data[selectionName] = unwrap(cell, subselections, errorMessage)
         }
 
@@ -112,7 +112,7 @@ object SyncEngineObjectDataFactory {
      */
     private suspend fun unwrap(
         value: Any?,
-        subselections: RawSelectionSet?,
+        subselections: EngineSelectionSet?,
         errorMessage: String,
     ): Any? {
         return when (value) {
@@ -198,10 +198,10 @@ object SyncEngineObjectDataFactory {
 
     private fun maybeSelections(
         objectEngineResult: ObjectEngineResultImpl,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
         fieldName: String,
         selectionName: String,
-    ): RawSelectionSet? {
+    ): EngineSelectionSet? {
         val field = objectEngineResult.type.getField(fieldName)
         return if (GraphQLTypeUtil.unwrapAll(field.type) is GraphQLCompositeType) {
             selectionSet.selectionSetForSelection(
@@ -214,16 +214,16 @@ object SyncEngineObjectDataFactory {
     }
 
     private fun oerKey(
-        selectionSet: RawSelectionSet,
-        rawSelection: RawSelection,
+        selectionSet: EngineSelectionSet,
+        engineSelection: EngineSelection,
     ): ObjectEngineResult.Key {
         val args = selectionSet.argumentsOfSelection(
-            rawSelection.typeCondition,
-            rawSelection.selectionName
+            engineSelection.typeCondition,
+            engineSelection.selectionName
         ) ?: emptyMap()
         return ObjectEngineResult.Key(
-            rawSelection.fieldName,
-            rawSelection.selectionName,
+            engineSelection.fieldName,
+            engineSelection.selectionName,
             args
         )
     }

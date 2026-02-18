@@ -28,7 +28,7 @@ import viaduct.api.types.Query
 import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.EngineExecutionContextWrapperImpl
@@ -56,7 +56,7 @@ sealed class ResolverExecutionContextFactoryBase<R : CompositeOutput>(
     @Suppress("UNCHECKED_CAST")
     protected fun <CTX : ResolverExecutionContext<*>> wrap(ctx: CTX): CTX = wrapperContextCls.primaryConstructor!!.call(ctx) as CTX
 
-    private val toNonCompositeSelectionSet: ResolverExecutionContextFactoryBase<R>.(RawSelectionSet?) -> SelectionSet<R> = { sels ->
+    private val toNonCompositeSelectionSet: ResolverExecutionContextFactoryBase<R>.(EngineSelectionSet?) -> SelectionSet<R> = { sels ->
         require(sels == null) {
             "received a non-null selection set on a type declared as not-composite: ${resultType.kcls}"
         }
@@ -64,7 +64,7 @@ sealed class ResolverExecutionContextFactoryBase<R : CompositeOutput>(
         SelectionSet.NoSelections as SelectionSet<R>
     }
 
-    private val toCompositeSelectionSet: ResolverExecutionContextFactoryBase<R>.(RawSelectionSet?) -> SelectionSet<R> = { sels ->
+    private val toCompositeSelectionSet: ResolverExecutionContextFactoryBase<R>.(EngineSelectionSet?) -> SelectionSet<R> = { sels ->
         require(sels != null) {
             "received a null selection set on a type declared as composite: ${resultType.kcls}"
         }
@@ -72,7 +72,7 @@ sealed class ResolverExecutionContextFactoryBase<R : CompositeOutput>(
         SelectionSetImpl(resultType, sels) as SelectionSet<R>
     }
 
-    protected val toSelectionSet: ResolverExecutionContextFactoryBase<R>.(RawSelectionSet?) -> SelectionSet<R> =
+    protected val toSelectionSet: ResolverExecutionContextFactoryBase<R>.(EngineSelectionSet?) -> SelectionSet<R> =
         if (resultType.kcls == CompositeOutput.NotComposite::class) {
             toNonCompositeSelectionSet
         } else {
@@ -92,7 +92,7 @@ class NodeExecutionContextFactory(
     ) {
     operator fun invoke(
         engineExecutionContext: EngineExecutionContext,
-        selections: RawSelectionSet?,
+        selections: EngineSelectionSet?,
         requestContext: Any?,
         id: String
     ): NodeExecutionContext<*> {
@@ -139,7 +139,7 @@ class FieldExecutionContextFactory internal constructor(
     ) {
     operator fun invoke(
         engineExecutionContext: EngineExecutionContext,
-        rawSelections: RawSelectionSet?,
+        engineSelections: EngineSelectionSet?,
         requestContext: Any?,
         rawArguments: Map<String, Any?>,
         rawObjectValue: EngineObjectData,
@@ -153,7 +153,7 @@ class FieldExecutionContextFactory internal constructor(
             FieldExecutionContext::class.java -> FieldExecutionContextImpl<Query>(
                 internalContext,
                 engineExecutionContextWrapper,
-                this.toSelectionSet(rawSelections),
+                this.toSelectionSet(engineSelections),
                 requestContext,
                 rawArguments.toInputLikeGRT(internalContext, argumentsCls),
                 rawObjectValue.toObjectGRT(internalContext, objectCls),
@@ -166,7 +166,7 @@ class FieldExecutionContextFactory internal constructor(
             MutationFieldExecutionContext::class.java -> MutationFieldExecutionContextImpl<Query, Mutation>(
                 internalContext,
                 engineExecutionContextWrapper,
-                this.toSelectionSet(rawSelections),
+                this.toSelectionSet(engineSelections),
                 requestContext,
                 rawArguments.toInputLikeGRT(internalContext, argumentsCls),
                 rawQueryValue.toObjectGRT(internalContext, queryCls),

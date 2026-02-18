@@ -18,7 +18,7 @@ import viaduct.api.types.CompositeOutput
 import viaduct.api.types.Input
 import viaduct.api.types.Object
 import viaduct.apiannotations.ExperimentalApi
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.Domain
 import viaduct.mapping.graphql.IR
@@ -31,7 +31,7 @@ import viaduct.mapping.graphql.IR
 object JsonDomain {
     private class Impl(
         val internal: InternalContext,
-        val selectionSet: RawSelectionSet?,
+        val selectionSet: EngineSelectionSet?,
         val resolveTypeName: ResolveTypeName
     ) : Domain<String> {
         override val conv: Conv<String, IR.Value.Object> = Conv(
@@ -132,10 +132,10 @@ object JsonDomain {
         selectionSet: SelectionSet<T>
     ): Domain<String> {
         selectionSet as InternalSelectionSet
-        val type = selectionSet.rawSelectionSet.type
+        val type = selectionSet.engineSelectionSet.type
         return Impl(
             ctx.internal,
-            selectionSet.rawSelectionSet,
+            selectionSet.engineSelectionSet,
             ResolveTypeName.Const(type)
         )
     }

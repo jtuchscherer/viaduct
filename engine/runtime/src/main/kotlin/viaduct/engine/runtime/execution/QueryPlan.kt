@@ -23,10 +23,10 @@ import java.util.concurrent.Executors
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.future.await
 import viaduct.engine.api.Coordinate
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.QueryPlanExecutionCondition
 import viaduct.engine.api.QueryPlanExecutionCondition.Companion.ALWAYS_EXECUTE
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.VariablesResolver
@@ -302,14 +302,14 @@ data class QueryPlan(
         }
 
         /**
-         * Builds a [QueryPlan] from a [RawSelectionSet] for subquery execution.
+         * Builds a [QueryPlan] from a [EngineSelectionSet] for subquery execution.
          *
-         * This method extracts the graphql-java AST directly from the RawSelectionSet
-         * without re-parsing. The [RawSelectionSet.toSelectionSet] method inlines all
+         * This method extracts the graphql-java AST directly from the EngineSelectionSet
+         * without re-parsing. The [EngineSelectionSet.toSelectionSet] method inlines all
          * fragment spreads, so no fragment definitions are needed.
          *
          * @param parameters The parameters containing the schema and registry.
-         * @param rss The RawSelectionSet containing the selections to execute.
+         * @param rss The EngineSelectionSet containing the selections to execute.
          * @param attribution Attribution for this query plan execution.
          * @param executionCondition Condition under which this plan should execute.
          * @return A new [QueryPlan] instance.
@@ -317,12 +317,12 @@ data class QueryPlan(
          */
         suspend fun buildFromSelections(
             parameters: Parameters,
-            rss: RawSelectionSet,
+            rss: EngineSelectionSet,
             attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
             executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE
         ): QueryPlan {
             if (rss.isEmpty()) {
-                throw IllegalArgumentException("RawSelectionSet.Empty is not supported for subquery execution")
+                throw IllegalArgumentException("EngineSelectionSet.Empty is not supported for subquery execution")
             }
 
             val gjSelectionSet = rss.toSelectionSet()

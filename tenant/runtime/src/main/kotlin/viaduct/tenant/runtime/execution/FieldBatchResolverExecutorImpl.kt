@@ -49,7 +49,7 @@ class FieldBatchResolverExecutorImpl(
             resolverContextFactory(
                 engineExecutionContext = context,
                 requestContext = context.requestContext, // TODO - get rid of this argument
-                rawSelections = key.selections,
+                engineSelections = key.selections,
                 rawArguments = key.arguments,
                 rawObjectValue = key.objectValue,
                 rawQueryValue = key.queryValue,

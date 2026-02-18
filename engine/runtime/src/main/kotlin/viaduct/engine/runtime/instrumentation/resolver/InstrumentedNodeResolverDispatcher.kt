@@ -2,7 +2,7 @@ package viaduct.engine.runtime.instrumentation.resolver
 
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.instrumentation.resolver.ResolverFunction
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.runtime.NodeResolverDispatcher
@@ -21,7 +21,7 @@ class InstrumentedNodeResolverDispatcher(
 
     override suspend fun resolve(
         id: String,
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         context: EngineExecutionContext
     ): EngineObjectData {
         val createStateParameter = ViaductResolverInstrumentation.CreateInstrumentationStateParameters()

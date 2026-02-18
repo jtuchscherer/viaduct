@@ -20,9 +20,9 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLImplementingType
 import graphql.schema.GraphQLTypeUtil
 import java.util.Locale
+import viaduct.engine.api.EngineSelection
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ParsedSelections
-import viaduct.engine.api.RawSelection
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.fragment.Fragment
 import viaduct.engine.api.fragment.FragmentSource
@@ -32,7 +32,7 @@ import viaduct.graphql.utils.GraphQLTypeRelation
 import viaduct.graphql.utils.ensureOneDirective
 import viaduct.graphql.utils.rawValue
 
-data class RawSelectionSetContext(
+data class EngineSelectionSetContext(
     val variables: Map<String, Any?>,
     val fragmentDefinitions: Map<String, FragmentDefinition>,
     val schema: ViaductSchema,
@@ -56,7 +56,7 @@ data class FieldSelection(val field: Field, val typeCondition: GraphQLCompositeT
 }
 
 /**
- * RawSelectionSet provides an untyped interface for SelectionSet manipulation. It is intended for direct
+ * EngineSelectionSetImpl provides an untyped interface for SelectionSet manipulation. It is intended for direct
  * use by the Viaduct engine or indirect use by tenants via a [SelectionSetImpl].
  *
  * It is differentiated from the graphql-java SelectionSet class by being specialized for
@@ -66,11 +66,11 @@ data class FieldSelection(val field: Field, val typeCondition: GraphQLCompositeT
  * - operations that involve projecting from an interface into an implementation, or a union into a
  *   member, will inherit selected fields from the parent type.
  */
-data class RawSelectionSetImpl(
+data class EngineSelectionSetImpl(
     /** The GraphQL type described by this selection set */
     val def: GraphQLCompositeType,
     /**
-     * [RawSelectionSet] models its selections as a flattened list of fields and type conditions.
+     * [EngineSelectionSet] models its selections as a flattened list of fields and type conditions.
      * This list describes the direct selections on the current type, nested selections that have
      * a type condition, and fragment spreads. These selections do not include field subselections.
      *
@@ -80,13 +80,13 @@ data class RawSelectionSetImpl(
     /** the explicit types requested, @see [requestsType] */
     val requestedTypes: Set<GraphQLCompositeType>,
     /** contextual data for this selection set */
-    val ctx: RawSelectionSetContext
-) : RawSelectionSet {
+    val ctx: EngineSelectionSetContext
+) : EngineSelectionSet {
     override val type: String get() = def.name
 
-    override fun selections(): List<RawSelection> = selections.map { it.toRawSelection() }
+    override fun selections(): List<EngineSelection> = selections.map { it.toEngineSelection() }
 
-    override fun traversableSelections(): List<RawSelection> {
+    override fun traversableSelections(): List<EngineSelection> {
         val type = compositeType(type)
         return selections.mapNotNull { sel ->
             // a selection can be reprojected by widening and then narrowing to a different type.
@@ -100,7 +100,7 @@ data class RawSelectionSetImpl(
             if (selectionType !is GraphQLCompositeType) {
                 return@mapNotNull null
             }
-            sel.toRawSelection()
+            sel.toEngineSelection()
         }
     }
 
@@ -115,7 +115,7 @@ data class RawSelectionSetImpl(
         return SelectionSet(newSelections)
     }
 
-    override fun addVariables(variables: Map<String, Any?>): RawSelectionSet {
+    override fun addVariables(variables: Map<String, Any?>): EngineSelectionSet {
         this.ctx.variables.forEach { (k, _) ->
             require(!variables.containsKey(k)) {
                 "cannot rebind variable with key $k"
@@ -136,7 +136,7 @@ data class RawSelectionSetImpl(
     override fun toNodelikeSelectionSet(
         nodeFieldName: String,
         arguments: List<Argument>
-    ): RawSelectionSet {
+    ): EngineSelectionSet {
         val isNode = this.type == "Node"
         val implementsNode = (this.def as? GraphQLImplementingType)?.interfaces?.any { it.name == "Node" } == true
         require(isNode || implementsNode) {
@@ -182,26 +182,26 @@ data class RawSelectionSetImpl(
     override fun resolveSelection(
         type: String,
         selectionName: String
-    ): RawSelection =
+    ): EngineSelection =
         findSelection(type) { it.resultKey == selectionName }
-            ?.let { it.toRawSelection() }
+            ?.let { it.toEngineSelection() }
             ?: throw IllegalArgumentException("No selection found for selectionName `$selectionName`")
 
     /**
-     * Return a new RawSelectionSetImpl that incorporates the provided graphql-java
+     * Return a new EngineSelectionSetImpl that incorporates the provided graphql-java
      * [graphql.language.SelectionSet].
      *
      * The provided SelectionSet must be schematically valid for this
-     * RawSelectionSetImpl's [def].
+     * EngineSelectionSetImpl's [def].
      */
-    internal operator fun plus(selectionSet: GJSelectionSet): RawSelectionSetImpl = withTypedSelections(def, selectionSet)
+    internal operator fun plus(selectionSet: GJSelectionSet): EngineSelectionSetImpl = withTypedSelections(def, selectionSet)
 
     /** Recursively extract the [FieldSelection]s that apply to the provided type. */
     private fun withTypedSelections(
         type: GraphQLCompositeType,
         selectionSet: GJSelectionSet,
         spreadFragments: Set<String> = emptySet()
-    ): RawSelectionSetImpl =
+    ): EngineSelectionSetImpl =
         selectionSet.selections
             .filter(::applyConditionalDirectives)
             .fold(this) { acc, sel ->
@@ -253,7 +253,7 @@ data class RawSelectionSetImpl(
     override fun selectionSetForField(
         type: String,
         field: String
-    ): RawSelectionSetImpl {
+    ): EngineSelectionSetImpl {
         val coord = (type to field).gj
         val subselectionType =
             ctx.schema.schema.getFieldDefinition(coord)?.let {
@@ -268,7 +268,7 @@ data class RawSelectionSetImpl(
     override fun selectionSetForSelection(
         type: String,
         selectionName: String
-    ): RawSelectionSetImpl {
+    ): EngineSelectionSetImpl {
         val selectionType = fieldsContainer(type)
         val subselectionType =
             resolveSelection(type, selectionName).let { sel ->
@@ -288,7 +288,7 @@ data class RawSelectionSetImpl(
         selectionType: GraphQLCompositeType,
         subselectionType: GraphQLCompositeType,
         match: (Field) -> Boolean
-    ): RawSelectionSetImpl {
+    ): EngineSelectionSetImpl {
         if (!ctx.schema.rels.isSpreadable(this.def, selectionType)) {
             throw IllegalArgumentException("Selections of type ${selectionType.name} are not spreadable in type ${this.def.name}")
         }
@@ -302,11 +302,11 @@ data class RawSelectionSetImpl(
                 }
                 .mapNotNull { it.field.selectionSet }
 
-        val base = RawSelectionSetImpl(def = subselectionType, selections = emptyList(), requestedTypes = emptySet(), ctx)
+        val base = EngineSelectionSetImpl(def = subselectionType, selections = emptyList(), requestedTypes = emptySet(), ctx)
         return newSelections.fold(base) { acc, ss -> acc + ss }
     }
 
-    override fun selectionSetForType(type: String): RawSelectionSetImpl {
+    override fun selectionSetForType(type: String): EngineSelectionSetImpl {
         val u = compositeType(type)
 
         if (u == this.def) return this
@@ -466,8 +466,8 @@ data class RawSelectionSetImpl(
             "Missing fragment definition: $name"
         }
 
-    private fun FieldSelection.toRawSelection(): RawSelection =
-        RawSelection(
+    private fun FieldSelection.toEngineSelection(): EngineSelection =
+        EngineSelection(
             typeCondition = typeCondition.name,
             fieldName = field.name,
             selectionName = field.resultKey
@@ -481,7 +481,7 @@ data class RawSelectionSetImpl(
             variables: Map<String, Any?>,
             schema: ViaductSchema,
             graphQLContext: GraphQLContext = emptyGraphQLContext
-        ): RawSelectionSetImpl {
+        ): EngineSelectionSetImpl {
             val typeName = parsedSelections.typeName
             val type =
                 schema.schema.getType(typeName) as? GraphQLCompositeType
@@ -490,11 +490,11 @@ data class RawSelectionSetImpl(
                     )
 
             val base =
-                RawSelectionSetImpl(
+                EngineSelectionSetImpl(
                     def = type,
                     requestedTypes = emptySet(),
                     selections = emptyList(),
-                    ctx = RawSelectionSetContext(
+                    ctx = EngineSelectionSetContext(
                         variables = variables,
                         fragmentDefinitions = parsedSelections.fragmentMap,
                         schema = schema,

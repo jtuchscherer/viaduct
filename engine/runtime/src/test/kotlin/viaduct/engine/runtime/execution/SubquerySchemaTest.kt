@@ -31,7 +31,7 @@ import viaduct.engine.api.mocks.runFeatureTest
  *
  * Subqueries should ALWAYS execute against `fullSchema`, regardless of whether
  * the outer operation is introspective. This is because:
- * 1. `RawSelectionSetFactoryImpl` builds RawSelectionSets with `fullSchema`
+ * 1. `EngineSelectionSetFactoryImpl` builds EngineSelectionSets with `fullSchema`
  * 2. `EngineExecutionContextImpl.query/mutation` uses `fullSchema.schema.queryType/mutationType`
  * 3. Subqueries are internal server-side calls that shouldn't be constrained by
  *    the client-visible schema scope
@@ -92,8 +92,8 @@ class SubquerySchemaTest {
             field("Container" to "derivedFromInternal") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "internalField", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "internalField", emptyMap())
 
                         val queryResult = ctx.query(
                             resolverId = "Container.derivedFromInternal",
@@ -180,8 +180,8 @@ class SubquerySchemaTest {
             field("Container" to "triggerInternalMutation") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Mutation", "internalMutation", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Mutation", "internalMutation", emptyMap())
 
                         val mutationResult = ctx.mutation(
                             resolverId = "Container.triggerInternalMutation",
@@ -234,8 +234,8 @@ class SubquerySchemaTest {
             field("Container" to "derivedFromQuery") {
                 resolver {
                     fn { _, _, _, _, ctx ->
-                        val rss = ctx.rawSelectionSetFactory
-                            .rawSelectionSet("Query", "rootValue", emptyMap())
+                        val rss = ctx.engineSelectionSetFactory
+                            .engineSelectionSet("Query", "rootValue", emptyMap())
 
                         val queryResult = ctx.query(
                             resolverId = "Container.derivedFromQuery",

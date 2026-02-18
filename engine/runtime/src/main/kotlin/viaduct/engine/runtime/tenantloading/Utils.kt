@@ -8,8 +8,8 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeUtil
 import viaduct.engine.api.Coordinate
-import viaduct.engine.api.RawSelection
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelection
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.utils.GraphQLTypeRelation
 import viaduct.graphql.utils.VariableUsageInfo
@@ -66,16 +66,16 @@ internal val GraphQLType.isListish: Boolean get() =
         else -> false
     }
 
-/** return a [Coordinate] representation of a [RawSelection] */
-internal val RawSelection.coord: Coordinate get() = this.typeCondition to this.fieldName
+/** return a [Coordinate] representation of a [EngineSelection] */
+internal val EngineSelection.coord: Coordinate get() = this.typeCondition to this.fieldName
 
 /**
  * return a [GraphQLTypeRelation.Relation] that describes the relationship
- * between this RawSelectionSet and the type condition of the provided [selection]
+ * between this EngineSelectionSet and the type condition of the provided [selection]
  */
-internal fun RawSelectionSet.relation(
+internal fun EngineSelectionSet.relation(
     schema: ViaductSchema,
-    selection: RawSelection
+    selection: EngineSelection
 ): GraphQLTypeRelation.Relation {
     val ssType = schema.schema.getTypeAs<GraphQLCompositeType>(type)
     val selectionType = schema.schema.getTypeAs<GraphQLCompositeType>(selection.typeCondition)

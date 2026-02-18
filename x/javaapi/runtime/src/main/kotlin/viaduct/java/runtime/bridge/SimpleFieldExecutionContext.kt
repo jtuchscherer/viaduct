@@ -1,7 +1,7 @@
 package viaduct.java.runtime.bridge
 
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.java.api.context.FieldExecutionContext
 
 // Internal marker types for the context implementation
@@ -23,7 +23,7 @@ class SimpleFieldExecutionContext(
     private val arguments: Map<String, Any?>,
     private val objectValue: EngineObjectData,
     private val queryValue: EngineObjectData,
-    private val selections: RawSelectionSet?,
+    private val selections: EngineSelectionSet?,
     private val requestContext: Any?
 ) : FieldExecutionContext<AnyQuery, AnyQuery, AnyArguments, AnySelections> {
     override fun getObjectValue(): AnyQuery {

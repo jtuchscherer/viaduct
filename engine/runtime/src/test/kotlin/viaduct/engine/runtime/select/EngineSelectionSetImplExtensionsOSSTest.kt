@@ -23,7 +23,7 @@ import viaduct.engine.api.fragment.FragmentSource
 import viaduct.engine.api.fragment.FragmentVariables
 import viaduct.engine.api.select.SelectionsParser
 
-class RawSelectionSetImplExtensionsOSSTest : Assertions() {
+class EngineSelectionSetImplExtensionsOSSTest : Assertions() {
     private val schema =
         mkSchema(
             """
@@ -59,8 +59,8 @@ class RawSelectionSetImplExtensionsOSSTest : Assertions() {
         selections: String,
         vars: Map<String, Any?> = emptyMap(),
         schema: GraphQLSchema = this.schema
-    ): RawSelectionSetImpl =
-        RawSelectionSetImpl.create(
+    ): EngineSelectionSetImpl =
+        EngineSelectionSetImpl.create(
             SelectionsParser.parse(type, selections),
             vars,
             ViaductSchema(schema),
@@ -375,7 +375,7 @@ class RawSelectionSetImplExtensionsOSSTest : Assertions() {
     private fun mkFragment(
         type: String,
         vars: Map<String, Any?> = emptyMap()
-    ): RawSelectionSetImpl {
+    ): EngineSelectionSetImpl {
         val schema = mkSchema(
             """
             type $type {
@@ -388,7 +388,7 @@ class RawSelectionSetImplExtensionsOSSTest : Assertions() {
         )
 
         val typeDef = schema.getObjectType(type)
-        val context = RawSelectionSetContext(
+        val context = EngineSelectionSetContext(
             variables = vars,
             fragmentDefinitions = emptyMap(),
             schema = ViaductSchema(schema),
@@ -396,7 +396,7 @@ class RawSelectionSetImplExtensionsOSSTest : Assertions() {
             Locale.getDefault()
         )
 
-        return RawSelectionSetImpl(
+        return EngineSelectionSetImpl(
             def = typeDef,
             selections = emptyList(),
             requestedTypes = emptySet(),
@@ -406,10 +406,10 @@ class RawSelectionSetImplExtensionsOSSTest : Assertions() {
 
     @Test
     fun `toFragment -- creates fragment with correct source and variables`() {
-        val rawSelectionSet = mkFragment("Node", mapOf("var1" to "value1"))
-        val fragment = rawSelectionSet.toFragment()
+        val engineSelectionSet = mkFragment("Node", mapOf("var1" to "value1"))
+        val fragment = engineSelectionSet.toFragment()
         val expectedFragment = Fragment(
-            FragmentSource.create(rawSelectionSet.toDocument()),
+            FragmentSource.create(engineSelectionSet.toDocument()),
             FragmentVariables.fromMap(mapOf("var1" to "value1"))
         )
 

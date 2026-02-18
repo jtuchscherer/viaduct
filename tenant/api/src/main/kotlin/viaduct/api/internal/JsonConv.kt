@@ -12,7 +12,7 @@ import graphql.schema.GraphQLType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetTime
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.ConvMemo
@@ -55,7 +55,7 @@ object JsonConv {
     operator fun invoke(
         schema: ViaductSchema,
         type: GraphQLType,
-        selectionSet: RawSelectionSet? = null,
+        selectionSet: EngineSelectionSet? = null,
         addJsonTypenameField: AddJsonTypenameField = AddJsonTypenameField.Always
     ): Conv<String, IR.Value> =
         Builder(schema, addJsonTypenameField)
@@ -252,7 +252,7 @@ object JsonConv {
 
         fun build(
             type: GraphQLType,
-            selectionSet: RawSelectionSet?
+            selectionSet: EngineSelectionSet?
         ): Conv<String, IR.Value> =
             json(mk(type, selectionSet)).also {
                 convMemo.finalize()
@@ -260,7 +260,7 @@ object JsonConv {
 
         private fun mk(
             type: GraphQLType,
-            selectionSet: RawSelectionSet?,
+            selectionSet: EngineSelectionSet?,
             isNullable: Boolean = true
         ): Conv<Any?, IR.Value> {
             val conv = when (type) {

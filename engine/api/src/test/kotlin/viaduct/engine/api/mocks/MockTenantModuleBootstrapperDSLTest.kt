@@ -377,7 +377,7 @@ class MockTenantModuleBootstrapperDSLTest {
         // Execute the node resolver and verify it works
         val (ctx, reg) = module.contextMocks.run { Pair(engineExecutionContext, dispatcherRegistry) }
         runBlocking {
-            val selectionSet = ctx.rawSelectionSetFactory.rawSelectionSet("TestNode", "id", emptyMap())
+            val selectionSet = ctx.engineSelectionSetFactory.engineSelectionSet("TestNode", "id", emptyMap())
             val result = reg.getNodeResolverDispatcher("TestNode")!!.resolve("test-id", selectionSet, ctx)
             assertEquals("test-id", result.fetch("id"))
 

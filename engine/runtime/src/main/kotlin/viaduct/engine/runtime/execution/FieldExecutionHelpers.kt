@@ -326,7 +326,7 @@ object FieldExecutionHelpers {
                     graphQLContext,
                     locale
                 )
-                val vss = engineExecutionContext.rawSelectionSetFactory.rawSelectionSet(
+                val vss = engineExecutionContext.engineSelectionSetFactory.engineSelectionSet(
                     vrss.selections,
                     variables = innerVariables.toMap()
                 )

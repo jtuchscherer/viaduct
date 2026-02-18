@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.Coordinate
-import viaduct.engine.api.RawSelection
+import viaduct.engine.api.EngineSelection
 import viaduct.engine.api.mocks.MockSchema
 import viaduct.engine.api.select.SelectionsParser
 
-class RawSelectionSetImplTest {
+class EngineSelectionSetImplTest {
     private val defaultSdl =
         """
             type Struct { int: Int }
@@ -42,9 +42,9 @@ class RawSelectionSetImplTest {
         selections: String,
         sdl: String = defaultSdl,
         vars: Map<String, Any?> = mapOf(),
-    ): RawSelectionSetImpl =
+    ): EngineSelectionSetImpl =
         MockSchema.mk(sdl).let { schema ->
-            RawSelectionSetImpl.create(
+            EngineSelectionSetImpl.create(
                 SelectionsParser.parse(typename, selections),
                 vars,
                 schema,
@@ -236,7 +236,7 @@ class RawSelectionSetImplTest {
     fun `containsField -- simple type projections do not change contained fields`() {
         val ss = mk("Node", "id ... on Foo { bar }")
 
-        fun test(ss: RawSelectionSetImpl) {
+        fun test(ss: EngineSelectionSetImpl) {
             assertTrue(ss.containsField("Node", "id"))
             assertTrue(ss.containsField("Foo", "id"))
             assertTrue(ss.containsField("Foo", "bar"))
@@ -521,7 +521,7 @@ class RawSelectionSetImplTest {
     fun `requestsType -- simple type projections do not change requested types`() {
         val ss = mk("Foo", "__typename")
 
-        fun test(ss: RawSelectionSetImpl) {
+        fun test(ss: EngineSelectionSetImpl) {
             assertTrue(ss.requestsType("Node"))
             assertTrue(ss.requestsType("Foo"))
             assertFalse(ss.requestsType("Baz"))
@@ -1158,7 +1158,7 @@ class RawSelectionSetImplTest {
     fun `selections -- simple`() {
         val ss = mk("Node", "id")
         assertEquals(
-            listOf(RawSelection("Node", "id", "id")),
+            listOf(EngineSelection("Node", "id", "id")),
             ss.selections()
         )
     }
@@ -1168,8 +1168,8 @@ class RawSelectionSetImplTest {
         val ss = mk("Node", "id ... on Node { id }")
         assertEquals(
             listOf(
-                RawSelection("Node", "id", "id"),
-                RawSelection("Node", "id", "id"),
+                EngineSelection("Node", "id", "id"),
+                EngineSelection("Node", "id", "id"),
             ),
             ss.selections()
         )
@@ -1179,7 +1179,7 @@ class RawSelectionSetImplTest {
     fun `selections -- aliased`() {
         val ss = mk("Node", "alias: id")
         assertEquals(
-            listOf(RawSelection("Node", "id", "alias")),
+            listOf(EngineSelection("Node", "id", "alias")),
             ss.selections()
         )
     }
@@ -1187,10 +1187,10 @@ class RawSelectionSetImplTest {
     @Test
     fun `selections -- skip and include`() {
         mk("Node", "id @skip(if:true)").let {
-            assertEquals(emptyList<RawSelection>(), it.selections())
+            assertEquals(emptyList<EngineSelection>(), it.selections())
         }
         mk("Node", "id @include(if:false)").let {
-            assertEquals(emptyList<RawSelection>(), it.selections())
+            assertEquals(emptyList<EngineSelection>(), it.selections())
         }
     }
 
@@ -1205,8 +1205,8 @@ class RawSelectionSetImplTest {
         )
         assertEquals(
             setOf(
-                RawSelection("Foo", "int", "int"),
-                RawSelection("Baz", "id", "id"),
+                EngineSelection("Foo", "int", "int"),
+                EngineSelection("Baz", "id", "id"),
             ),
             ss.selections().toSet()
         )
@@ -1223,8 +1223,8 @@ class RawSelectionSetImplTest {
         )
         assertEquals(
             setOf(
-                RawSelection("Node", "id", "id"),
-                RawSelection("Foo", "id", "id"),
+                EngineSelection("Node", "id", "id"),
+                EngineSelection("Foo", "id", "id"),
             ),
             ss.selections().toSet()
         )
@@ -1275,7 +1275,7 @@ class RawSelectionSetImplTest {
             """.trimIndent()
         )
         assertEquals(
-            listOf(RawSelection("Foo", "foo", "foo")),
+            listOf(EngineSelection("Foo", "foo", "foo")),
             ss.traversableSelections()
         )
     }
@@ -1310,10 +1310,10 @@ class RawSelectionSetImplTest {
         )
         assertEquals(
             setOf(
-                RawSelection("Query", "o1", "o1"),
-                RawSelection("Query", "o2", "o2"),
-                RawSelection("Query", "o3", "o3"),
-                RawSelection("Query", "o4", "o4"),
+                EngineSelection("Query", "o1", "o1"),
+                EngineSelection("Query", "o2", "o2"),
+                EngineSelection("Query", "o3", "o3"),
+                EngineSelection("Query", "o4", "o4"),
             ),
             ss.traversableSelections().toSet()
         )
@@ -1330,7 +1330,7 @@ class RawSelectionSetImplTest {
             """.trimIndent()
         )
         assertEquals(
-            listOf(RawSelection("Foo", "foo", "foo")),
+            listOf(EngineSelection("Foo", "foo", "foo")),
             ss.traversableSelections()
         )
     }
@@ -1344,7 +1344,7 @@ class RawSelectionSetImplTest {
             """.trimIndent()
         )
         assertEquals(
-            listOf(RawSelection("Foo", "foo", "foo")),
+            listOf(EngineSelection("Foo", "foo", "foo")),
             ss.traversableSelections()
         )
     }
@@ -1502,7 +1502,7 @@ class RawSelectionSetImplTest {
     fun `resolveSelection -- unaliased`() {
         mk("Query", "x", sdl = "extend type Query { x: Int }").let {
             assertEquals(
-                RawSelection("Query", "x", "x"),
+                EngineSelection("Query", "x", "x"),
                 it.resolveSelection("Query", "x")
             )
         }
@@ -1512,7 +1512,7 @@ class RawSelectionSetImplTest {
     fun `resolveSelection -- aliased`() {
         mk("Query", "y:x", sdl = "extend type Query { x: Int }").let {
             assertEquals(
-                RawSelection("Query", "x", "y"),
+                EngineSelection("Query", "x", "y"),
                 it.resolveSelection("Query", "y")
             )
         }
@@ -1529,20 +1529,20 @@ class RawSelectionSetImplTest {
         mk("Iface", "x, ...on Foo {y, a:x}", sdl = sdl).let {
             // same
             assertEquals(
-                RawSelection("Iface", "x", "x"),
+                EngineSelection("Iface", "x", "x"),
                 it.resolveSelection("Iface", "x")
             )
             // narrower than
             assertEquals(
-                RawSelection("Foo", "y", "y"),
+                EngineSelection("Foo", "y", "y"),
                 it.resolveSelection("Foo", "y")
             )
             assertEquals(
-                RawSelection("Iface", "x", "x"),
+                EngineSelection("Iface", "x", "x"),
                 it.resolveSelection("Foo", "x")
             )
             assertEquals(
-                RawSelection("Foo", "x", "a"),
+                EngineSelection("Foo", "x", "a"),
                 it.resolveSelection("Foo", "a")
             )
         }

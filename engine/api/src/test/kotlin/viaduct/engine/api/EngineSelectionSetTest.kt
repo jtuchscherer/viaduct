@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.fragment.Fragment
 
-class RawSelectionSetTest {
+class EngineSelectionSetTest {
     @Test
     fun `empty`() {
-        val ss = RawSelectionSet.empty("Foo")
+        val ss = EngineSelectionSet.empty("Foo")
 
         assertFalse(ss.containsField(ss.type, "x"))
         assertFalse(ss.containsField("Bar", "x"))
@@ -54,12 +54,12 @@ class RawSelectionSetTest {
             ss.toNodelikeSelectionSet("unused", listOf())
         }
 
-        assertEquals("toNodelikeSelectionSet is not supported for RawSelectionSet.Empty", exceptionToNodelikeSelectionSet.message)
+        assertEquals("toNodelikeSelectionSet is not supported for EngineSelectionSet.Empty", exceptionToNodelikeSelectionSet.message)
 
         val exceptionAddVariables = assertThrows<UnsupportedOperationException> {
             ss.addVariables(mapOf())
         }
-        assertEquals("addVariables is not supported for RawSelectionSet.Empty", exceptionAddVariables.message)
+        assertEquals("addVariables is not supported for EngineSelectionSet.Empty", exceptionAddVariables.message)
 
         assertEquals("", ss.printAsFieldSet())
     }

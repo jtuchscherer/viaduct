@@ -4,14 +4,14 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLTypeUtil
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.FromFieldVariablesResolver
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.Validated
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.gj
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.engine.runtime.validation.Validator
 import viaduct.graphql.utils.GraphQLTypeRelation
 import viaduct.graphql.utils.VariableUsageInfo
@@ -20,7 +20,7 @@ import viaduct.graphql.utils.collectAllVariableUsages
 class FromFieldVariablesHaveValidPaths(
     private val schema: ViaductSchema
 ) : Validator<RequiredSelectionsValidationCtx> {
-    private val rawSelectionSetFactory = RawSelectionSetFactoryImpl(schema)
+    private val engineSelectionSetFactory = EngineSelectionSetFactoryImpl(schema)
 
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun validate(ctx: RequiredSelectionsValidationCtx) {
@@ -93,14 +93,14 @@ class FromFieldVariablesHaveValidPaths(
 
         variableSinksByName.forEach { (name, usages) ->
             val source = checkNotNull(variableSourceByName[name])
-            val sourceRawSelections = rawSelectionSetFactory.rawSelectionSet(source.selections, emptyMap())
+            val sourceEngineSelections = engineSelectionSetFactory.engineSelectionSet(source.selections, emptyMap())
             val selectionPath = checkNotNull(variableResolversByName[name]).path
 
             for (usage in usages) {
                 validateFromFieldVariable(
                     coord = coord,
                     variableName = name,
-                    selections = sourceRawSelections,
+                    selections = sourceEngineSelections,
                     selectionPath = selectionPath,
                     usage = usage
                 )
@@ -118,7 +118,7 @@ class FromFieldVariablesHaveValidPaths(
     private fun validateFromFieldVariable(
         coord: TypeOrFieldCoordinate,
         variableName: String,
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         selectionPath: List<String>,
         usage: VariableUsageInfo
     ) {
@@ -153,7 +153,7 @@ class FromFieldVariablesHaveValidPaths(
         coord: TypeOrFieldCoordinate,
         variableName: String,
         currentType: Type,
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         selectionPath: List<String>,
         selectionPathIndex: Int = 0
     ): Type {

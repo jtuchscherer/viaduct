@@ -120,7 +120,7 @@ class ResolverDataFetcher(
         environment: DataFetchingEnvironment,
         engineResults: EngineResults,
     ): EngineObjectData {
-        val selectionSetFactory = localExecutionContext.rawSelectionSetFactory
+        val selectionSetFactory = localExecutionContext.engineSelectionSetFactory
 
         val objectErrorMessage =
             "add it to @Resolver's objectValueFragment before accessing it via Context.objectValue"
@@ -134,7 +134,7 @@ class ResolverDataFetcher(
                 environment.graphQlContext,
                 environment.locale
             )
-            selectionSetFactory.rawSelectionSet(rss.selections, variables.toMap())
+            selectionSetFactory.engineSelectionSet(rss.selections, variables.toMap())
         }
         val objectValue = ProxyEngineObjectData(
             engineResults.parentResult,
@@ -161,7 +161,7 @@ class ResolverDataFetcher(
                 environment.graphQlContext,
                 environment.locale
             )
-            selectionSetFactory.rawSelectionSet(rss.selections, variables.toMap())
+            selectionSetFactory.engineSelectionSet(rss.selections, variables.toMap())
         }
         val queryValue = ProxyEngineObjectData(
             engineResults.queryResult,
@@ -189,7 +189,7 @@ class ResolverDataFetcher(
         engineObjectData.queryValue,
         engineObjectData.syncObjectValueGetter,
         engineObjectData.syncQueryValueGetter,
-        engineExecutionContext.rawSelectionSetFactory.rawSelectionSet(environment),
+        engineExecutionContext.engineSelectionSetFactory.engineSelectionSet(environment),
         engineExecutionContext
     )
 
@@ -215,9 +215,9 @@ class ResolverDataFetcher(
         }
         val checkerSelectionSetMap = checkerDispatcher.requiredSelectionSets
 
-        val selectionSetFactory = environment.engineExecutionContext.rawSelectionSetFactory
+        val selectionSetFactory = environment.engineExecutionContext.engineSelectionSetFactory
         return checkerSelectionSetMap.mapValues { (_, rss) ->
-            val selectionSet = rss?.let { selectionSetFactory.rawSelectionSet(rss.selections, emptyMap()) }
+            val selectionSet = rss?.let { selectionSetFactory.engineSelectionSet(rss.selections, emptyMap()) }
             CheckerProxyEngineObjectData(
                 engineResult,
                 "missing from checker RSS",

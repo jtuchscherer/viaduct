@@ -2,7 +2,7 @@ package viaduct.engine.runtime.instrumentation.resolver
 
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.instrumentation.resolver.ResolverFunction
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.runtime.FieldResolverDispatcher
@@ -28,7 +28,7 @@ class InstrumentedFieldResolverDispatcher(
         queryValue: EngineObjectData,
         syncObjectValueGetter: suspend () -> EngineObjectData.Sync,
         syncQueryValueGetter: suspend () -> EngineObjectData.Sync,
-        selections: RawSelectionSet?,
+        selections: EngineSelectionSet?,
         context: EngineExecutionContext
     ): Any? {
         val createStateParameter = ViaductResolverInstrumentation.CreateInstrumentationStateParameters()

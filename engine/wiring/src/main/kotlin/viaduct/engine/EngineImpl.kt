@@ -15,8 +15,8 @@ import kotlinx.coroutines.future.await
 import viaduct.engine.api.Engine
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionInput
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.SubqueryExecutionException
 import viaduct.engine.api.TemporaryBypassAccessCheck
@@ -151,7 +151,7 @@ class EngineImpl(
 
     override suspend fun resolveSelectionSet(
         executionHandle: EngineExecutionContext.ExecutionHandle,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions,
     ): EngineObjectData {
         val parentParams = executionHandle.asExecutionParameters()

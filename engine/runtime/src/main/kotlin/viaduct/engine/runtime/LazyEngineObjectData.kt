@@ -2,7 +2,7 @@ package viaduct.engine.runtime
 
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 
 /**
  * An EngineObjectData that is not fully resolved until [resolveData] is called.
@@ -14,7 +14,7 @@ interface LazyEngineObjectData : EngineObjectData {
      * @return true if the data was resolved by this call, false if it was already called previously
      */
     suspend fun resolveData(
-        selections: RawSelectionSet,
+        selections: EngineSelectionSet,
         context: EngineExecutionContext
     ): Boolean
 }

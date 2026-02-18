@@ -11,14 +11,14 @@ import java.util.function.Supplier
 import viaduct.engine.api.Engine
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.RawSelectionSet
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.SubqueryExecutionException
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.runtime.select.RawSelectionSetFactoryImpl
+import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.service.api.spi.FlagManager
 import viaduct.service.api.spi.GlobalIDCodec
 
@@ -36,7 +36,7 @@ class EngineExecutionContextFactory(
     private val meterRegistry: MeterRegistry?,
 ) {
     // Constructing this is expensive, so do it just once per schema-version
-    private val rawSelectionSetFactory: RawSelectionSet.Factory = RawSelectionSetFactoryImpl(fullSchema)
+    private val engineSelectionSetFactory: EngineSelectionSet.Factory = EngineSelectionSetFactoryImpl(fullSchema)
 
     fun create(
         scopedSchema: ViaductSchema,
@@ -46,7 +46,7 @@ class EngineExecutionContextFactory(
             fullSchema,
             scopedSchema,
             requestContext,
-            rawSelectionSetFactory,
+            engineSelectionSetFactory,
             dispatcherRegistry,
             resolverInstrumentation,
             ConcurrentHashMap<String, FieldDataLoader>(),
@@ -86,7 +86,7 @@ class EngineExecutionContextImpl(
     override val fullSchema: ViaductSchema,
     override val scopedSchema: ViaductSchema,
     override val requestContext: Any?,
-    override val rawSelectionSetFactory: RawSelectionSet.Factory,
+    override val engineSelectionSetFactory: EngineSelectionSet.Factory,
     val dispatcherRegistry: DispatcherRegistry,
     val resolverInstrumentation: Instrumentation,
     internal val fieldDataLoaders: ConcurrentHashMap<String, FieldDataLoader>,
@@ -136,7 +136,7 @@ class EngineExecutionContextImpl(
 
     override suspend fun resolveSelectionSet(
         resolverId: String,
-        selectionSet: RawSelectionSet,
+        selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions,
     ): EngineObjectData {
         val handle = executionHandle
@@ -216,7 +216,7 @@ class EngineExecutionContextImpl(
             scopedSchema = this.scopedSchema,
             requestContext = this.requestContext,
             activeSchema = activeSchema,
-            rawSelectionSetFactory = this.rawSelectionSetFactory,
+            engineSelectionSetFactory = this.engineSelectionSetFactory,
             dispatcherRegistry = this.dispatcherRegistry,
             resolverInstrumentation = this.resolverInstrumentation,
             fieldDataLoaders = this.fieldDataLoaders,

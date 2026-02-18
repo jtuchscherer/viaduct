@@ -73,7 +73,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
         val ctx = mk()
         val ss = ctx.selectionsFor(Query.Reflection, "__typename")
         assertTrue(ss.contains(Query.Reflection.Fields.__typename))
-        val inner = (ss as SelectionSetImpl).rawSelectionSet
+        val inner = (ss as SelectionSetImpl).engineSelectionSet
         assertTrue(inner.variables().isEmpty())
     }
 
@@ -82,7 +82,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
         val ctx = mk()
         val ss = ctx.selectionsFor(Query.Reflection, "__typename", mapOf("var" to true))
         assertTrue(ss.contains(Query.Reflection.Fields.__typename))
-        val inner = (ss as SelectionSetImpl).rawSelectionSet
+        val inner = (ss as SelectionSetImpl).engineSelectionSet
         assertEquals(mapOf("var" to true), inner.variables())
     }
 
@@ -210,7 +210,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
         assertTrue(ss.contains(Foo.Reflection.Fields.id))
         assertTrue(ss.contains(Foo.Reflection.Fields.fooSelf))
 
-        val inner = (ss as SelectionSetImpl).rawSelectionSet
+        val inner = (ss as SelectionSetImpl).engineSelectionSet
         assertTrue(inner.variables().isEmpty())
     }
 }

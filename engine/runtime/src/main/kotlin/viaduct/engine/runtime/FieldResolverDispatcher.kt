@@ -2,7 +2,7 @@ package viaduct.engine.runtime
 
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.RawSelectionSet
+import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
 
@@ -27,7 +27,7 @@ interface FieldResolverDispatcher {
         queryValue: EngineObjectData,
         syncObjectValueGetter: suspend () -> EngineObjectData.Sync,
         syncQueryValueGetter: suspend () -> EngineObjectData.Sync,
-        selections: RawSelectionSet?,
+        selections: EngineSelectionSet?,
         context: EngineExecutionContext,
     ): Any?
 }
