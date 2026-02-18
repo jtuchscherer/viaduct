@@ -50,6 +50,7 @@ dependencies {
     testImplementation(libs.kotest.property.jvm)
     testImplementation(libs.kotlinx.coroutines.jdk8)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.assertj.core)
     testImplementation(libs.strikt.core)
     testImplementation(libs.micrometer.core)
     testImplementation(libs.slf4j.api)

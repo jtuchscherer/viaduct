@@ -7,7 +7,10 @@ import com.google.inject.Injector
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
+import viaduct.api.Resolver
 import viaduct.api.bootstrap.ViaductTenantAPIBootstrapper
+import viaduct.api.internal.NodeResolverFor
+import viaduct.api.internal.ResolverFor
 import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
 import viaduct.service.ViaductBuilder
@@ -62,6 +65,16 @@ import viaduct.tenant.runtime.bootstrap.ViaductTenantResolverClassFinderFactory
 abstract class FeatureAppTestBase {
     open lateinit var sdl: String
         protected set
+
+    /**
+     * When true, validates before build that all schema-declared resolvers have corresponding
+     * @Resolver-annotated implementation classes. This catches the common mistake of declaring
+     * @resolver in the schema but forgetting to implement the resolver class.
+     *
+     * Override to false in tests that intentionally omit resolver implementations
+     * (e.g., tenant filtering tests).
+     */
+    protected open val validateResolverCompleteness: Boolean = true
 
     private val injector: Injector by lazy { Guice.createInjector() }
     private val guiceTenantCodeInjector by lazy { GuiceTenantCodeInjector(injector) }
@@ -172,6 +185,9 @@ abstract class FeatureAppTestBase {
             viaductBuilder.withSchemaConfiguration(viaductSchemaConfiguration)
         }
         if (!::viaductService.isInitialized) {
+            if (validateResolverCompleteness) {
+                validateResolverImplementations()
+            }
             try {
                 viaductService = viaductBuilder.build()
             } catch (t: Throwable) {
@@ -179,4 +195,71 @@ abstract class FeatureAppTestBase {
             }
         }
     }
+
+    /**
+     * Validates that all generated resolver base classes have corresponding implementation classes.
+     *
+     * When the schema declares @resolver on a field or type, codegen generates a base class
+     * (annotated with @ResolverFor or @NodeResolverFor). This method checks that each base class
+     * has at least one implementation:
+     * - Field resolvers: must have a subclass annotated with @Resolver
+     * - Node resolvers: must have at least one subclass
+     *
+     * Without this check, a missing resolver is silently skipped during bootstrapping and the
+     * field returns null at query time with no indication of what went wrong.
+     */
+    private fun validateResolverImplementations() {
+        val classFinder = tenantResolverClassFinderFactory.create(derivedClassPackagePrefix)
+        val missingResolvers = mutableListOf<String>()
+
+        // Check field resolvers (@ResolverFor base classes need a @Resolver subclass).
+        // Exclude built-in Viaduct resolvers (Query.node, Query.nodes) that are provided
+        // by ViaductNodeResolverAPIBootstrapper rather than by tenant @Resolver classes.
+        val builtInResolverFields = setOf("Query" to "node", "Query" to "nodes")
+        for (baseClass in classFinder.resolverClassesInPackage()) {
+            val annotation = baseClass.annotations.firstOrNull { it is ResolverFor } as? ResolverFor
+                ?: continue
+            if ((annotation.typeName to annotation.fieldName) in builtInResolverFields) continue
+            val implementations = classFinder.getSubTypesOf(baseClass)
+                .filter { it.isAnnotationPresent(Resolver::class.java) }
+            if (implementations.isEmpty()) {
+                missingResolvers.add("${annotation.typeName}.${annotation.fieldName}")
+            }
+        }
+
+        // Check node resolvers (@NodeResolverFor base classes need any subclass)
+        for (baseClass in classFinder.nodeResolverForClassesInPackage()) {
+            val annotation = baseClass.annotations.firstOrNull { it is NodeResolverFor } as? NodeResolverFor
+                ?: continue
+            val implementations = classFinder.getSubTypesOf(baseClass)
+            if (implementations.isEmpty()) {
+                missingResolvers.add("Node(${annotation.typeName})")
+            }
+        }
+
+        if (missingResolvers.isNotEmpty()) {
+            throw MissingResolverImplementationException(missingResolvers)
+        }
+    }
 }
+
+/**
+ * Thrown when a FeatureAppTest schema declares @resolver on fields or types but no corresponding
+ * resolver implementation class is found.
+ *
+ * Each field marked with @resolver in the schema requires a class annotated with @Resolver
+ * that extends the generated resolver base class (e.g., QueryResolvers.MyField for field resolvers,
+ * NodeResolvers.MyType for node resolvers).
+ */
+class MissingResolverImplementationException(
+    missingResolvers: List<String>
+) : RuntimeException(
+        buildString {
+            append("Missing @Resolver implementation for schema-declared resolvers: ")
+            append(missingResolvers.joinToString(", "))
+            append(
+                ". Each field or type with @resolver in the schema must have a corresponding " +
+                    "class annotated with @Resolver that extends the generated resolver base class."
+            )
+        }
+    )

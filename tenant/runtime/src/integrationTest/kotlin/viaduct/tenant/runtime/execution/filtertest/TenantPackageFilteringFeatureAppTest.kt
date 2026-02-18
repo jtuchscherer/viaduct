@@ -14,6 +14,8 @@ import viaduct.tenant.runtime.execution.filtertest.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
 class TenantPackageFilteringFeatureAppTest : FeatureAppTestBase() {
+    override val validateResolverCompleteness = false
+
     @Resolver
     class Tenant1Scope1ValueResolver : QueryResolvers.Scope1Value() {
         override suspend fun resolve(ctx: Context): TestScope1Object {
