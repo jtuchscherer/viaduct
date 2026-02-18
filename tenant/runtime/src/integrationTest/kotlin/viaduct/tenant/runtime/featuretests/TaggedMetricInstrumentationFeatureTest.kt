@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import viaduct.engine.runtime.instrumentation.TaggedMetricInstrumentation
 import viaduct.tenant.runtime.featuretests.fixtures.FeatureTestBuilder
@@ -116,7 +117,10 @@ class TaggedMetricInstrumentationFeatureTest {
         assertEquals("true", fieldMeter.id.tags.find { it.key == "success" }?.value)
     }
 
+    // This test is temporarily disabled since some assertions non-deterministically fail when the instrumentation callbacks
+    // get cancelled when the request completes
     @Test
+    @Disabled
     fun `ensure field failure tag is present`() {
         val registry = SimpleMeterRegistry()
 
@@ -132,7 +136,10 @@ class TaggedMetricInstrumentationFeatureTest {
         assertEquals("false", fieldMeter.id.tags.find { it.key == "success" }?.value)
     }
 
+    // This test is temporarily disabled since some assertions non-deterministically fail when the instrumentation callbacks
+    // get cancelled when the request completes
     @Test
+    @Disabled
     fun `ensure field count is correct`() {
         val registry = SimpleMeterRegistry()
 

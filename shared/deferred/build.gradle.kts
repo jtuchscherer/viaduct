@@ -6,4 +6,6 @@ plugins {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
     api(libs.viaduct.shared.apiannotations)
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

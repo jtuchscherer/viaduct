@@ -22,7 +22,6 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -50,7 +49,7 @@ class DeferredExtensionsTest {
                 lateinit var child: CompletableDeferred<Int>
                 lateinit var supervisor: Job
 
-                withThreadLocalParent(parent) {
+                withRequestParent(parent) {
                     val before = parent.children.toSet()
 
                     child = completableDeferred()
@@ -84,7 +83,7 @@ class DeferredExtensionsTest {
                 lateinit var child: CompletableDeferred<Unit>
                 lateinit var supervisor: Job
 
-                withThreadLocalParent(parent) {
+                withRequestParent(parent) {
                     val before = parent.children.toSet()
 
                     child = completableDeferred()
@@ -106,13 +105,48 @@ class DeferredExtensionsTest {
             }
 
         @Test
+        fun `deferred is parented to request parent context element`() =
+            runBlocking {
+                val requestParent = Job()
+                val threadLocalJob = Job()
+
+                lateinit var child: CompletableDeferred<Int>
+                lateinit var supervisor: Job
+
+                withContext(
+                    threadLocalJob +
+                        ThreadLocalCoroutineContextManager.ContextElement(defaultJob = threadLocalJob) +
+                        RequestParentJobContextElement(requestParent)
+                ) {
+                    val requestParentBefore = requestParent.children.toSet()
+                    val threadLocalBefore = threadLocalJob.children.toSet()
+
+                    child = completableDeferred()
+                    yield()
+
+                    val newRequestChildren = requestParent.children.toSet() - requestParentBefore
+                    val newThreadLocalChildren = threadLocalJob.children.toSet() - threadLocalBefore
+
+                    assertEquals(1, newRequestChildren.size, "Request parent should receive the supervisor child")
+                    assertTrue(newThreadLocalChildren.isEmpty(), "Thread-local job should not receive any child")
+
+                    supervisor = newRequestChildren.single()
+                    assertTrue(supervisor.children.any { it === child }, "Request parent supervisor should own the child deferred")
+                }
+
+                child.complete(1)
+                assertEquals(1, child.await())
+                assertTrue(supervisor.isCompleted)
+            }
+
+        @Test
         fun `parent cancellation cascades to deferred`() =
             runBlocking {
                 val parent = Job()
                 lateinit var d: CompletableDeferred<Int>
 
                 // Create and link under the TL parent, then exit the scope
-                withThreadLocalParent(parent) {
+                withRequestParent(parent) {
                     val before = parent.children.toSet()
 
                     d = completableDeferred()
@@ -146,22 +180,22 @@ class DeferredExtensionsTest {
             }
 
         @Test
-        fun `inactive parent - deferred is NOT parented`() =
+        fun `inactive request parent - deferred is NOT parented`() =
             runBlocking {
                 val inactiveParent = Job().apply { cancel(CancellationException("inactive")) }
                 lateinit var d: CompletableDeferred<Int>
-                // Install the inactive parent as the TL default job
-                ThreadLocalCoroutineContextManager.INSTANCE.setDefaultCoroutineContext(inactiveParent)
 
-                // Install only the TL ContextElement; do NOT include the cancelled Job in the coroutine context.
-                coroutineScope {
-                    d = completableDeferred() // this is going to get the inactive parent as the parent
+                withContext(
+                    ThreadLocalCoroutineContextManager.ContextElement(defaultJob = inactiveParent) +
+                        RequestParentJobContextElement(inactiveParent)
+                ) {
+                    d = completableDeferred()
                     yield()
 
                     // Because parent.isActive == false, completableDeferred() should have returned an unparented deferred.
                     assertTrue(
                         inactiveParent.children.toList().isEmpty(),
-                        "No supervisor should be created when parent is inactive"
+                        "No supervisor should be created when request parent is inactive"
                     )
 
                     d.complete(1)
@@ -195,7 +229,7 @@ class DeferredExtensionsTest {
                 lateinit var supOk: Job
                 lateinit var supBad: Job
 
-                withThreadLocalParent(parent) {
+                withRequestParent(parent) {
                     val before = parent.children.toSet()
 
                     ok = completableDeferred()
@@ -223,15 +257,17 @@ class DeferredExtensionsTest {
             }
 
         /**
-         * Installs a thread-local coroutine context with the provided [parent] as the default Job
-         * for the duration of [block]. This ensures completableDeferred() can see the parent via
-         * ThreadLocalCoroutineContextManager.ContextElement without touching global defaults.
+         * Installs [parent] as the request parent job for the duration of [block].
+         * Also installs the [ThreadLocalCoroutineContextManager.ContextElement] needed to
+         * bridge the coroutine context into thread-locals where [completableDeferred] reads it.
          */
-        private suspend fun <R> withThreadLocalParent(
+        private suspend fun <R> withRequestParent(
             parent: Job,
             block: suspend () -> R
         ): R {
-            val ctx = parent + ThreadLocalCoroutineContextManager.ContextElement(defaultJob = parent)
+            val ctx = parent +
+                ThreadLocalCoroutineContextManager.ContextElement(defaultJob = parent) +
+                RequestParentJobContextElement(parent)
             return withContext(ctx) { block() }
         }
     }

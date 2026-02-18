@@ -29,8 +29,52 @@ fun threadLocalCoroutineContext(): CoroutineContext {
  * Returns the current [Job] from the [ThreadLocalCoroutineContextManager], or `null` if there
  * is no current [Job]. Avoids overhead of actually accessing the full [CoroutineContext] and
  * folding over it to find the [Job].
+ *
+ * TODO: This is currently unused, clean this up once we've verified that we only need the request job
  */
 fun threadLocalCurrentJobOrNull(): Job? = ThreadLocalCoroutineContextManager.INSTANCE.getCurrentJobOrNull()
+
+/**
+ * Returns the current request-scoped parent [Job], or `null` if no request parent job is active
+ * on this thread. Uses a dedicated [ThreadLocal] managed by [RequestParentJobContextElement] to
+ * provide O(1) access without walking the full [CoroutineContext].
+ */
+fun currentRequestParentJobOrNull(): Job? = ThreadLocalCoroutineContextManager.INSTANCE.getCurrentRequestParentJobOrNull()
+
+/**
+ * A [CoroutineContext] element that propagates a request-scoped parent [Job] across thread
+ * boundaries during coroutine dispatch.
+ *
+ * When coroutines are dispatched to different threads, the [ThreadContextElement] contract
+ * ensures the request parent job is saved/restored on the [ThreadLocal] so that code running
+ * on any thread can discover the current request's parent job via
+ * [currentRequestParentJobOrNull].
+ *
+ * The request job represents the top-level job for an incoming request, as opposed to the
+ * default job which is the root of the coroutine hierarchy created by
+ * `withThreadLocalCoroutineContext`.
+ */
+class RequestParentJobContextElement(
+    val requestJob: Job
+) : AbstractCoroutineContextElement(Key),
+    ThreadContextElement<Job?> {
+    companion object Key : CoroutineContext.Key<RequestParentJobContextElement> {
+        internal val tlRequestParentJob = ThreadLocal<Job?>()
+    }
+
+    override fun updateThreadContext(context: CoroutineContext): Job? {
+        val prev = tlRequestParentJob.get()
+        tlRequestParentJob.set(requestJob)
+        return prev
+    }
+
+    override fun restoreThreadContext(
+        context: CoroutineContext,
+        oldState: Job?
+    ) {
+        tlRequestParentJob.set(oldState)
+    }
+}
 
 /**
  * [ThreadLocalCoroutineContextManager] manages a single [ThreadLocal] that, at any given time,
@@ -96,6 +140,11 @@ class ThreadLocalCoroutineContextManager {
 
     // FAST path: O(1) read, no expensive ctx object access except in fallback case
     fun getCurrentJobOrNull(): Job? = tlJob.get() ?: (defaultCtx?.get(Job))
+
+    // FAST path: O(1) read, no expensive ctx object access except in fallback case
+    fun getCurrentRequestParentJobOrNull(): Job? =
+        RequestParentJobContextElement.tlRequestParentJob.get()
+            ?: (tlCtx.get() ?: defaultCtx)?.get(RequestParentJobContextElement)?.requestJob
 
     fun getCurrentDefaultJob(): Job {
         val ctx = getCurrentCoroutineContext()

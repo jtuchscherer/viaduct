@@ -20,7 +20,7 @@ import kotlinx.coroutines.SupervisorJob
  * Create a CompletableDeferred with the parent job set to the current threadLocalCoroutineContext's Job
  */
 fun <T> completableDeferred(): CompletableDeferred<T> {
-    val parentJob = threadLocalCurrentJobOrNull()
+    val parentJob = currentRequestParentJobOrNull()
         ?: return CompletableDeferred()
     if (!parentJob.isActive) {
         return CompletableDeferred()

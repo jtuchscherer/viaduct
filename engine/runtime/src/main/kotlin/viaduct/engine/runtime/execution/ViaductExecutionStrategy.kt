@@ -12,7 +12,6 @@ import graphql.execution.NonNullableFieldWasNullException
 import graphql.language.OperationDefinition
 import graphql.schema.GraphQLObjectType
 import java.util.concurrent.CompletableFuture
-import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
@@ -26,6 +25,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import viaduct.deferred.RequestParentJobContextElement
 import viaduct.engine.api.TemporaryBypassAccessCheck
 import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.runtime.EngineExecutionContextImpl
@@ -346,7 +346,7 @@ class ViaductExecutionStrategy internal constructor(
      */
     internal suspend fun <T> withRequestSupervisor(block: suspend CoroutineScope.(supervisorFactory: (CoroutineContext) -> CoroutineScope) -> T): T {
         val cc = currentCoroutineContext()
-        val existingSupervisor = cc[RequestExecutionSupervisorContext]?.supervisorJob?.takeIf { it.isActive }
+        val existingSupervisor = cc[RequestParentJobContextElement]?.requestJob?.takeIf { it.isActive }
         if (existingSupervisor != null) {
             return executeWithSupervisor(existingSupervisor, block)
         }
@@ -366,7 +366,7 @@ class ViaductExecutionStrategy internal constructor(
         block: suspend CoroutineScope.(supervisorFactory: (CoroutineContext) -> CoroutineScope) -> T
     ): T {
         val cc = currentCoroutineContext()
-        val ctx = cc + RequestExecutionSupervisorContext(supervisorJob) + CoroutineExceptionHandler { _, t ->
+        val ctx = cc + RequestParentJobContextElement(supervisorJob) + CoroutineExceptionHandler { _, t ->
             log.error("Uncaught exception in request scope", t)
         }
         return CoroutineScope(ctx).async {
@@ -375,11 +375,5 @@ class ViaductExecutionStrategy internal constructor(
                 this.block(factory)
             }
         }.await()
-    }
-
-    internal class RequestExecutionSupervisorContext(
-        val supervisorJob: Job
-    ) : AbstractCoroutineContextElement(Key) {
-        companion object Key : CoroutineContext.Key<RequestExecutionSupervisorContext>
     }
 }
