@@ -30,7 +30,7 @@ class CompleteSelectionSetTest {
     // ==================== Object-typed completions (non-Query) ====================
     // These exercise the forChildPlan path where isRootQueryQueryPlan=false,
     // which uses parentEngineResult. This is the primary production path for
-    // DFP shims (ViaductClassicDerivedFieldResolverExecutor) and checker execution.
+    // DFP shims (ClassicDerivedFieldResolverExecutor) and checker execution.
 
     @Test
     fun `object-typed completion with scalar fields`() {
