@@ -26,12 +26,14 @@ import viaduct.engine.api.instrumentation.ChainedModernGJInstrumentation
 import viaduct.engine.api.instrumentation.ViaductModernGJInstrumentation
 import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.EngineExecutionContextFactory
+import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ProxyEngineObjectData
 import viaduct.engine.runtime.context.CompositeLocalContext
 import viaduct.engine.runtime.execution.AccessCheckRunner
 import viaduct.engine.runtime.execution.ExecutionParameters
 import viaduct.engine.runtime.execution.FieldResolver
+import viaduct.engine.runtime.execution.QueryPlan
 import viaduct.engine.runtime.execution.ViaductExecutionStrategy
 import viaduct.engine.runtime.execution.WrappedCoroutineExecutionStrategy
 import viaduct.engine.runtime.execution.asExecutionParameters
@@ -39,6 +41,7 @@ import viaduct.engine.runtime.graphql_java.GraphQLJavaConfig
 import viaduct.engine.runtime.instrumentation.ResolverDataFetcherInstrumentation
 import viaduct.engine.runtime.instrumentation.ScopeInstrumentation
 import viaduct.engine.runtime.instrumentation.TaggedMetricInstrumentation
+import viaduct.engine.runtime.select.EngineSelectionSetImpl
 import viaduct.service.api.spi.FlagManager
 
 @Deprecated("Airbnb use only")
@@ -180,10 +183,23 @@ class EngineImpl(
             )
         }
 
+        val rssImpl = selectionSet as EngineSelectionSetImpl
+
         val selectionParams = try {
-            parentParams.forSubquery(
+            val eecImpl = parentParams.engineExecutionContext as EngineExecutionContextImpl
+            val queryPlan = QueryPlan.buildFromSelections(
+                parameters = QueryPlan.Parameters(
+                    schema = eecImpl.fullSchema,
+                    registry = eecImpl.dispatcherRegistry,
+                    executeAccessChecksInModstrat = eecImpl.executeAccessChecksInModstrat,
+                    dispatcherRegistry = eecImpl.dispatcherRegistry,
+                ),
                 rss = selectionSet,
-                targetOER = targetOER,
+            )
+            parentParams.forChildPlan(
+                queryPlan,
+                rssImpl.ctx.coercedVariables,
+                ExecutionParameters.ChildPlanTarget.WithOER(targetOER),
             )
         } catch (e: Exception) {
             throw SubqueryExecutionException.queryPlanBuildFailed(e)
