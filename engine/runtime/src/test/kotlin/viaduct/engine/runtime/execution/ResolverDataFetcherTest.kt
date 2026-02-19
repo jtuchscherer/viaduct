@@ -217,7 +217,7 @@ class ResolverDataFetcherTest {
                         ObjectEngineResult.Key("testField", "testField", emptyMap())
                     ) { setter ->
                         setter.set(
-                            ObjectEngineResultImpl.ENGINE_VALUE_SLOT,
+                            ObjectEngineResultImpl.RAW_VALUE_SLOT,
                             Value.fromValue(
                                 FieldResolutionResult(
                                     engineResult = expectedResult,
