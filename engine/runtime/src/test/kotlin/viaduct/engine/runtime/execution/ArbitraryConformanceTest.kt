@@ -246,7 +246,6 @@ class ArbitraryConformanceTest : KotestPropertyBase() {
     }
 
     @Test
-    @Disabled
     fun `arb arb arb`(): Unit =
         runBlocking {
             /** test execution of arbitrary requests against arbitrary schemas that use arbitrary wiring */
