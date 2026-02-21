@@ -20,13 +20,14 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.forAll
+import java.lang.Integer.max
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetTime
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.KotestPropertyBase
@@ -219,7 +220,7 @@ class ArbIRTest : KotestPropertyBase() {
             val cfg = Config.default +
                 (ListValueSize to 1.asIntRange()) +
                 (ExplicitNullValueWeight to 0.0) +
-                (MaxValueDepth to 0)
+                (MaxValueDepth to 1)
 
             val type = GraphQLList.list(GraphQLList.list(Scalars.GraphQLInt))
             Arb
@@ -446,51 +447,6 @@ class ArbIRTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `generates input object values -- cyclic input objects`(): Unit =
-        runBlocking {
-            val schema = "input Inp { inp:Inp }".asViaductSchema
-            // ensure that the default configuration can generate an input object in a
-            // reasonable amount of time
-            Arb
-                .ir(schema, schema.schema.getType("Inp").nonNullable, Config.default)
-                .forAll { it is IR.Value.Object }
-        }
-
-    @Test
-    fun `generates input object values -- cyclic input objects with defaults`(): Unit =
-        /**
-         * NB: this test case will start failing in the next version of graphql-java, after this PR is landed:
-         *   https://github.com/graphql-java/graphql-java/pull/4253
-         *
-         * If this test is failing during a graphql-java upgrade, then it can be removed without replacement,
-         * coverage will be handled automatically by the test cases in [GraphQLSchemasTest] that generate
-         * arbitrary schemas.
-         */
-        runBlocking {
-            val schema = """
-                input Inp { inp:Inp = {} }
-
-                input A { b:B = {} }
-                input B { a:A = {} }
-            """.asViaductSchema
-
-            val cfg = Config.default + (ImplicitNullValueWeight to 1.0)
-
-            // self-recursing input
-            Arb
-                .ir(schema, schema.schema.getType("Inp").nonNullable, cfg)
-                .forAll { it is IR.Value.Object && "inp" in it.fields }
-
-            // co-recursive inputs
-            Arb
-                .ir(schema, schema.schema.getType("A").nonNullable, cfg)
-                .forAll { it is IR.Value.Object && "b" in it.fields }
-            Arb
-                .ir(schema, schema.schema.getType("B").nonNullable, cfg)
-                .forAll { it is IR.Value.Object && "a" in it.fields }
-        }
-
-    @Test
     fun `generates input object values -- unset fields when field has default value`(): Unit =
         runBlocking {
             val schema = "input Inp { x:Int! = 0 }".asViaductSchema
@@ -543,69 +499,89 @@ class ArbIRTest : KotestPropertyBase() {
                 }
         }
 
-    @Test
-    fun `mkCyclicInputSCCs -- empty`() {
-        assertTrue(mkCyclicInputSCCs(emptySchema.schema).isEmpty())
-    }
+    @Nested
+    inner class CyclicInputTests {
+        private fun test(
+            sdl: String,
+            typeName: String = "A",
+            expDepth: Int = 3
+        ): Unit =
+            runBlocking {
+                // use a config that limits the number of ways that
+                // the generator can exit early
+                val cfg = Config.default +
+                    (ExplicitNullValueWeight to 0.0) +
+                    (ImplicitNullValueWeight to 0.0) +
+                    (ListValueSize to 1.asIntRange()) +
+                    (MaxValueDepth to 3)
 
-    @Test
-    fun `mkCyclicInputSCCs -- acyclic input types`() {
-        val schema = """
-            input A { x: Int }
-            input B { a: A }
-        """.asViaductSchema.schema
+                val schema = sdl.asViaductSchema
+                Arb.ir(schema, schema.schema.getType(typeName).nonNullable, cfg)
+                    .forAll {
+                        it.maxDepth == expDepth
+                    }
+            }
 
-        assertTrue(mkCyclicInputSCCs(schema).isEmpty())
-    }
+        @Test
+        fun `nullable self-recursion`() {
+            test("input A { a:A }")
+        }
 
-    @Test
-    fun `mkCyclicInputSCCs -- self-loop`() {
-        val schema = "input Inp { inp: Inp }".asViaductSchema.schema
-        val result = mkCyclicInputSCCs(schema)
+        @Test
+        fun `non-nullable self-recursion with list`() {
+            test("input A { a:[A!]! }")
+        }
 
-        assertEquals(mapOf("Inp" to setOf("Inp")), result)
-    }
+        @Test
+        fun `non-nullable co-recursion with lists`() {
+            test(
+                """
+                    input A { b:[B!]! }
+                    input B { a:[A!]! }
+                """.trimIndent()
+            )
+        }
 
-    @Test
-    fun `mkCyclicInputSCCs -- two-type cycle`() {
-        val schema = """
-            input A { b: B }
-            input B { a: A }
-        """.asViaductSchema.schema
-        val result = mkCyclicInputSCCs(schema)
+        @Test
+        fun `co-recursive OneOfs with simple escape`() {
+            test(
+                """
+                    input A @oneOf { b:B }
+                    input B @oneOf { c:C }
+                    input C @oneOf { d:D }
+                    input D @oneOf { a:A, escape:Int }
+                """.trimIndent(),
+                expDepth = 4
+            )
+        }
 
-        assertEquals(
-            mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")),
-            result
-        )
-    }
+        @Test
+        fun `non-nullable chain with null escape -- greater than MaxValueDepth`() {
+            test(
+                """
+                    input A { b:B! }
+                    input B { c:C! }
+                    input C { d:D! }
+                    input D { e:E! }
+                    input E { a:A }   # nullable escape
+                """.trimIndent(),
+                expDepth = 4
+            )
+        }
 
-    @Test
-    fun `mkCyclicInputSCCs -- cycle with acyclic type`() {
-        val schema = """
-            input A { b: B }
-            input B { a: A }
-            input C { a: A }
-        """.asViaductSchema.schema
-        val result = mkCyclicInputSCCs(schema)
-
-        assertEquals(
-            mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")),
-            result
-        )
-    }
-
-    @Test
-    fun `mkCyclicInputSCCs -- wrapped types are unwrapped`() {
-        val schema = """
-            input A { b: [B!]! }
-            input B { a: A }
-        """.asViaductSchema.schema
-        val result = mkCyclicInputSCCs(schema)
-        assertEquals(
-            mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")),
-            result
-        )
+        @Test
+        fun `non-nullable chain with list escape -- greater than MaxValueDepth`() {
+            test(
+                """
+                    input A { b:B! }
+                    input B { c:C! }
+                    input C { d:D! }
+                    input D { e:E! }
+                    input E { a:[A!]! } # list escape
+                """.trimIndent(),
+                expDepth = 5
+            )
+        }
     }
 }
 
@@ -619,3 +595,26 @@ internal val GraphQLType.nonNullable: GraphQLType get() =
 internal fun GraphQLSchema.scalar(name: String): GraphQLScalarType = getTypeAs(name)
 
 internal val emptySchema = "extend type Query { placeholder:Int }".asViaductSchema
+
+internal val IR.Value.maxDepth: Int
+    get() =
+        when (this) {
+            is IR.Value.Object -> {
+                if (this.fields.isEmpty()) {
+                    0
+                } else {
+                    val maxFieldDepth = this.fields.toList().fold(0) { acc, (k, v) ->
+                        max(acc, v.maxDepth)
+                    }
+                    1 + maxFieldDepth
+                }
+            }
+            is IR.Value.List -> {
+                if (this.value.isEmpty()) {
+                    0
+                } else {
+                    1 + this.value.fold(0) { acc, v -> max(acc, v.maxDepth) }
+                }
+            }
+            else -> 0
+        }

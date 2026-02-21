@@ -27,7 +27,7 @@ class DomainValidatorTest : KotestPropertyBase() {
     @Test
     fun `checkAll with schema -- passes for valid domain`(): Unit =
         runBlocking {
-            Arb.graphQLSchema(cfg).forAll(100) { schema ->
+            Arb.graphQLSchema(cfg).forAll { schema ->
                 val validator = DomainValidator(IdentityDomain, schema)
                 val result = runCatching { validator.checkAll(100) }
                 result.isSuccess
@@ -37,7 +37,7 @@ class DomainValidatorTest : KotestPropertyBase() {
     @Test
     fun `checkAll with schema -- throws ValueRoundtripError with seed for invalid domain`(): Unit =
         runBlocking {
-            Arb.graphQLSchema(cfg).checkInvariants(100) { schema, check ->
+            Arb.graphQLSchema(cfg).checkInvariants { schema, check ->
                 val validator = DomainValidator(NonBijectiveTestDomain, schema)
                 val exception = runCatching { validator.checkAll(100) }.exceptionOrNull()
 
@@ -61,7 +61,7 @@ class DomainValidatorTest : KotestPropertyBase() {
     @Test
     fun `checkAll with schema -- throws RoundtripError with seed when domain throws`(): Unit =
         runBlocking {
-            Arb.graphQLSchema(cfg).checkInvariants(100) { schema, check ->
+            Arb.graphQLSchema(cfg).checkInvariants { schema, check ->
                 val err = RuntimeException()
                 val validator = DomainValidator(ThrowingTestDomain(err), schema)
                 val exception = runCatching { validator.checkAll(1) }.exceptionOrNull()

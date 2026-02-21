@@ -141,6 +141,21 @@ internal class SchemaGenerator(val cfg: Config, val rs: RandomSource) {
 }
 
 internal class AddDefaults(private val schema: ViaductSchema, private val cfg: Config, private val rs: RandomSource) : GraphQLTypeVisitorStub() {
+    /**
+     * Default values in a schema have different requirements than those used in a Document.
+     *
+     * For example, consider this schema with invalid default values:
+     *    input A { b:B = {} }
+     *    input B { a:A = {} }
+     *
+     * These definitions break the inhabitation property of the schema because their coerced
+     * default values are infinitely large.
+     *
+     * For the purposes of generating a default value in a schema, we need our graph of type cycles
+     * to include every possible edge, even edges from nullable or list-typed fields.
+     */
+    private val cycleGroups = CycleGroups.allInputCycles(schema)
+
     // don't traverse into built-in directives
     override fun visitGraphQLDirective(
         node: GraphQLDirective,
@@ -191,7 +206,7 @@ internal class AddDefaults(private val schema: ViaductSchema, private val cfg: C
     }
 
     private fun genDefaultValue(type: GraphQLInputType): Value<*> =
-        Arb.ir(schema, type, cfg).map { ir ->
+        Arb.ir(schema, cycleGroups, type, cfg).map { ir ->
             GJValueConv(type).invert(ir)
         }.next(rs)
 }

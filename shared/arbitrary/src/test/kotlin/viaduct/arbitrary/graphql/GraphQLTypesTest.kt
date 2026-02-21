@@ -7,6 +7,7 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeReference
 import graphql.schema.GraphQLTypeUtil
@@ -487,6 +488,36 @@ class GraphQLTypesTest : KotestPropertyBase() {
 
                     otherRefs.all { types.resolve(it) == null }
                 }
+        }
+
+    @Test
+    fun `GraphQLTypes -- generates escape fields for inputs`(): Unit =
+        runBlocking {
+            // Ensure that we can generate input types even when we insist on non-null non-list fields
+            Arb.graphQLTypes(minimalConfig + (NonNullableness to 1.0))
+                .forAll(iterCount) { types ->
+                    types.inputs.values.all { inp ->
+                        inp.fields.isNotEmpty()
+                    }
+                }
+        }
+
+    @Test
+    fun `GraphQLTypes -- generates escape fields for OneOf inputs`(): Unit =
+        runBlocking {
+            // OneOf types may require additional "escape" fields to ensure that they are inhabited.
+            // For example, for this uninhabited type:
+            //   input A @oneOf { a:A }
+            // We would expect the generator to add an escape field to ensure that values can be constructed:
+            //   input A @oneOf { a:A, escape:Int }
+
+            Arb.graphQLTypes(
+                GraphQLNames(mapOf(TypeType.Input to setOf("A"))),
+                minimalConfig + (OneOfWeight to 1.0)
+            ).forAll(iterCount) { types ->
+                val a = types.inputs["A"]!!
+                a.fields.any { it.name.startsWith("escape") && it.type is GraphQLScalarType }
+            }
         }
 
     @Test

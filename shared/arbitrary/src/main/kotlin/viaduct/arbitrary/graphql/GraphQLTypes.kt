@@ -27,18 +27,17 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.element
-import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
-import io.kotest.property.arbitrary.set
 import kotlin.math.min
 import viaduct.arbitrary.common.CompoundingWeight
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.ConfigKey
+import viaduct.arbitrary.common.asSequence
 
 /** A bag of generated types that can be converted into a GraphQLSchema */
 data class GraphQLTypes(
@@ -401,33 +400,47 @@ internal class GraphQLTypesGen(
 
     private fun Arb<GraphQLTypes>.withInputs(): Arb<GraphQLTypes> =
         map { types ->
-            // OneOf types can be arranged to form types for which values cannot be created.
-            // For example:
-            //   input A @oneOf { b:B }
-            //   input B @oneOf { a:A }
-            // In order to not generate values in this style, it helps to know all the OneOf's
-            // that we're going to generate ahead of time.
-            val oneOfTypes = names.inputs.filter { sampleWeight(OneOfWeight) }
-                .toSet()
-
             /**
-             * while input _type_ generation needs to only know the names of other input objects,
-             * input _field_ generation may try to generate default values that require knowing
-             * not just the names of other inputs, but also their fields.
+             * Input objects have a unique requirement in that they must be constructed in a
+             * way that allows for finite values. This is easiest to explain with counter-examples --
+             * here are some type configurations that are invalid because they are uninhabited and
+             * require infinite values:
              *
-             * Break with the pattern used elsewhere in this class and fold over input type generation,
-             * allowing later input types to generate values that refer to previously generated input types.
+             * ```
+             * // Recursive graphs with non-nullable edges:
+             * input A { b:B! }
+             * input B { a:A! }
              *
-             * Names are sorted to put them into lexicographic order, it's expected that any generated
-             * edges that refer to types earlier-in-the-list may be non-nullable. This assumption is also
-             * baked into [isUnsatisfiableInputEdge]
+             * // Uninhabited OneOf types:
+             * input A @oneOf { b:B }
+             * input B @oneOf { a:A }
+             *
+             * // Mixed OneOf and non-nullable graphs:
+             * input A @oneOf { b:B }
+             * input B { a:A! }
+             * ```
+             *
+             * The property that makes a type uninhabited is that the graph of its mandatory
+             * fields (fields that *must* be provided a value) contains a cycle. If we construct types
+             * such that any mandatory dependencies are a-cyclic, then we can guarantee inhabitation.
+             *
+             * The job of this method is to guarantee that every input object is inhabited, while
+             * retaining the ability to generate as many interesting edge cases as possible.
+             *
+             * As a heuristic, we only allow input-typed mandatory fields where the name of the field's
+             * type is lexicographically smaller than the name of the host's type. This ensures that
+             * the graph of mandatory fields is acyclic. For example:
+             *
+             *   input A { b: B }    // field type "B" > host type "A"    ->  mandatory edge is not allowed
+             *   input B { a: A! }   // field type "A" > host type "B"    ->  mandatory edge is allowed
              */
+            val oneOfTypes = names.inputs.filter { sampleWeight(OneOfWeight) }.toSet()
 
-            names.inputs.sorted().fold(types) { acc, name ->
+            val inputs = names.inputs.associateWith { name ->
                 val isOneOf = name in oneOfTypes
                 val fields = genInputFields(name, isOneOf, InputObjectTypeSize)
 
-                val inp = GraphQLInputObjectType
+                GraphQLInputObjectType
                     .newInputObject()
                     .name(name)
                     .description(genDescription())
@@ -436,23 +449,17 @@ internal class GraphQLTypesGen(
                         if (isOneOf) {
                             withDirective(Directives.OneOfDirective)
 
-                            // If we detect that we've generated an uninhabited oneof, insert a field that allows
-                            // value creation
-                            if (isUninhabitedOneOf(name, fields, oneOfTypes)) {
-                                val reliefFieldName = Arb.graphQLFieldName(cfg).filterNot { it == name }.next(rs)
-                                field(
-                                    GraphQLInputObjectField.newInputObjectField()
-                                        .name(reliefFieldName)
-                                        .type(Scalars.GraphQLInt)
-                                        .build()
-                                )
+                            // As a disjunctive type, if a OneOf contains no inhabited fields, then it
+                            // is itself uninhabited.
+                            // In these cases, we can make it inhabited by adding a single escape field
+                            if (fields.none { isInhabitedField(name, it) }) {
+                                field(genEscapeInputField())
                             }
                         }
                     }
                     .build()
-
-                acc.copy(inputs = acc.inputs + (name to inp))
             }
+            types.copy(inputs = types.inputs + inputs)
         }
 
     private fun genInputFields(
@@ -460,100 +467,74 @@ internal class GraphQLTypesGen(
         isOneOf: Boolean,
         key: ConfigKey<IntRange>
     ): List<GraphQLInputObjectField> {
-        val arbInputField = genInputTypeDescriptor(allowNonNullable = !isOneOf)
-            .filterNot { isUnsatisfiableInputEdge(hostType, it) }
-            .zip(Arb.graphQLFieldName(cfg))
-            .map { (itd, fn) ->
+        /**
+         * To generate input fields, we start by generating an InputTypeDescriptor
+         * and dropping the descriptors that don't meet the current nullability constraints.
+         *
+         * There are some configurations (like a small name pool or extreme configurations
+         * for non-nullable types) that may make it impossible to meet the nullability
+         * constraints.
+         *
+         * In these cases, generate up to 100x the number of requested fields
+         * before falling back to an escape field.
+         */
+        val fieldCount = Arb.int(cfg[key]).next(rs)
+        val fields = genInputTypeDescriptor(allowNonNullable = !isOneOf)
+            .asSequence(rs)
+            .take(fieldCount * 100)
+            .filter { itd ->
+                if (itd.usedNonNullably && itd.underlyingTypeType == TypeType.Input) {
+                    itd.underlyingTypeName.compareTo(hostType) < 0
+                } else {
+                    true
+                }
+            }
+            .take(fieldCount)
+            .toList()
+            .map { itd ->
                 GraphQLInputObjectField
                     .newInputObjectField()
-                    .name(fn)
+                    .name(Arb.graphQLFieldName(cfg).next(rs))
                     .description(genDescription())
                     .type(itd.type)
                     .build()
             }
+            .distinctBy { it.name }
 
-        return Arb
-            .set(arbInputField, cfg[key])
-            .map { it.distinctBy { it.name } }
-            .next(rs)
+        return fields.ifEmpty { listOf(genEscapeInputField()) }
     }
 
-    /**
-     * An unsatisfiable input edge is an edge between input types for which it can be impossible to generate a value.
-     * This is a problem that is specific to non-nullable input object types, which can create cyclic relationships
-     * that require an infinitely large value to satisfy.
-     *
-     * A simple example of this relationship is:
-     *   input A { b: B! }
-     *   input B { a: A! }
-     *
-     * In this example, creating a value for A would require an infinitely nested object, {b: {a: {b: {...}}}
-     * This is described in more detail at https://spec.graphql.org/October2021/#sec-Input-Objects.Circular-References
-     *
-     * Since it is difficult to know during type generation if an input field is going to be part of a cycle,
-     * this method uses a heuristic that direct non-nullable edges are only allowed between two objects if the
-     * host type name is lexicographically greater than the field's type name.
-     *
-     * An example of an allowed schema:
-     *   input A { b: B }    // host type A < field type B    ->  edge is unsatisfiable
-     *   input B { a: A! }   // host type B > field type A    ->  edge is satisfiable
-     *
-     * This allows generating circular references that can be satisfied with finite values.
-     */
-    private fun isUnsatisfiableInputEdge(
-        hostTypeName: String,
-        inputTypeDescriptor: InputTypeDescriptor
-    ): Boolean =
-        inputTypeDescriptor.underlyingTypeName.compareTo(hostTypeName) != -1 &&
-            inputTypeDescriptor.usedNonNullably &&
-            inputTypeDescriptor.underlyingTypeType == TypeType.Input
+    private fun genEscapeInputField(): GraphQLInputObjectField {
+        val escapeFieldName = Arb.graphQLFieldName(cfg)
+            // prefix the escape field name for better debuggability
+            .map { "escape_" + it }
+            .next(rs)
 
-    /**
-     * OneOfs can form "uninhabited" subgraphs, where there are no possible values that can be constructed
-     * for the type.
-     * An example of this is:
-     *     input A @oneOf { a:A }
-     *
-     * These kinds of types are considered valid according to the spec, but they create problems by making types
-     * inaccessible to GraphQL values.
-     *
-     * A fix to make these types invalid is proposed here:
-     *   https://github.com/graphql/graphql-spec/pull/1211
-     *
-     * This method applies a heuristic that will allow us to create interesting cyclic OneOf types while
-     * rejecting the fewest possible type graphs.
-     *
-     * Following the convention of [isUnsatisfiableInputEdge], the rules are:
-     *   1. for an input object to be inhabited, it must define at least one inhabited field
-     *   2. if a field's type includes a List wrapper, or its unwrapped type is not a OneOf, assume that the
-     *      field's type is inhabited
-     *   2. if a field's type name is a oneOf and is lexicographically greater than hostTypeName,
-     *      assume that the field's type is inhabited
-     *   3. if a field's type name is a oneOf and is lexicographically less-than or equal-to the
-     *      hostTypeName, assume that this field is uninhabited
-     *
-     * Examples:
-     * An uninhabited graph:
-     *   input A @oneOf { a:A }   // host type A == field type A  -> edge may be uninhabited
-     *
-     * An inhabited one:
-     *   input A @oneOf { b:B }   // host type A < field type B -> edge may be uninhabited
-     *   input B @oneOf { a:A }   // host type B < field type A -> assume that A is inhabited
-     */
-    private fun isUninhabitedOneOf(
+        return GraphQLInputObjectField.newInputObjectField()
+            .name(escapeFieldName)
+            .type(Scalars.GraphQLInt)
+            .build()
+    }
+
+    /** An inhabited field is a field with a type that allows constructing a finite value. */
+    private fun isInhabitedField(
         hostTypeName: String,
-        fields: List<GraphQLInputObjectField>,
-        oneOfTypes: Set<String>
-    ): Boolean =
-        fields.all { f ->
-            assert(f.type !is GraphQLNonNull)
-            if (f.type is GraphQLList) return@all false
-            val inner = GraphQLTypeUtil.unwrapAllAs<GraphQLNamedType>(f.type).name
-            if (inner !in oneOfTypes) return@all false
-            // if hostTypeName is smaller-than ("A" < "B") or equal to ("A" == "A") than the field's
-            // OneOf type, then assume that this field is uninhabited.
-            hostTypeName.compareTo(inner) < 1
-        }
+        field: GraphQLInputObjectField
+    ): Boolean {
+        // list-typed fields (even non-nullable lists) are inhabited because they can always
+        // be constructed with an empty array ([])
+        if (GraphQLTypeUtil.unwrapNonNull(field.type) is GraphQLList) return true
+
+        val fieldTypeName = GraphQLTypeUtil.unwrapAllAs<GraphQLNamedType>(field.type).name
+        // fields with simple types are always inhabited
+        if (fieldTypeName in names.scalars || fieldTypeName in names.enums) return true
+
+        /**
+         * As a heuristic, fieldTypeName < hostTypeName is assumed to be inhabited.
+         * See explanation in [withInputs].
+         */
+        return fieldTypeName.compareTo(hostTypeName) < 0
+    }
 
     private fun Arb<GraphQLTypes>.withUnions(): Arb<GraphQLTypes> =
         map { types ->
