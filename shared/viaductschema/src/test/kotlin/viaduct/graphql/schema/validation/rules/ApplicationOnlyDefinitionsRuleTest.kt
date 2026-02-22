@@ -1,7 +1,9 @@
 package viaduct.graphql.schema.validation.rules
 
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Test
 import viaduct.graphql.schema.ViaductSchema
@@ -23,7 +25,7 @@ class ApplicationOnlyDefinitionsRuleTest {
 
         val errors = validator.validate(schema)
 
-        errors.filter { it.code == ValidationErrorCodes.DIRECTIVE_DEFINED_IN_MODULE }.shouldBeEmpty()
+        errors.shouldBeEmpty()
     }
 
     @Test
@@ -42,7 +44,7 @@ class ApplicationOnlyDefinitionsRuleTest {
 
         val errors = validator.validate(schema)
 
-        errors.filter { it.code == ValidationErrorCodes.SCALAR_DEFINED_IN_MODULE }.shouldBeEmpty()
+        errors.shouldBeEmpty()
     }
 
     @Test
@@ -54,10 +56,10 @@ class ApplicationOnlyDefinitionsRuleTest {
 
         val errors = validator.validate(schema)
 
-        errors.map { it.code } shouldContain ValidationErrorCodes.DIRECTIVE_DEFINED_IN_MODULE
-        val directiveError = errors.first { it.code == ValidationErrorCodes.DIRECTIVE_DEFINED_IN_MODULE }
-        directiveError.message shouldContain "@testDirective"
-        directiveError.location.sourceLocation?.sourceName shouldContain "partition/"
+        errors shouldHaveSize 1
+        errors[0].code shouldBe ValidationErrorCodes.DIRECTIVE_DEFINED_IN_MODULE
+        errors[0].message shouldContain "@testDirective"
+        errors[0].location.sourceLocation.shouldNotBeNull().sourceName shouldContain "partition/"
     }
 
     @Test
@@ -69,8 +71,10 @@ class ApplicationOnlyDefinitionsRuleTest {
 
         val errors = validator.validate(schema)
 
-        errors.map { it.code } shouldContain ValidationErrorCodes.SCALAR_DEFINED_IN_MODULE
-        errors.first { it.code == ValidationErrorCodes.SCALAR_DEFINED_IN_MODULE }.message shouldContain "TestScalar"
+        errors shouldHaveSize 1
+        errors[0].code shouldBe ValidationErrorCodes.SCALAR_DEFINED_IN_MODULE
+        errors[0].message shouldContain "TestScalar"
+        errors[0].location.sourceLocation.shouldNotBeNull().sourceName shouldContain "partition/"
     }
 
     @Test
@@ -82,6 +86,6 @@ class ApplicationOnlyDefinitionsRuleTest {
 
         val errors = validator.validate(schema)
 
-        errors.filter { it.code == ValidationErrorCodes.DIRECTIVE_DEFINED_IN_MODULE }.shouldBeEmpty()
+        errors.shouldBeEmpty()
     }
 }

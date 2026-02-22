@@ -2,6 +2,7 @@ package viaduct.graphql.schema.validation.rules
 
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Test
@@ -43,7 +44,19 @@ class NoSubscriptionsRuleTest {
             code shouldBe ValidationErrorCodes.SUBSCRIPTION_NOT_ALLOWED
             message shouldContain "Subscription"
             location.path shouldBe listOf("Subscription")
+            location.sourceLocation shouldBe null
         }
+    }
+
+    @Test
+    fun `error location includes source location when loaded from file`() {
+        val schemaUrl = javaClass.getResource("/validation/application/subscription.graphql")!!
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(listOf(schemaUrl))
+
+        val errors = validator.validate(schema)
+
+        errors shouldHaveSize 1
+        errors[0].location.sourceLocation.shouldNotBeNull().sourceName shouldContain "subscription.graphql"
     }
 
     @Test

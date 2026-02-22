@@ -1,8 +1,8 @@
 package viaduct.gradle
 
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldExist
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
@@ -37,7 +37,7 @@ class ViaductSchemaValidatorTest {
     }
 
     @Test
-    fun `syntax error fails before viaduct validation`() {
+    fun `syntax error produces parse failure message`() {
         val schemaFile = tempDir.resolve("schema.graphqls").toFile().apply {
             writeText(
                 """
@@ -51,8 +51,7 @@ class ViaductSchemaValidatorTest {
         val errors = validator.validateSchema(listOf(schemaFile))
 
         errors shouldHaveSize 1
-        errors[0].message shouldNotContain ValidationErrorCodes.SUBSCRIPTION_NOT_ALLOWED
-        errors[0].message shouldNotContain ValidationErrorCodes.CUSTOM_SCALAR_NOT_ALLOWED
+        errors[0].message shouldContain "non schema definition language"
     }
 
     @Test
@@ -80,8 +79,8 @@ class ViaductSchemaValidatorTest {
 
         errors shouldHaveSize 3 // 2 custom scalars + 1 subscription
         val messages = errors.map { it.message }
-        messages.any { it.contains("[${ValidationErrorCodes.CUSTOM_SCALAR_NOT_ALLOWED}]") } shouldBe true
-        messages.any { it.contains("[${ValidationErrorCodes.SUBSCRIPTION_NOT_ALLOWED}]") } shouldBe true
+        messages.shouldExist { it.contains("[${ValidationErrorCodes.CUSTOM_SCALAR_NOT_ALLOWED}]") }
+        messages.shouldExist { it.contains("[${ValidationErrorCodes.SUBSCRIPTION_NOT_ALLOWED}]") }
     }
 
     @Test

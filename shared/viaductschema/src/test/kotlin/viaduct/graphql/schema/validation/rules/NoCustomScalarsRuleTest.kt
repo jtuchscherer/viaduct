@@ -3,6 +3,7 @@ package viaduct.graphql.schema.validation.rules
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Test
@@ -48,6 +49,19 @@ class NoCustomScalarsRuleTest {
         errors shouldHaveSize 1
         errors[0].code shouldBe ValidationErrorCodes.CUSTOM_SCALAR_NOT_ALLOWED
         errors[0].location.path shouldBe listOf("DateTime")
+        errors[0].location.sourceLocation shouldBe null
+    }
+
+    @Test
+    fun `error location includes source location when loaded from file`() {
+        val schemaUrl = javaClass.getResource("/validation/application/custom_scalar.graphql")!!
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(listOf(schemaUrl))
+        val validator = SchemaValidator(listOf(listOf(NoCustomScalarsRule())))
+
+        val errors = validator.validate(schema)
+
+        errors shouldHaveSize 1
+        errors[0].location.sourceLocation.shouldNotBeNull().sourceName shouldContain "custom_scalar.graphql"
     }
 
     @Test

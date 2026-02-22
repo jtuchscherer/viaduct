@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import viaduct.graphql.schema.ViaductSchema
 import viaduct.graphql.schema.graphqljava.extensions.fromTypeDefinitionRegistry
+import viaduct.graphql.schema.validation.SchemaValidationError.Severity
 
 class ValidationContextTest {
     @Test
@@ -197,6 +198,122 @@ class ValidationContextTest {
         ctx.walkSchema(listOf(rule))
 
         visitedUnions shouldContain "SearchResult"
+    }
+
+    @Test
+    fun `walkSchema visits interfaces`() {
+        val visitedInterfaces = mutableListOf<String>()
+
+        val rule = object : ValidationRule("test") {
+            override fun visitInterface(
+                ctx: ValidationContext,
+                iface: ViaductSchema.Interface
+            ) {
+                visitedInterfaces.add(iface.name)
+            }
+        }
+
+        val sdl = """
+            interface Character { name: String }
+            type Human implements Character { name: String }
+            type Query { hero: Character }
+        """.trimIndent()
+
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(sdl)
+        val ctx = ValidationContext(schema)
+
+        ctx.walkSchema(listOf(rule))
+
+        visitedInterfaces shouldContain "Character"
+    }
+
+    @Test
+    fun `walkSchema visits objects`() {
+        val visitedObjects = mutableListOf<String>()
+
+        val rule = object : ValidationRule("test") {
+            override fun visitObject(
+                ctx: ValidationContext,
+                obj: ViaductSchema.Object
+            ) {
+                visitedObjects.add(obj.name)
+            }
+        }
+
+        val sdl = """
+            type Human { name: String }
+            type Query { hero: Human }
+        """.trimIndent()
+
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(sdl)
+        val ctx = ValidationContext(schema)
+
+        ctx.walkSchema(listOf(rule))
+
+        visitedObjects shouldContain "Human"
+    }
+
+    @Test
+    fun `walkSchema visits enums`() {
+        val visitedEnums = mutableListOf<String>()
+
+        val rule = object : ValidationRule("test") {
+            override fun visitEnum(
+                ctx: ValidationContext,
+                enum: ViaductSchema.Enum
+            ) {
+                visitedEnums.add(enum.name)
+            }
+        }
+
+        val sdl = """
+            enum Episode { NEWHOPE, EMPIRE }
+            type Query { episode: Episode }
+        """.trimIndent()
+
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(sdl)
+        val ctx = ValidationContext(schema)
+
+        ctx.walkSchema(listOf(rule))
+
+        visitedEnums shouldContain "Episode"
+    }
+
+    @Test
+    fun `walkSchema visits directive args`() {
+        val visitedDirectiveArgs = mutableListOf<String>()
+
+        val rule = object : ValidationRule("test") {
+            override fun visitDirectiveArg(
+                ctx: ValidationContext,
+                arg: ViaductSchema.DirectiveArg
+            ) {
+                visitedDirectiveArgs.add(arg.name)
+            }
+        }
+
+        val sdl = """
+            directive @auth(role: String) on FIELD_DEFINITION
+            type Query { hello: String }
+        """.trimIndent()
+
+        val schema = ViaductSchema.fromTypeDefinitionRegistry(sdl)
+        val ctx = ValidationContext(schema)
+
+        ctx.walkSchema(listOf(rule))
+
+        visitedDirectiveArgs shouldContain "role"
+    }
+
+    @Test
+    fun `reportError supports WARNING severity`() {
+        val schema = ViaductSchema.fromTypeDefinitionRegistry("type Query { hello: String }")
+        val ctx = ValidationContext(schema)
+
+        ctx.reportError("WARN_CODE", "A warning", SchemaLocation.ofType("Query"), Severity.WARNING)
+
+        ctx.errors shouldHaveSize 1
+        ctx.errors[0].severity shouldBe Severity.WARNING
     }
 
     @Test
