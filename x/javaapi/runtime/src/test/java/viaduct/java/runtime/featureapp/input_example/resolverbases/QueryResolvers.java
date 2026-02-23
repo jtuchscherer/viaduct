@@ -1,4 +1,4 @@
-package viaduct.java.runtime.example.resolverbases;
+package viaduct.java.runtime.featureapp.input_example.resolverbases;
 
 import java.util.concurrent.CompletableFuture;
 import viaduct.java.api.annotations.ResolverFor;
@@ -6,42 +6,53 @@ import viaduct.java.api.context.FieldExecutionContext;
 import viaduct.java.api.globalid.GlobalID;
 import viaduct.java.api.reflect.Type;
 import viaduct.java.api.resolvers.FieldResolverBase;
-import viaduct.java.api.types.Arguments;
 import viaduct.java.api.types.CompositeOutput;
 import viaduct.java.api.types.NodeCompositeOutput;
-import viaduct.java.runtime.example.grts.Query;
+import viaduct.java.runtime.featureapp.input_example.grt.Query;
+import viaduct.java.runtime.featureapp.input_example.grt.Query_userByName_Arguments;
+import viaduct.java.runtime.featureapp.input_example.grt.User;
 
 /**
  * Generated resolver base classes for Query type.
  *
- * <p>This simulates the codegen output for resolver base classes. In a real application, these
- * would be generated from the GraphQL schema.
+ * <p>This simulates the codegen output for resolver base classes. In production, these would be
+ * generated from the GraphQL schema.
  */
 public final class QueryResolvers {
 
-  private QueryResolvers() {}
+  private QueryResolvers() {
+    // Utility class
+  }
 
   /**
-   * Base class for Query.greeting resolver.
+   * Base class for Query.userByName resolver.
    *
    * <p>The {@code @ResolverFor} annotation is read by the bootstrapper to determine which field
    * this resolver handles.
+   *
+   * <p>Note: Uses Query_userByName_Arguments instead of Arguments.None to demonstrate typed
+   * arguments with nested input objects.
    */
-  @ResolverFor(typeName = "Query", fieldName = "greeting")
-  public abstract static class Greeting
-      implements FieldResolverBase<String, Query, Query, Arguments.None, CompositeOutput.None> {
+  @ResolverFor(typeName = "Query", fieldName = "userByName")
+  public abstract static class UserByName
+      implements FieldResolverBase<
+          User, Query, Query, Query_userByName_Arguments, CompositeOutput.None> {
 
     /**
-     * Context for Query.greeting resolver. Provides type-safe access to object value, query value,
-     * arguments, and selections.
+     * Context for Query.userByName resolver. Provides type-safe access to object value, query
+     * value, arguments, and selections.
      */
     public static class Context
-        implements FieldResolverBase.Context<Query, Query, Arguments.None, CompositeOutput.None> {
+        implements FieldResolverBase.Context<
+            Query, Query, Query_userByName_Arguments, CompositeOutput.None> {
 
-      private final FieldExecutionContext<Query, Query, Arguments.None, CompositeOutput.None> inner;
+      private final FieldExecutionContext<
+              Query, Query, Query_userByName_Arguments, CompositeOutput.None>
+          inner;
 
       public Context(
-          FieldExecutionContext<Query, Query, Arguments.None, CompositeOutput.None> inner) {
+          FieldExecutionContext<Query, Query, Query_userByName_Arguments, CompositeOutput.None>
+              inner) {
         this.inner = inner;
       }
 
@@ -56,7 +67,7 @@ public final class QueryResolvers {
       }
 
       @Override
-      public Arguments.None getArguments() {
+      public Query_userByName_Arguments getArguments() {
         return inner.getArguments();
       }
 
@@ -88,12 +99,12 @@ public final class QueryResolvers {
     }
 
     /**
-     * Resolves the greeting field value for a single parent object. Override this method to
+     * Resolves the userByName field value for a single parent object. Override this method to
      * implement single-item resolution.
      *
-     * @param ctx the execution context
-     * @return a future that completes with the resolved value
+     * @param ctx the execution context containing typed arguments
+     * @return a future that completes with the resolved User value
      */
-    public abstract CompletableFuture<String> resolve(Context ctx);
+    public abstract CompletableFuture<User> resolve(Context ctx);
   }
 }

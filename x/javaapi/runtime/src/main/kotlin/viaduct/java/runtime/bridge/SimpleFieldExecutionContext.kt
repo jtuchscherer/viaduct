@@ -2,26 +2,34 @@ package viaduct.java.runtime.bridge
 
 import viaduct.java.api.context.FieldExecutionContext
 import viaduct.java.api.resolvers.FieldResolverBase
+import viaduct.java.api.types.Arguments
+import viaduct.java.api.types.CompositeOutput
+import viaduct.java.api.types.Query
 
 // Internal marker types for the context implementation
-object AnyQuery : viaduct.java.api.types.Query
+object AnyQuery : Query
 
-object AnyArguments : viaduct.java.api.types.Arguments
-
-object AnySelections : viaduct.java.api.types.CompositeOutput
+object AnySelections : CompositeOutput
 
 /**
- * Minimal implementation of FieldExecutionContext for simple resolvers.
+ * Minimal implementation of FieldExecutionContext for Java resolvers.
  *
- * This provides just enough functionality for basic field resolvers that don't use
- * required selection sets. For now, it throws UnsupportedOperationException for
- * methods that require full context support.
+ * Bridges the engine's untyped data (argument maps) to the Java API's typed interfaces.
+ * Arguments are populated from the engine's argument map using reflection on the Arguments class.
+ *
+ * Uses [Arguments] directly as the generic argument type so that any concrete Arguments
+ * subtype (e.g., Query_person_Arguments) can be returned without a ClassCastException.
+ * Callers access getArguments() through the erased interface and cast to their specific type.
+ *
+ * @param requestContext The request context from the engine
+ * @param arguments The typed Arguments instance (populated from the engine's argument map), or null
  */
 @Suppress("UNCHECKED_CAST", "TooManyFunctions")
 class SimpleFieldExecutionContext(
-    private val requestContext: Any?
-) : FieldExecutionContext<AnyQuery, AnyQuery, AnyArguments, AnySelections>,
-    FieldResolverBase.Context<AnyQuery, AnyQuery, AnyArguments, AnySelections> {
+    private val requestContext: Any?,
+    private val arguments: Arguments? = null,
+) : FieldExecutionContext<AnyQuery, AnyQuery, Arguments, AnySelections>,
+    FieldResolverBase.Context<AnyQuery, AnyQuery, Arguments, AnySelections> {
     override fun getObjectValue(): AnyQuery {
         throw UnsupportedOperationException(
             "Object value access not yet implemented for Java resolvers"
@@ -34,10 +42,8 @@ class SimpleFieldExecutionContext(
         )
     }
 
-    override fun getArguments(): AnyArguments {
-        throw UnsupportedOperationException(
-            "Arguments access not yet implemented for Java resolvers"
-        )
+    override fun getArguments(): Arguments {
+        return arguments ?: Arguments.NoArguments
     }
 
     override fun getSelections(): Any {

@@ -89,18 +89,31 @@ public class GraphQLSchemaParser {
    * @return the list of object models
    */
   public List<ObjectModel> extractObjects(ViaductSchema schema, String packageName) {
+    return extractObjects(schema, packageName, false);
+  }
+
+  /**
+   * Extracts object models from a ViaductSchema with optional root type inclusion.
+   *
+   * @param schema the ViaductSchema
+   * @param packageName the package name for generated objects
+   * @param includeRootTypes if true, includes Query, Mutation, Subscription types
+   * @return the list of object models
+   */
+  public List<ObjectModel> extractObjects(
+      ViaductSchema schema, String packageName, boolean includeRootTypes) {
     List<ObjectModel> objects = new ArrayList<>();
     TypeMapper typeMapper = new TypeMapper();
 
-    // Root types to exclude from generation
+    // Root types to exclude from generation (unless explicitly included)
     Set<String> rootTypes = Set.of("Query", "Mutation", "Subscription");
 
     for (ViaductSchema.TypeDef typeDef : schema.getTypes().values()) {
       if (typeDef instanceof ViaductSchema.Object objectDef) {
         String name = objectDef.getName();
 
-        // Skip root types
-        if (rootTypes.contains(name)) {
+        // Skip root types unless includeRootTypes is true
+        if (!includeRootTypes && rootTypes.contains(name)) {
           continue;
         }
 
@@ -117,7 +130,13 @@ public class GraphQLSchemaParser {
         }
 
         objects.add(
-            new ObjectModel(packageName, name, interfaces, fields, getDescription(objectDef)));
+            new ObjectModel(
+                packageName,
+                name,
+                interfaces,
+                fields,
+                getDescription(objectDef),
+                rootTypes.contains(name)));
       }
     }
 
@@ -288,19 +307,19 @@ public class GraphQLSchemaParser {
     // Query type is always the Query GRT
     String queryType = grtPackage + ".Query";
 
-    // Arguments type - use NoArguments if field has no arguments
+    // Arguments type - use Arguments.None if field has no arguments
     boolean hasArguments = field.getHasArgs();
     String argumentsType =
         hasArguments
             ? grtPackage + "." + typeName + "_" + resolverClassName + "_Arguments"
-            : "Arguments.NoArguments";
+            : "Arguments.None";
 
-    // Selections type - use NotComposite if output is not a composite type
+    // Selections type - use CompositeOutput.None if output is not a composite type
     boolean isCompositeOutput = field.getType().getBaseTypeDef().isComposite();
     String selectionsType =
         isCompositeOutput
             ? grtPackage + "." + field.getType().getBaseTypeDef().getName()
-            : "CompositeOutput.NotComposite";
+            : "CompositeOutput.None";
 
     // Exclude batchResolve for Mutation fields
     boolean includeBatchResolve = !typeName.equals(mutationTypeName);

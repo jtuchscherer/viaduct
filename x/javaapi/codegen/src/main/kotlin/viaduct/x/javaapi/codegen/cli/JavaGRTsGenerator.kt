@@ -53,7 +53,7 @@ class JavaGRTsGenerator : CliktCommand(
     override fun run() {
         // Generate GRTs (enums, objects, inputs, interfaces, unions)
         val grtsCodegen = JavaGRTsCodegen()
-        val grtsResult = grtsCodegen.generate(schemaFiles, grtOutputDir, grtPackage)
+        val grtsResult = grtsCodegen.generate(schemaFiles, grtOutputDir, grtPackage, false)
 
         // Generate Resolvers (separate step)
         val resolversCodegen = JavaResolversCodegen()

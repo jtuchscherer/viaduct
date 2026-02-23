@@ -47,14 +47,23 @@ class SimpleFieldExecutionContextTest {
     }
 
     @Test
-    fun `getArguments throws UnsupportedOperationException`() {
+    fun `getArguments returns NoArguments when no arguments provided`() {
         val context = SimpleFieldExecutionContext(
             requestContext = null
         )
 
-        assertThatThrownBy { context.getArguments() }
-            .isInstanceOf(UnsupportedOperationException::class.java)
-            .hasMessageContaining("Arguments access not yet implemented")
+        assertThat(context.getArguments()).isSameAs(viaduct.java.api.types.Arguments.NoArguments)
+    }
+
+    @Test
+    fun `getArguments returns provided arguments`() {
+        val args = viaduct.java.api.types.Arguments.NoArguments
+        val context = SimpleFieldExecutionContext(
+            requestContext = null,
+            arguments = args
+        )
+
+        assertThat(context.getArguments()).isSameAs(args)
     }
 
     @Test

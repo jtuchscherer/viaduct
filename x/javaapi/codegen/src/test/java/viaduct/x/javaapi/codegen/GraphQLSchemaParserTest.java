@@ -466,7 +466,7 @@ class GraphQLSchemaParserTest {
     assertThat(profilePicture.returnType()).isEqualTo("String");
     assertThat(profilePicture.objectType()).isEqualTo("com.example.types.User");
     assertThat(profilePicture.queryType()).isEqualTo("com.example.types.Query");
-    assertThat(profilePicture.argumentsType()).isEqualTo("Arguments.NoArguments");
+    assertThat(profilePicture.argumentsType()).isEqualTo("Arguments.None");
     assertThat(profilePicture.hasArguments()).isFalse();
     assertThat(profilePicture.includeBatchResolve()).isTrue();
 
@@ -516,7 +516,7 @@ class GraphQLSchemaParserTest {
             .findFirst()
             .orElseThrow();
     assertThat(reviews.hasArguments()).isFalse();
-    assertThat(reviews.argumentsType()).isEqualTo("Arguments.NoArguments");
+    assertThat(reviews.argumentsType()).isEqualTo("Arguments.None");
   }
 
   @Test
@@ -558,15 +558,15 @@ class GraphQLSchemaParserTest {
     assertThat(profilePicture.getFieldResolverBaseType())
         .isEqualTo(
             "FieldResolverBase<String, com.example.types.User, com.example.types.Query,"
-                + " Arguments.NoArguments, CompositeOutput.NotComposite>");
+                + " Arguments.None, CompositeOutput.None>");
     assertThat(profilePicture.getContextBaseType())
         .isEqualTo(
             "FieldResolverBase.Context<com.example.types.User, com.example.types.Query,"
-                + " Arguments.NoArguments, CompositeOutput.NotComposite>");
+                + " Arguments.None, CompositeOutput.None>");
     assertThat(profilePicture.getFieldExecutionContextType())
         .isEqualTo(
             "FieldExecutionContext<com.example.types.User, com.example.types.Query,"
-                + " Arguments.NoArguments, CompositeOutput.NotComposite>");
+                + " Arguments.None, CompositeOutput.None>");
     assertThat(profilePicture.getResolveFutureType()).isEqualTo("CompletableFuture<String>");
     assertThat(profilePicture.getBatchResolveFutureType())
         .isEqualTo("CompletableFuture<Map<Context, String>>");

@@ -8,7 +8,8 @@ public record ObjectModel(
     String className,
     List<String> implementedInterfaces,
     List<FieldModel> fields,
-    String description) {
+    String description,
+    boolean isRootType) {
 
   // ST (StringTemplate) requires JavaBean-style getters
   public String getPackageName() {
@@ -40,11 +41,14 @@ public record ObjectModel(
   }
 
   /**
-   * Returns the implements clause for the class declaration. Always includes GraphQLObject, plus
-   * any implemented interfaces.
+   * Returns the implements clause for the class declaration. For root types, uses the appropriate
+   * marker interface. For other types, uses GraphQLObject plus any implemented interfaces.
    */
   public String getImplementsClause() {
-    StringBuilder sb = new StringBuilder("GraphQLObject");
+    // Root types use their specific marker interface (which extends GraphQLObject)
+    String baseInterface = isRootType ? "viaduct.java.api.types." + className : "GraphQLObject";
+
+    StringBuilder sb = new StringBuilder(baseInterface);
     if (implementedInterfaces != null) {
       for (String iface : implementedInterfaces) {
         sb.append(", ").append(iface);

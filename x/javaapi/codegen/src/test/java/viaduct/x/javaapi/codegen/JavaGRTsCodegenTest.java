@@ -59,7 +59,8 @@ class JavaGRTsCodegenTest {
     File grtOutputDir = tempDir.resolve("grt-output").toFile();
 
     JavaGRTsCodegen.Result result =
-        codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example.generated");
+        codegen.generate(
+            List.of(schemaFile.toFile()), grtOutputDir, "com.example.generated", false);
 
     // Verify counts
     assertThat(result.enumCount()).isEqualTo(1);
@@ -112,9 +113,88 @@ class JavaGRTsCodegenTest {
     File grtOutputDir = tempDir.resolve("nested/grt/dir").toFile();
     assertThat(grtOutputDir).doesNotExist();
 
-    codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example");
+    codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example", false);
 
     assertThat(grtOutputDir).exists();
+  }
+
+  @Test
+  void includeRootTypesGeneratesQueryMutationSubscription() throws IOException {
+    // Schema with root types
+    String schemaWithRootTypes =
+        """
+        type Query {
+          hello: String
+        }
+
+        type Mutation {
+          doSomething: String
+        }
+
+        type Subscription {
+          onEvent: String
+        }
+
+        type User {
+          name: String
+        }
+        """;
+
+    Path rootSchemaFile = tempDir.resolve("root-schema.graphqls");
+    Files.writeString(rootSchemaFile, schemaWithRootTypes);
+    File grtOutputDir = tempDir.resolve("root-output").toFile();
+
+    JavaGRTsCodegen.Result result =
+        codegen.generate(List.of(rootSchemaFile.toFile()), grtOutputDir, "com.example.root", true);
+
+    // All 4 object types should be generated (3 root + 1 regular)
+    assertThat(result.objectCount()).isEqualTo(4);
+
+    Path packageDir = grtOutputDir.toPath().resolve("com/example/root");
+    assertThat(packageDir.resolve("Query.java")).exists();
+    assertThat(packageDir.resolve("Mutation.java")).exists();
+    assertThat(packageDir.resolve("Subscription.java")).exists();
+    assertThat(packageDir.resolve("User.java")).exists();
+
+    // Root types should use marker interfaces
+    String queryContent = Files.readString(packageDir.resolve("Query.java"));
+    assertThat(queryContent).contains("implements viaduct.java.api.types.Query");
+
+    String mutationContent = Files.readString(packageDir.resolve("Mutation.java"));
+    assertThat(mutationContent).contains("implements viaduct.java.api.types.Mutation");
+
+    // Regular types should use GraphQLObject
+    String userContent = Files.readString(packageDir.resolve("User.java"));
+    assertThat(userContent).contains("implements GraphQLObject");
+  }
+
+  @Test
+  void excludeRootTypesSkipsQueryMutationSubscription() throws IOException {
+    String schemaWithRootTypes =
+        """
+        type Query {
+          hello: String
+        }
+
+        type User {
+          name: String
+        }
+        """;
+
+    Path rootSchemaFile = tempDir.resolve("exclude-schema.graphqls");
+    Files.writeString(rootSchemaFile, schemaWithRootTypes);
+    File grtOutputDir = tempDir.resolve("exclude-output").toFile();
+
+    JavaGRTsCodegen.Result result =
+        codegen.generate(
+            List.of(rootSchemaFile.toFile()), grtOutputDir, "com.example.exclude", false);
+
+    // Only User should be generated, Query should be excluded
+    assertThat(result.objectCount()).isEqualTo(1);
+
+    Path packageDir = grtOutputDir.toPath().resolve("com/example/exclude");
+    assertThat(packageDir.resolve("Query.java")).doesNotExist();
+    assertThat(packageDir.resolve("User.java")).exists();
   }
 
   @Test
@@ -122,7 +202,7 @@ class JavaGRTsCodegenTest {
     File grtOutputDir = tempDir.resolve("grt-output").toFile();
 
     JavaGRTsCodegen.Result result =
-        codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example");
+        codegen.generate(List.of(schemaFile.toFile()), grtOutputDir, "com.example", false);
 
     for (File file : result.generatedFiles()) {
       assertThat(file.isAbsolute()).isTrue();

@@ -1,4 +1,4 @@
-package viaduct.java.runtime.example.resolverbases;
+package viaduct.java.runtime.featureapp.enum_example.resolverbases;
 
 import java.util.concurrent.CompletableFuture;
 import viaduct.java.api.annotations.ResolverFor;
@@ -9,31 +9,34 @@ import viaduct.java.api.resolvers.FieldResolverBase;
 import viaduct.java.api.types.Arguments;
 import viaduct.java.api.types.CompositeOutput;
 import viaduct.java.api.types.NodeCompositeOutput;
-import viaduct.java.runtime.example.grts.Query;
+import viaduct.java.runtime.featureapp.enum_example.grt.Query;
+import viaduct.java.runtime.featureapp.enum_example.grt.Status;
 
 /**
  * Generated resolver base classes for Query type.
  *
- * <p>This simulates the codegen output for resolver base classes. In a real application, these
- * would be generated from the GraphQL schema.
+ * <p>This simulates the codegen output for resolver base classes. In production, these would be
+ * generated from the GraphQL schema.
  */
 public final class QueryResolvers {
 
-  private QueryResolvers() {}
+  private QueryResolvers() {
+    // Utility class
+  }
 
   /**
-   * Base class for Query.greeting resolver.
+   * Base class for Query.currentStatus resolver.
    *
    * <p>The {@code @ResolverFor} annotation is read by the bootstrapper to determine which field
    * this resolver handles.
    */
-  @ResolverFor(typeName = "Query", fieldName = "greeting")
-  public abstract static class Greeting
-      implements FieldResolverBase<String, Query, Query, Arguments.None, CompositeOutput.None> {
+  @ResolverFor(typeName = "Query", fieldName = "currentStatus")
+  public abstract static class CurrentStatus
+      implements FieldResolverBase<Status, Query, Query, Arguments.None, CompositeOutput.None> {
 
     /**
-     * Context for Query.greeting resolver. Provides type-safe access to object value, query value,
-     * arguments, and selections.
+     * Context for Query.currentStatus resolver. Provides type-safe access to object value, query
+     * value, arguments, and selections.
      */
     public static class Context
         implements FieldResolverBase.Context<Query, Query, Arguments.None, CompositeOutput.None> {
@@ -88,12 +91,12 @@ public final class QueryResolvers {
     }
 
     /**
-     * Resolves the greeting field value for a single parent object. Override this method to
+     * Resolves the currentStatus field value for a single parent object. Override this method to
      * implement single-item resolution.
      *
      * @param ctx the execution context
      * @return a future that completes with the resolved value
      */
-    public abstract CompletableFuture<String> resolve(Context ctx);
+    public abstract CompletableFuture<Status> resolve(Context ctx);
   }
 }

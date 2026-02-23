@@ -35,6 +35,7 @@ public final class JavaResolverGenerator {
           import viaduct.java.api.types.Arguments;
           import viaduct.java.api.types.CompositeOutput;
           import viaduct.java.api.types.NodeCompositeOutput;
+          import <mdl.packageName>.*;
 
           /**
            * Generated resolver base classes for <mdl.typeName> type.
@@ -106,27 +107,12 @@ public final class JavaResolverGenerator {
 
                   /**
                    * Resolves the <r.gqlFieldName> field value for a single parent object.
+                   * Override this method to implement single-item resolution.
                    *
                    * @param ctx the execution context
                    * @return a future that completes with the resolved value
                    */
-                  public <r.resolveFutureType> resolve(Context ctx) {
-                      throw new UnsupportedOperationException(
-                          "<r.gqlTypeName>.<r.gqlFieldName>.resolve not implemented");
-                  \\}
-                  <if(r.includeBatchResolve)>
-
-                  /**
-                   * Resolves the <r.gqlFieldName> field values for multiple parent objects in a batch.
-                   *
-                   * @param contexts list of execution contexts
-                   * @return a future that completes with a map from context to resolved value
-                   */
-                  public <r.batchResolveFutureType> batchResolve(<r.batchResolveContextListType> contexts) {
-                      throw new UnsupportedOperationException(
-                          "<r.gqlTypeName>.<r.gqlFieldName>.batchResolve not implemented");
-                  \\}
-                  <endif>
+                  public abstract <r.resolveFutureType> resolve(Context ctx);
               \\}
               }; separator="\\n">
           }

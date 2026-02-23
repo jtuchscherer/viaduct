@@ -40,10 +40,12 @@ public class JavaGRTsCodegen {
    * @param schemaFiles list of GraphQL schema files to parse
    * @param grtOutputDir output directory for generated GRT files (written to package subdirs)
    * @param grtPackage Java package name for generated GRT types
+   * @param includeRootTypes if true, includes Query, Mutation, Subscription types in generation
    * @return result containing counts of generated types
    * @throws IOException if there's an error reading or writing files
    */
-  public Result generate(List<File> schemaFiles, File grtOutputDir, String grtPackage)
+  public Result generate(
+      List<File> schemaFiles, File grtOutputDir, String grtPackage, boolean includeRootTypes)
       throws IOException {
     // Ensure output directory exists
     if (!grtOutputDir.exists() && !grtOutputDir.mkdirs()) {
@@ -61,8 +63,8 @@ public class JavaGRTsCodegen {
       generatedFiles.add(JavaGRTGenerator.EnumGenerator.generateToFile(model, grtOutputDir));
     }
 
-    // Generate objects
-    List<ObjectModel> objectModels = parser.extractObjects(schema, grtPackage);
+    // Generate objects (with optional root type inclusion)
+    List<ObjectModel> objectModels = parser.extractObjects(schema, grtPackage, includeRootTypes);
     for (ObjectModel model : objectModels) {
       generatedFiles.add(JavaGRTGenerator.ObjectGenerator.generateToFile(model, grtOutputDir));
     }

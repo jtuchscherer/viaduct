@@ -18,7 +18,8 @@ class ObjectGeneratorTest {
                 new FieldModel("id", "String", false),
                 new FieldModel("name", "String", false),
                 new FieldModel("email", "String", true)),
-            null);
+            null,
+            false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 
@@ -42,7 +43,8 @@ class ObjectGeneratorTest {
             "Booking",
             List.of(),
             List.of(new FieldModel("id", "String", false)),
-            "A booking for a listing.");
+            "A booking for a listing.",
+            false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 
@@ -61,7 +63,8 @@ class ObjectGeneratorTest {
             "Human",
             List.of("Character", "Node"),
             List.of(new FieldModel("id", "String", false), new FieldModel("name", "String", false)),
-            null);
+            null,
+            false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 
@@ -79,7 +82,8 @@ class ObjectGeneratorTest {
                 new FieldModel("host", "User", false),
                 new FieldModel("amenities", "List<String>", false),
                 new FieldModel("pricePerNight", "double", false)),
-            null);
+            null,
+            false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 
@@ -101,7 +105,8 @@ class ObjectGeneratorTest {
             List.of(),
             List.of(
                 new FieldModel("name", "String", false), new FieldModel("age", "Integer", true)),
-            null);
+            null,
+            false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 

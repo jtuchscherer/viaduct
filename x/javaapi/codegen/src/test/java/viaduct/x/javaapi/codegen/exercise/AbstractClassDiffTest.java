@@ -102,7 +102,7 @@ abstract class AbstractClassDiffTest {
 
     Path generatedSourceDir = tempDir.resolve("generated-sources");
     Files.createDirectories(generatedSourceDir);
-    codegen.generate(List.of(schemaFile), generatedSourceDir.toFile(), GENERATED_PACKAGE);
+    codegen.generate(List.of(schemaFile), generatedSourceDir.toFile(), GENERATED_PACKAGE, false);
 
     Path compiledClassesDir = tempDir.resolve("compiled-classes");
     Files.createDirectories(compiledClassesDir);

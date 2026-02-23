@@ -1,6 +1,7 @@
 package viaduct.java.runtime.bridge
 
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletableFuture
 import org.slf4j.LoggerFactory
 import viaduct.engine.api.FieldResolverExecutor
@@ -12,6 +13,7 @@ import viaduct.java.api.annotations.Resolver
 import viaduct.java.api.annotations.ResolverFor
 import viaduct.java.api.context.FieldExecutionContext
 import viaduct.java.api.resolvers.FieldResolverBase
+import viaduct.java.api.types.Arguments
 import viaduct.java.runtime.bootstrap.JavaResolverClassFinder
 import viaduct.service.api.spi.TenantCodeInjector
 
@@ -153,6 +155,9 @@ class JavaModuleBootstrapper(
                     "Resolver class $resolverClass does not have a 'resolve' method"
                 )
 
+            // Extract the Arguments class from the resolver base's generic type parameters
+            val argumentsClass = extractArgumentsClass(baseClass)
+
             // Create the executor
             val resolverId = "$typeName.$fieldName"
             val resolverName = resolverClass.name
@@ -169,6 +174,7 @@ class JavaModuleBootstrapper(
                 resolveFunction = { ctx -> invokeResolver(resolverProvider, resolveMethod, ctx) },
                 resolverId = resolverId,
                 resolverName = resolverName,
+                argumentsClass = argumentsClass,
             )
 
             val coordinate = typeName to fieldName
@@ -186,6 +192,29 @@ class JavaModuleBootstrapper(
     override fun nodeResolverExecutors(schema: ViaductSchema): Iterable<Pair<String, NodeResolverExecutor>> {
         // Node resolver support is deferred - requires JavaNodeResolverExecutor bridge
         return emptyList()
+    }
+
+    /**
+     * Extracts the Arguments class from a resolver base class's generic type parameters.
+     *
+     * FieldResolverBase<T, O, Q, A, S> — A (index 3) is the Arguments type.
+     * Returns null if the type cannot be determined or is Arguments.None.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun extractArgumentsClass(baseClass: Class<*>): Class<out Arguments>? {
+        for (iface in baseClass.genericInterfaces) {
+            if (iface is ParameterizedType && iface.rawType == FieldResolverBase::class.java) {
+                val typeArgs = iface.actualTypeArguments
+                if (typeArgs.size >= 4) {
+                    val argType = typeArgs[3]
+                    if (argType is Class<*> && Arguments::class.java.isAssignableFrom(argType)) {
+                        val argClass = argType as Class<out Arguments>
+                        return if (argClass == Arguments.None::class.java) null else argClass
+                    }
+                }
+            }
+        }
+        return null
     }
 
     /**
@@ -220,6 +249,9 @@ class JavaModuleBootstrapper(
      *
      * Each invocation creates a new resolver instance via the provider, matching Viaduct's
      * per-invocation instantiation model.
+     *
+     * The resolve method expects a resolver-specific Context class that wraps FieldExecutionContext.
+     * This method finds that Context class and creates an instance wrapping the provided context.
      */
     @Suppress("UNCHECKED_CAST")
     private fun invokeResolver(
@@ -229,9 +261,33 @@ class JavaModuleBootstrapper(
     ): CompletableFuture<Any?> {
         return try {
             val resolver = provider.get()
-            resolveMethod.invoke(resolver, context) as CompletableFuture<Any?>
+            // The resolve method expects a Context class that wraps FieldExecutionContext
+            val contextType = resolveMethod.parameterTypes[0]
+            val wrappedContext = wrapContext(contextType, context)
+            resolveMethod.invoke(resolver, wrappedContext) as CompletableFuture<Any?>
         } catch (e: Exception) {
             CompletableFuture<Any?>().apply { completeExceptionally(e) }
         }
+    }
+
+    /**
+     * Wraps a FieldExecutionContext in the resolver's Context class.
+     *
+     * Generated resolver base classes have an inner Context class that wraps FieldExecutionContext.
+     * This method creates an instance of that Context class with the provided context.
+     */
+    private fun wrapContext(
+        contextType: Class<*>,
+        context: FieldExecutionContext<*, *, *, *>
+    ): Any {
+        // Find the constructor that takes FieldExecutionContext
+        val constructor = contextType.constructors.firstOrNull { ctor ->
+            ctor.parameterCount == 1 &&
+                FieldExecutionContext::class.java.isAssignableFrom(ctor.parameterTypes[0])
+        } ?: throw IllegalStateException(
+            "Context class ${contextType.name} does not have a constructor taking FieldExecutionContext"
+        )
+
+        return constructor.newInstance(context)
     }
 }

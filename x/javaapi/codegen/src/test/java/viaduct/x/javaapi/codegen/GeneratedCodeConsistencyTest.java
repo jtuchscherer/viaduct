@@ -25,7 +25,8 @@ class GeneratedCodeConsistencyTest {
 
   @Test
   void objectGenerator_usesGraphQLObject() {
-    ObjectModel model = new ObjectModel("com.example", "TestObject", List.of(), List.of(), null);
+    ObjectModel model =
+        new ObjectModel("com.example", "TestObject", List.of(), List.of(), null, false);
 
     String generated = JavaGRTGenerator.ObjectGenerator.generate(model);
 

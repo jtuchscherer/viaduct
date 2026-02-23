@@ -17,7 +17,7 @@ class ResolverGeneratorTest {
             "Profile",
             "com.example.types.User",
             "com.example.types.Query",
-            "Arguments.NoArguments",
+            "Arguments.None",
             "com.example.types.Profile",
             false,
             true,
@@ -35,11 +35,9 @@ class ResolverGeneratorTest {
         .contains("public abstract static class Profile")
         .contains(
             "implements FieldResolverBase<Profile, com.example.types.User, com.example.types.Query,"
-                + " Arguments.NoArguments, com.example.types.Profile>")
+                + " Arguments.None, com.example.types.Profile>")
         .contains("public static class Context")
-        .contains("public CompletableFuture<Profile> resolve(Context ctx)")
-        .contains(
-            "public CompletableFuture<Map<Context, Profile>> batchResolve(List<Context> contexts)");
+        .contains("public abstract CompletableFuture<Profile> resolve(Context ctx)");
   }
 
   @Test
@@ -91,7 +89,7 @@ class ResolverGeneratorTest {
 
     assertThat(generated)
         .contains("@ResolverFor(typeName = \"Mutation\", fieldName = \"createUser\")")
-        .contains("public CompletableFuture<User> resolve(Context ctx)")
+        .contains("public abstract CompletableFuture<User> resolve(Context ctx)")
         .doesNotContain("batchResolve");
   }
 
@@ -105,7 +103,7 @@ class ResolverGeneratorTest {
             "Profile",
             "com.example.types.User",
             "com.example.types.Query",
-            "Arguments.NoArguments",
+            "Arguments.None",
             "com.example.types.Profile",
             false,
             true,
@@ -119,7 +117,7 @@ class ResolverGeneratorTest {
             "List<Order>",
             "com.example.types.User",
             "com.example.types.Query",
-            "Arguments.NoArguments",
+            "Arguments.None",
             "com.example.types.Order",
             false,
             true,
@@ -148,8 +146,8 @@ class ResolverGeneratorTest {
             "String",
             "com.example.types.User",
             "com.example.types.Query",
-            "Arguments.NoArguments",
-            "CompositeOutput.NotComposite",
+            "Arguments.None",
+            "CompositeOutput.None",
             false,
             false,
             true);
@@ -161,8 +159,8 @@ class ResolverGeneratorTest {
 
     assertThat(generated)
         .contains("@ResolverFor(typeName = \"User\", fieldName = \"fullName\")")
-        .contains("CompositeOutput.NotComposite")
-        .contains("public CompletableFuture<String> resolve(Context ctx)");
+        .contains("CompositeOutput.None")
+        .contains("public abstract CompletableFuture<String> resolve(Context ctx)");
   }
 
   @Test
@@ -175,7 +173,7 @@ class ResolverGeneratorTest {
             "Profile",
             "com.example.types.User",
             "com.example.types.Query",
-            "Arguments.NoArguments",
+            "Arguments.None",
             "com.example.types.Profile",
             false,
             true,
@@ -190,7 +188,7 @@ class ResolverGeneratorTest {
     assertThat(generated)
         .contains("public com.example.types.User getObjectValue()")
         .contains("public com.example.types.Query getQueryValue()")
-        .contains("public Arguments.NoArguments getArguments()")
+        .contains("public Arguments.None getArguments()")
         .contains("public Object getSelections()")
         .contains(
             "public <T extends NodeCompositeOutput> GlobalID<T> globalIDFor(Type<T> type, String"
