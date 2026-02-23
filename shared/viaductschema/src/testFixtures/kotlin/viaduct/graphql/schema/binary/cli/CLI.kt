@@ -45,7 +45,7 @@ import viaduct.graphql.schema.graphqljava.gjSchemaFromRegistry
 import viaduct.graphql.schema.graphqljava.readTypesFromURLs
 import viaduct.graphql.schema.graphqljava.toGraphQLSchema
 import viaduct.graphql.schema.test.SchemaDiff
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.invariants.FailureCollector
 
 fun main(args: Array<String>) =
@@ -252,7 +252,7 @@ private class MmAccessTimeCommand : CliktCommand(
     private fun runGraphQLJava(input: File) {
         val urls = viaductFiles(input.toPath())
         val registry = readTypesFromURLs(urls).apply {
-            DefaultSchemaProvider.addDefaults(this, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(this, allowExisting = true)
         }
         val gqlSchema = UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
         val typeDefs = gqlSchema.allTypesAsList
@@ -358,7 +358,7 @@ private class MmLoadNoGJCommand : CliktCommand(
                 parseTime = measureTimeMillis {
                     val urls = viaductFiles(input.toPath())
                     registry = readTypesFromURLs(urls).apply {
-                        DefaultSchemaProvider.addDefaults(this, allowExisting = true)
+                        DefaultSchemaFactory.addDefaults(this, allowExisting = true)
                     }
                 }
                 buildTime = measureTimeMillis {
@@ -462,7 +462,7 @@ private fun readGJSchemaWithRegistry(inputPath: Path): Pair<SchemaWithData, Type
             }
         }.trackData(true).build()
     val registry = SchemaParser().parse(reader).apply {
-        DefaultSchemaProvider.addDefaults(this, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(this, allowExisting = true)
     }
     return gjSchemaFromRegistry(registry) to registry
 }

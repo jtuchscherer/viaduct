@@ -5,7 +5,7 @@ import kotlin.reflect.full.createInstance
 import org.slf4j.LoggerFactory
 
 /**
- * Discovers ViaductProvider implementations annotated with @ViaductServerConfiguration
+ * Discovers ViaductFactory implementations annotated with @ViaductServerConfiguration
  * using classpath scanning.
  */
 object FactoryDiscovery {
@@ -13,7 +13,7 @@ object FactoryDiscovery {
 
     /**
      * Scans the classpath to find a class annotated with @ViaductServerConfiguration
-     * that implements ViaductProvider.
+     * that implements ViaductFactory.
      *
      * If no provider is found, falls back to DefaultViaductFactory using the provided
      * packagePrefix.
@@ -24,7 +24,7 @@ object FactoryDiscovery {
      * @throws IllegalStateException if multiple providers are found or if packagePrefix is
      *         null when falling back to DefaultViaductFactory
      */
-    fun discoverProvider(packagePrefix: String?): ViaductProvider {
+    fun discoverProvider(packagePrefix: String?): ViaductFactory {
         val providers = findProviderClasses()
 
         return when (providers.size) {
@@ -55,11 +55,11 @@ object FactoryDiscovery {
     }
 
     /**
-     * Finds all classes annotated with @ViaductServerConfiguration that implement ViaductProvider.
+     * Finds all classes annotated with @ViaductServerConfiguration that implement ViaductFactory.
      *
      * @return List of instantiated provider instances
      */
-    private fun findProviderClasses(): List<ViaductProvider> {
+    private fun findProviderClasses(): List<ViaductFactory> {
         val annotationName = ViaductServerConfiguration::class.java.name
 
         return ClassGraph()
@@ -73,10 +73,10 @@ object FactoryDiscovery {
                         try {
                             val loadedClass = classInfo.loadClass()
 
-                            // Verify it implements ViaductProvider
-                            if (!ViaductProvider::class.java.isAssignableFrom(loadedClass)) {
+                            // Verify it implements ViaductFactory
+                            if (!ViaductFactory::class.java.isAssignableFrom(loadedClass)) {
                                 logger.warn(
-                                    "Skipping {}: annotated with @ViaductServerConfiguration but does not implement ViaductProvider",
+                                    "Skipping {}: annotated with @ViaductServerConfiguration but does not implement ViaductFactory",
                                     classInfo.name
                                 )
                                 return@mapNotNull null
@@ -87,7 +87,7 @@ object FactoryDiscovery {
                                 loadedClass.getDeclaredConstructor()
                             } catch (e: NoSuchMethodException) {
                                 logger.warn(
-                                    "Skipping {}: no no-argument constructor found. ViaductProvider implementations must have a no-argument constructor.",
+                                    "Skipping {}: no no-argument constructor found. ViaductFactory implementations must have a no-argument constructor.",
                                     classInfo.name
                                 )
                                 return@mapNotNull null
@@ -96,7 +96,7 @@ object FactoryDiscovery {
                             // Create instance
                             val kClass = loadedClass.kotlin
                             @Suppress("UNCHECKED_CAST")
-                            kClass.createInstance() as ViaductProvider
+                            kClass.createInstance() as ViaductFactory
                         } catch (e: Exception) {
                             logger.error("Failed to instantiate provider class {}", classInfo.name, e)
                             null

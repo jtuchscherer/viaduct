@@ -11,7 +11,7 @@ import graphql.schema.idl.UnExecutableSchemaGenerator
 import java.io.InputStreamReader
 import java.net.URL
 import org.junit.jupiter.api.Assertions.assertEquals
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 abstract class SchemaScopeTestBase {
     protected fun assertSchemaEqualToFixture(
@@ -67,7 +67,7 @@ abstract class SchemaScopeTestBase {
                 .parse(
                     readerForResources(resources)
                 ).apply {
-                    DefaultSchemaProvider.addDefaults(this, allowExisting = true)
+                    DefaultSchemaFactory.addDefaults(this, allowExisting = true)
                 }
         )
 

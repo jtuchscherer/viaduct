@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory
 import viaduct.gradle.ViaductApplicationPlugin
 import viaduct.gradle.ViaductApplicationPlugin.Companion.BUILTIN_SCHEMA_FILE
 import viaduct.gradle.ViaductSchemaValidator
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 /**
  * This task gathers the various partitions of the schema and
@@ -94,7 +94,7 @@ abstract class AssembleCentralSchemaTask
             }
             val allSchemaFiles = outputDirectory.get().asFileTree.matching { include("**/*.graphqls") }.files
 
-            val sdl = DefaultSchemaProvider.getDefaultSDL(existingSDLFiles = allSchemaFiles.toList())
+            val sdl = DefaultSchemaFactory.getDefaultSDL(existingSDLFiles = allSchemaFiles.toList())
             val sdlFile = outputDirectory.get().asFile.resolve(BUILTIN_SCHEMA_FILE)
             sdlFile.writeText(sdl)
 

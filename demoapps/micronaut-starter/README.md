@@ -20,7 +20,7 @@ micronaut-starter/
 │   │       └── MicronautTenantCodeInjector.kt # DI bridge
 │   └── dev/kotlin/com/example/viadapp/
 │       └── dev/                               # Development-only code (excluded from production)
-│           └── MicronautViaductProvider.kt    # ViaductServer integration
+│           └── MicronautViaductFactory.kt    # ViaductServer integration
 └── resolvers/
     └── src/main/
         ├── kotlin/.../resolvers/              # Resolver implementations
@@ -29,7 +29,7 @@ micronaut-starter/
 
 ## Running in Development Mode
 
-The `MicronautViaductProvider` (in the `dev` source set) starts only the Micronaut `ApplicationContext` (DI container), not the full HTTP server. This provides:
+The `MicronautViaductFactory` (in the `dev` source set) starts only the Micronaut `ApplicationContext` (DI container), not the full HTTP server. This provides:
 
 - Faster startup times
 - Full dependency injection for resolvers
@@ -48,17 +48,17 @@ The `MicronautViaductProvider` (in the `dev` source set) starts only the Microna
 ### Production Build
 - Only includes code from `src/main/kotlin` (the `production` package)
 - Does NOT include the `viaduct-serve` dependency
-- Does NOT include `MicronautViaductProvider`
+- Does NOT include `MicronautViaductFactory`
 - Suitable for deployment with a full Micronaut HTTP server
 
 ### Development Build (serve task)
 - Includes both `src/main/kotlin` and `src/dev/kotlin`
 - Includes the `viaduct-serve` dependency
-- Uses `MicronautViaductProvider` for fast iteration with GraphiQL
+- Uses `MicronautViaductFactory` for fast iteration with GraphiQL
 
 ## How Development Mode Works
 
-1. `MicronautViaductProvider` is annotated with `@ViaductServerConfiguration`
+1. `MicronautViaductFactory` is annotated with `@ViaductServerConfiguration`
 2. When ViaductServer starts, it discovers this provider via classpath scanning
 3. The provider starts a minimal `ApplicationContext` (DI only, no HTTP server)
 4. The `Viaduct` bean is retrieved from the DI container

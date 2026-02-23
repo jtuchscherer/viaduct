@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertAll
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import viaduct.graphql.utils.DefaultSchemaProvider.DefaultDirective
+import viaduct.graphql.utils.DefaultSchemaFactory.DefaultDirective
 
 @Suppress("DEPRECATION")
-class DefaultSchemaProviderTest {
+class DefaultSchemaFactoryTest {
     /**
      * High-level integration test for the public API. Ensures `addDefaults` adds default
      * schema components (directives, Node, scalars, root types) correctly from an empty registry.
@@ -40,7 +40,7 @@ class DefaultSchemaProviderTest {
         val sdl = "type Foo implements Node { id: ID! }" // Ensure creation of Node interface and Node query fields
         val registry = SchemaParser().parse(sdl)
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         // Verify all default directives are present
         defaultDirectiveNames().forEach { directiveName ->
@@ -54,7 +54,7 @@ class DefaultSchemaProviderTest {
         assertNodeHasIdAndScopeAll(nodeInterface)
 
         // Verify all default scalars are present
-        DefaultSchemaProvider.defaultScalars().forEach { scalar ->
+        DefaultSchemaFactory.defaultScalars().forEach { scalar ->
             assertTrue(registry.getType(scalar.name).isPresent, "Should have ${scalar.name} scalar")
         }
 
@@ -104,7 +104,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
 
         assertAll(
@@ -118,7 +118,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add all default directives (smoke)`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         // 1) All default directives are present
         defaultDirectiveNames().forEach { directiveName ->
@@ -148,7 +148,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
 
         assertAll(
@@ -163,7 +163,7 @@ class DefaultSchemaProviderTest {
         val registry = TypeDefinitionRegistry()
 
         // When: Adding defaults
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         // Then: @connection directive should be present with correct location
         val connectionDirective = registry.getDirectiveDefinition("connection").getOrNull()
@@ -181,7 +181,7 @@ class DefaultSchemaProviderTest {
         val registry = TypeDefinitionRegistry()
 
         // When: Adding defaults
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         // Then: @edge directive should be present with correct location
         val edgeDirective = registry.getDirectiveDefinition("edge").getOrNull()
@@ -201,7 +201,7 @@ class DefaultSchemaProviderTest {
 
         // When/Then: Adding defaults should error
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
         assertContains(
             exception.message ?: "",
@@ -218,7 +218,7 @@ class DefaultSchemaProviderTest {
 
         // When/Then: Adding defaults should error
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
         assertContains(
             exception.message ?: "",
@@ -236,7 +236,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         assertTrue(registry.getType("Query").isPresent, "Should add Query always")
         assertFalse(registry.getType("Mutation").isPresent, "Should not add Mutation without extensions")
@@ -261,7 +261,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         assertTrue(registry.getType("Query").isPresent, "Should add Query when extensions exist")
         val query = registry.getType("Query").get() as ObjectTypeDefinition
@@ -292,7 +292,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
         val query = registry.getType("Query").get() as ObjectTypeDefinition
         val mutation = registry.getType("Mutation").get() as ObjectTypeDefinition
         val subscription = registry.getType("Subscription").get() as ObjectTypeDefinition
@@ -308,10 +308,10 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser()
             .parse("type User implements Node { id:ID! }")
             .also {
-                DefaultSchemaProvider.addDefaults(
+                DefaultSchemaFactory.addDefaults(
                     it,
-                    includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Never,
-                    includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Never
+                    includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Never,
+                    includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Never
                 )
             }
         assertNodeSchema(registry, expectNode = false)
@@ -321,14 +321,14 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should always add Node interface when includeNodeDefinition is Always`() {
         val registry = TypeDefinitionRegistry()
             .also {
-                DefaultSchemaProvider.addDefaults(it, includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Always)
+                DefaultSchemaFactory.addDefaults(it, includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Always)
             }
         assertNodeSchema(registry, expectNode = true)
     }
 
     @Test
     fun `addDefaults should not add Node interface when there are no implementations of Node`() {
-        val registry = TypeDefinitionRegistry().also(DefaultSchemaProvider::addDefaults)
+        val registry = TypeDefinitionRegistry().also(DefaultSchemaFactory::addDefaults)
         assertNodeSchema(registry, expectNode = false)
     }
 
@@ -336,7 +336,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add Node interface when Node implementing type exists`() {
         val registry = SchemaParser()
             .parse("type User implements Node { id:ID! }")
-            .also(DefaultSchemaProvider::addDefaults)
+            .also(DefaultSchemaFactory::addDefaults)
         assertNodeSchema(registry, expectNode = true)
     }
 
@@ -348,7 +348,7 @@ class DefaultSchemaProviderTest {
                     type User { empty:Int }
                     extend type User implements Node { id:ID! }
                 """.trimIndent()
-            ).also(DefaultSchemaProvider::addDefaults)
+            ).also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -358,7 +358,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add Node interface when Node implementing interface exists`() {
         val registry = SchemaParser()
             .parse("interface I implements Node { empty:Int }")
-            .also(DefaultSchemaProvider::addDefaults)
+            .also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -372,7 +372,7 @@ class DefaultSchemaProviderTest {
                 interface I { empty:Int }
                 extend interface I implements Node { id:ID! }
                 """.trimIndent()
-            ).also(DefaultSchemaProvider::addDefaults)
+            ).also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -382,7 +382,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add Node interface when Object field returns Node`() {
         val registry = SchemaParser()
             .parse("type O { nodes:[Node!]! }")
-            .also(DefaultSchemaProvider::addDefaults)
+            .also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -392,7 +392,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add Node interface when Object extension field returns Node`() {
         val registry = SchemaParser()
             .parse("extend type Query { x:Node }")
-            .also(DefaultSchemaProvider::addDefaults)
+            .also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -406,7 +406,7 @@ class DefaultSchemaProviderTest {
                 interface I { empty:Int }
                 extend type I { node:Node }
                 """.trimIndent()
-            ).also(DefaultSchemaProvider::addDefaults)
+            ).also(DefaultSchemaFactory::addDefaults)
 
         // Verify Node interface is added
         assertNodeSchema(registry, expectNode = true)
@@ -417,7 +417,7 @@ class DefaultSchemaProviderTest {
         val sdl = "type User implements Node { id:ID! }"
         val registry = SchemaParser().parse(sdl)
 
-        DefaultSchemaProvider.addDefaults(registry, includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Never)
+        DefaultSchemaFactory.addDefaults(registry, includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Never)
 
         // Verify Node interface is still present
         assertTrue(registry.getType("Node").isPresent, "Should have Node interface")
@@ -431,7 +431,7 @@ class DefaultSchemaProviderTest {
     @Test
     fun `addDefaults should always add Node query fields when includeNodeQueries=Always`() {
         val registry = TypeDefinitionRegistry().also {
-            DefaultSchemaProvider.addDefaults(it, includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Always)
+            DefaultSchemaFactory.addDefaults(it, includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Always)
         }
         assertNodeSchema(registry, true)
     }
@@ -446,7 +446,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
 
         assertAll(
@@ -469,7 +469,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         // Should not throw
-        DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
 
         // Verify Node query fields are still present
         val queryExtensions = registry.objectTypeExtensions()["Query"] ?: emptyList()
@@ -490,7 +490,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        val exception = assertThrows<RuntimeException> { DefaultSchemaProvider.addDefaults(registry) }
+        val exception = assertThrows<RuntimeException> { DefaultSchemaFactory.addDefaults(registry) }
 
         assertAll(
             { assertContains(exception.message ?: "", "Root type Query", message = "Should mention Query root") },
@@ -511,7 +511,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        val exception = assertThrows<RuntimeException> { DefaultSchemaProvider.addDefaults(registry) }
+        val exception = assertThrows<RuntimeException> { DefaultSchemaFactory.addDefaults(registry) }
 
         assertAll(
             { assertContains(exception.message ?: "", "Root type Query", message = "Should mention Query root") },
@@ -532,7 +532,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        val exception = assertThrows<RuntimeException> { DefaultSchemaProvider.addDefaults(registry) }
+        val exception = assertThrows<RuntimeException> { DefaultSchemaFactory.addDefaults(registry) }
 
         assertAll(
             { assertContains(exception.message ?: "", "Root type Mutation", message = "Should mention Mutation root") },
@@ -553,7 +553,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        assertDoesNotThrow { DefaultSchemaProvider.addDefaults(registry) }
+        assertDoesNotThrow { DefaultSchemaFactory.addDefaults(registry) }
     }
 
     @Test
@@ -569,7 +569,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        assertDoesNotThrow { DefaultSchemaProvider.addDefaults(registry) }
+        assertDoesNotThrow { DefaultSchemaFactory.addDefaults(registry) }
         assertTrue(registry.getType("Subscription").isPresent)
     }
 
@@ -581,7 +581,7 @@ class DefaultSchemaProviderTest {
         """.trimIndent()
         val registry = SchemaParser().parse(sdl)
 
-        val exception = assertThrows<RuntimeException> { DefaultSchemaProvider.addDefaults(registry) }
+        val exception = assertThrows<RuntimeException> { DefaultSchemaFactory.addDefaults(registry) }
 
         assertAll(
             { assertContains(exception.message ?: "", "Node interface", message = "Should mention Node interface") },
@@ -602,7 +602,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         // Should not throw with allowExisting=true
-        DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
 
         // Verify all component types are present
         assertTrue(registry.getDirectiveDefinition(sampleDirective).isPresent, "Should preserve existing directive")
@@ -613,7 +613,7 @@ class DefaultSchemaProviderTest {
         defaultDirectiveNames().forEach { directiveName ->
             assertTrue(registry.getDirectiveDefinition(directiveName).isPresent, "Should have @$directiveName directive")
         }
-        DefaultSchemaProvider.defaultScalars().forEach { scalar ->
+        DefaultSchemaFactory.defaultScalars().forEach { scalar ->
             assertTrue(registry.getType(scalar.name).isPresent, "Should have ${scalar.name} scalar")
         }
     }
@@ -628,7 +628,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         // Should not throw
-        DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
 
         // Node interface should still be present and preserve user field
         assertTrue(registry.getType("Node").isPresent)
@@ -654,7 +654,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         // Should not throw
-        DefaultSchemaProvider.addDefaults(registry, forceAddRootTypes = true, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(registry, forceAddRootTypes = true, allowExisting = true)
 
         // Root types should still be present (existing ones)
         assertTrue(registry.getType("Query").isPresent)
@@ -666,8 +666,8 @@ class DefaultSchemaProviderTest {
     fun `addDefaults is idempotent and keeps single SchemaDefinition`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry, forceAddRootTypes = true)
-        DefaultSchemaProvider.addDefaults(registry, forceAddRootTypes = true, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(registry, forceAddRootTypes = true)
+        DefaultSchemaFactory.addDefaults(registry, forceAddRootTypes = true, allowExisting = true)
 
         val schemaDefs = registry.schemaDefinition().toList()
         assertEquals(1, schemaDefs.size, "Should keep exactly one SchemaDefinition after repeated calls")
@@ -675,7 +675,7 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should round trip essential structure`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL()
+        val sdl = DefaultSchemaFactory.getDefaultSDL()
         val registry = SchemaParser().parse(sdl)
 
         // Directives exist
@@ -688,7 +688,7 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should not include node schema with empty extants`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
             existingSDLFiles = listOf()
         )
 
@@ -698,7 +698,7 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should include node schema if used in extant files`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
             existingSDLFiles = listOf(
                 mkFile("type User implements Node { id:ID! }")
             )
@@ -710,7 +710,7 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should include query definition with empty extants`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
             existingSDLFiles = emptyList()
         )
 
@@ -720,7 +720,7 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should include query definition when extended in extant files`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
             existingSDLFiles = listOf(
                 mkFile("extend type Query { x:Int }")
             )
@@ -733,7 +733,7 @@ class DefaultSchemaProviderTest {
     @Test
     fun `getDefaultSDL can be used to compose a valid schema with extant files`() {
         val extant = mkFile("extend type Query { x:Int }")
-        val default = mkFile(DefaultSchemaProvider.getDefaultSDL(existingSDLFiles = listOf(extant)))
+        val default = mkFile(DefaultSchemaFactory.getDefaultSDL(existingSDLFiles = listOf(extant)))
 
         val reader = MultiSourceReader
             .newMultiSourceReader()
@@ -748,14 +748,14 @@ class DefaultSchemaProviderTest {
 
     @Test
     fun `getDefaultSDL should include PageInfo type by default`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL()
+        val sdl = DefaultSchemaFactory.getDefaultSDL()
 
         assertTrue(sdl.contains("type PageInfo"), "Generated default SDL should include PageInfo")
     }
 
     @Test
     fun `getDefaultSDL should include PageInfo type when includePageInfo is true`() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(includePageInfo = true)
+        val sdl = DefaultSchemaFactory.getDefaultSDL(includePageInfo = true)
 
         assertTrue(sdl.contains("type PageInfo"), "Generated default SDL should include PageInfo when requested")
     }
@@ -764,7 +764,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should add PageInfo type when not present`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         assertTrue(registry.getType("PageInfo").isPresent, "Should have PageInfo type")
         val pageInfo = registry.getType("PageInfo").get() as ObjectTypeDefinition
@@ -775,7 +775,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should create PageInfo with correct Relay fields`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         val pageInfo = registry.getType("PageInfo").get() as ObjectTypeDefinition
 
@@ -791,7 +791,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should create PageInfo with correct field nullability`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         val pageInfo = registry.getType("PageInfo").get() as ObjectTypeDefinition
         val fields = pageInfo.fieldDefinitions.associateBy { it.name }
@@ -819,7 +819,7 @@ class DefaultSchemaProviderTest {
     fun `addDefaults should create PageInfo with scope directive`() {
         val registry = TypeDefinitionRegistry()
 
-        DefaultSchemaProvider.addDefaults(registry)
+        DefaultSchemaFactory.addDefaults(registry)
 
         val pageInfo = registry.getType("PageInfo").get() as ObjectTypeDefinition
         val scope = pageInfo.directives.singleOrNull { it.name == "scope" }
@@ -833,7 +833,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(nonConformingPageInfoSdl)
 
         val exception = assertThrows<RuntimeException> {
-            DefaultSchemaProvider.addDefaults(registry)
+            DefaultSchemaFactory.addDefaults(registry)
         }
 
         assertAll(
@@ -856,7 +856,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertAll(
@@ -879,7 +879,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(relayCompliantPageInfoSdl)
 
         assertDoesNotThrow {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
     }
 
@@ -895,7 +895,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoMissingHasNextPage)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertAll(
@@ -917,7 +917,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoMissingHasPreviousPage)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertContains(exception.message ?: "", "hasPreviousPage", message = "Should mention missing field")
@@ -935,7 +935,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoMissingStartCursor)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertContains(exception.message ?: "", "startCursor", message = "Should mention missing field")
@@ -953,7 +953,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoMissingEndCursor)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertContains(exception.message ?: "", "endCursor", message = "Should mention missing field")
@@ -972,7 +972,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoWithNullableHasNextPage)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertAll(
@@ -994,7 +994,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoWithNullableHasPreviousPage)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertAll(
@@ -1016,7 +1016,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoWithNonStringCursors)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         assertAll(
@@ -1036,7 +1036,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(pageInfoWithMultipleValidationErrors)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
 
         val message = exception.message ?: ""
@@ -1062,7 +1062,7 @@ class DefaultSchemaProviderTest {
 
         // Should accept (non-nullable is stricter, which is fine)
         assertDoesNotThrow {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true)
         }
     }
 
@@ -1080,7 +1080,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         assertDoesNotThrow {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true, airbnbModeEnabled = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true, airbnbModeEnabled = true)
         }
     }
 
@@ -1096,7 +1096,7 @@ class DefaultSchemaProviderTest {
         val registry = SchemaParser().parse(sdl)
 
         val exception = assertThrows<IllegalStateException> {
-            DefaultSchemaProvider.addDefaults(registry, allowExisting = true, airbnbModeEnabled = true)
+            DefaultSchemaFactory.addDefaults(registry, allowExisting = true, airbnbModeEnabled = true)
         }
 
         assertContains(exception.message ?: "", "hasNextPage", message = "Should mention missing field")
@@ -1107,7 +1107,7 @@ class DefaultSchemaProviderTest {
     private fun defaultDirectiveNames() = DefaultDirective.values().map { it.directiveName }
 
     private fun deterministicScalarName(): String =
-        DefaultSchemaProvider.defaultScalars().minOfOrNull { it.name }
+        DefaultSchemaFactory.defaultScalars().minOfOrNull { it.name }
             ?: error("No default scalars registered")
 
     private fun assertNodeHasIdAndScopeAll(node: InterfaceTypeDefinition) {

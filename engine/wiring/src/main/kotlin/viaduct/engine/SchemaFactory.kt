@@ -12,7 +12,7 @@ import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.runtime.execution.DefaultCoroutineInterop
 import viaduct.graphql.Scalars
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.utils.slf4j.logger
 
 class SchemaFactory(
@@ -145,7 +145,7 @@ class SchemaFactory(
 
         // Add default Viaduct schema components
         try {
-            DefaultSchemaProvider.addDefaults(tdr)
+            DefaultSchemaFactory.addDefaults(tdr)
         } catch (e: Exception) {
             throw ViaductSchemaLoadException(
                 "Failed to add default schema components.",
@@ -153,7 +153,7 @@ class SchemaFactory(
             )
         }
 
-        val definedScalars = DefaultSchemaProvider.defaultScalars() + (customScalars ?: emptySet())
+        val definedScalars = DefaultSchemaFactory.defaultScalars() + (customScalars ?: emptySet())
         val actualWiringFactory = ViaductWiringFactory(coroutineInterop)
         val wiring = RuntimeWiring.newRuntimeWiring().wiringFactory(actualWiringFactory).apply {
             definedScalars.forEach { scalar(it) }

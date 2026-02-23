@@ -19,7 +19,7 @@ import kotlin.streams.toList
 import viaduct.graphql.schema.ViaductSchema
 import viaduct.graphql.schema.graphqljava.extensions.fromTypeDefinitionRegistry
 import viaduct.graphql.schema.unparseWrappers
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 /**
  * Command to output attributes about types and fields into CSV files for
@@ -165,7 +165,7 @@ class Schema2CsvCommand : CliktCommand(
         }.trackData(true).build()
 
         val registry = SchemaParser().parse(reader).apply {
-            DefaultSchemaProvider.addDefaults(this, allowExisting = true)
+            DefaultSchemaFactory.addDefaults(this, allowExisting = true)
         }
 
         return ViaductSchema.fromTypeDefinitionRegistry(registry)

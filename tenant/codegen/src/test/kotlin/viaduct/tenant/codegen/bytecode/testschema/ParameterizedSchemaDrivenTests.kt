@@ -15,7 +15,7 @@ import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.schema.ViaductSchema as ViaductGraphQLSchema
 import viaduct.graphql.schema.graphqljava.extensions.fromTypeDefinitionRegistry
 import viaduct.graphql.schema.graphqljava.readTypes
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.invariants.FailureCollector
 import viaduct.tenant.codegen.bytecode.CodeGenArgs
 import viaduct.tenant.codegen.bytecode.GRTClassFilesBuilder
@@ -118,10 +118,10 @@ class ParameterizedSchemaDrivenTests {
 
         try {
             // Get the default SDL (directives, scalars, Node interface, root types)
-            val defaultSdl = DefaultSchemaProvider.getDefaultSDL(
+            val defaultSdl = DefaultSchemaFactory.getDefaultSDL(
                 existingSDLFiles = schemaFiles,
-                includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Always,
-                includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Never
+                includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Always,
+                includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Never
             )
 
             // Combine user schema files with the defaults

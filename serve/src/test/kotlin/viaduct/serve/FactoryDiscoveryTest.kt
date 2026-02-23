@@ -25,8 +25,8 @@ class FactoryDiscoveryTest {
     }
 
     @Test
-    fun `provider discovery should validate ViaductProvider implementation`() {
-        // Given: AnnotatedNonProvider exists on classpath but doesn't implement ViaductProvider
+    fun `provider discovery should validate ViaductFactory implementation`() {
+        // Given: AnnotatedNonProvider exists on classpath but doesn't implement ViaductFactory
 
         // When/Then: Discovery should handle this gracefully
         // The AnnotatedNonProvider should be rejected during discovery
@@ -53,9 +53,9 @@ class FactoryDiscoveryTest {
         // Given: Provider is discovered
         val provider = FactoryDiscovery.discoverProvider("viaduct.serve.fixtures")
 
-        // Then: Provider should be a valid ViaductProvider instance
+        // Then: Provider should be a valid ViaductFactory instance
         assertNotNull(provider)
-        assertTrue(provider is ViaductProvider)
+        assertTrue(provider is ViaductFactory)
     }
 
     @Test

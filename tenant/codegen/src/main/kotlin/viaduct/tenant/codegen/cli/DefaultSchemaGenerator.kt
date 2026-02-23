@@ -6,7 +6,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 /**
  * CLI tool that generates the default Viaduct schema (scalars, directives, root types, etc.)
@@ -24,9 +24,9 @@ class DefaultSchemaGenerator : CliktCommand() {
     private val includeRootTypes: Boolean by option("--include_root_types").flag("--no-include_root_types", default = true)
 
     override fun run() {
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
-            includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Always,
-            includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema(includeNodeFields),
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
+            includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Always,
+            includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema(includeNodeFields),
             includePageInfo = includePageInfo,
             includeRootTypes = includeRootTypes
         )

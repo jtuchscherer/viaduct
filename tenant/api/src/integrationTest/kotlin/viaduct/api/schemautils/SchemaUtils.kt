@@ -7,7 +7,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import viaduct.api.testschema.ApiTestSchemaFeatureAppTest
 import viaduct.engine.api.ViaductSchema
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 object SchemaUtils {
     fun getSchema(): ViaductSchema {
@@ -23,7 +23,7 @@ object SchemaUtils {
 
     fun createSchema(sdl: String): ViaductSchema {
         val tdr = SchemaParser().parse(sdl)
-        DefaultSchemaProvider.addDefaults(tdr, allowExisting = true)
+        DefaultSchemaFactory.addDefaults(tdr, allowExisting = true)
         return ViaductSchema(SchemaGenerator().makeExecutableSchema(tdr, RuntimeWiring.MOCKED_WIRING))
     }
 }

@@ -1,7 +1,7 @@
 package com.example.viadapp.dev
 
 import io.micronaut.context.ApplicationContext
-import viaduct.serve.ViaductProvider
+import viaduct.serve.ViaductFactory
 import viaduct.serve.ViaductServerConfiguration
 import viaduct.service.api.Viaduct
 
@@ -23,10 +23,10 @@ import viaduct.service.api.Viaduct
  * configuration in the production package.
  */
 @ViaductServerConfiguration
-class MicronautViaductProvider : ViaductProvider {
+class MicronautViaductFactory : ViaductFactory {
     private var applicationContext: ApplicationContext? = null
 
-    override fun getViaduct(): Viaduct {
+    override fun mkViaduct(): Viaduct {
         // Start a minimal ApplicationContext with limited package scanning
         // Only scan the packages needed for Viaduct:
         // - production: ViaductConfiguration, MicronautTenantCodeInjector

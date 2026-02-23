@@ -20,8 +20,8 @@ class DefaultViaductFactoryTest {
         // Given: A factory with an explicit package prefix
         val factory = DefaultViaductFactory("viaduct.serve.fixtures")
 
-        // When: getViaduct is called
-        val viaduct = factory.getViaduct()
+        // When: mkViaduct is called
+        val viaduct = factory.mkViaduct()
 
         // Then: A Viaduct instance should be created successfully
         assertNotNull(viaduct, "Viaduct instance should be created")
@@ -31,7 +31,7 @@ class DefaultViaductFactoryTest {
     fun `created Viaduct should be usable for queries`() {
         // Given: Factory creates Viaduct with a package prefix
         val factory = DefaultViaductFactory("viaduct.serve.fixtures")
-        val viaduct = factory.getViaduct()
+        val viaduct = factory.mkViaduct()
 
         // Then: Viaduct should have basic functionality
         assertNotNull(viaduct, "Viaduct should exist")

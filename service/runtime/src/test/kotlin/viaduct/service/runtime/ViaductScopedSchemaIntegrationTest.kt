@@ -19,7 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.scopes.errors.SchemaScopeValidationError
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.service.api.ExecutionInput
 import viaduct.service.api.SchemaId
 import viaduct.service.api.spi.FlagManager
@@ -113,7 +113,7 @@ class ViaductScopedSchemaIntegrationTest {
                     val schema = ViaductSchema(
                         SchemaGenerator().makeExecutableSchema(
                             SchemaParser().parse(sdl).apply {
-                                DefaultSchemaProvider.addDefaults(this)
+                                DefaultSchemaFactory.addDefaults(this)
                             },
                             RuntimeWiring.MOCKED_WIRING
                         )

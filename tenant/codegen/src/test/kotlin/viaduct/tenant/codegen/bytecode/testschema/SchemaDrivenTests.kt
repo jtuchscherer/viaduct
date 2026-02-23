@@ -12,7 +12,7 @@ import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.schema.ViaductSchema as ViaductGraphQLSchema
 import viaduct.graphql.schema.graphqljava.extensions.fromTypeDefinitionRegistry
 import viaduct.graphql.schema.graphqljava.readTypes
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.invariants.FailureCollector
 import viaduct.tenant.codegen.bytecode.CodeGenArgs
 import viaduct.tenant.codegen.bytecode.GRTClassFilesBuilder
@@ -45,10 +45,10 @@ class SchemaDrivenTests {
         runBlockingTest {
             val failures = FailureCollector()
 
-            val sdl = DefaultSchemaProvider.getDefaultSDL(
+            val sdl = DefaultSchemaFactory.getDefaultSDL(
                 existingSDLFiles = prepareSchemaFiles(),
-                includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Always,
-                includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Never
+                includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Always,
+                includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Never
             )
 
             val schema = ViaductGraphQLSchema.fromTypeDefinitionRegistry(SchemaParser().parse(sdl))
@@ -96,10 +96,10 @@ class SchemaDrivenTests {
         // Call KmContext.check to check invariants of result from loadGraphQLSchema
         // Classic test should use AirbnbBaseTypeMapper
 
-        val sdl = DefaultSchemaProvider.getDefaultSDL(
+        val sdl = DefaultSchemaFactory.getDefaultSDL(
             existingSDLFiles = prepareSchemaFiles(),
-            includeNodeDefinition = DefaultSchemaProvider.IncludeNodeSchema.Always,
-            includeNodeQueries = DefaultSchemaProvider.IncludeNodeSchema.Never
+            includeNodeDefinition = DefaultSchemaFactory.IncludeNodeSchema.Always,
+            includeNodeQueries = DefaultSchemaFactory.IncludeNodeSchema.Never
         )
 
         val schema = ViaductGraphQLSchema.fromTypeDefinitionRegistry(SchemaParser().parse(sdl))

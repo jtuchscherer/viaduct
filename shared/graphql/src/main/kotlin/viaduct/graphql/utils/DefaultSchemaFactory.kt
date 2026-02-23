@@ -40,7 +40,7 @@ import viaduct.utils.slf4j.logger
  * adding core Viaduct directives and intelligently creating root types only when needed.
  * Now supports includeRootTypes flag to control whether root types are generated.
  */
-object DefaultSchemaProvider {
+object DefaultSchemaFactory {
     const val SDL_FILENAME: String = "@@viaduct_default_schema.graphqls"
 
     private val log by logger()

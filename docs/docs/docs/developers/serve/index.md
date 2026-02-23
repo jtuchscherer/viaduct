@@ -56,16 +56,16 @@ Press `Ctrl+C` to stop.
 
 ### Using @ViaductServerConfiguration
 
-To enable dependency injection in your resolvers, create a class annotated with `@ViaductServerConfiguration` that implements `ViaductProvider`:
+To enable dependency injection in your resolvers, create a class annotated with `@ViaductServerConfiguration` that implements `ViaductFactory`:
 
 ```kotlin
 import viaduct.serve.ViaductServerConfiguration
-import viaduct.serve.ViaductProvider
+import viaduct.serve.ViaductFactory
 import viaduct.service.api.Viaduct
 
 @ViaductServerConfiguration
-class MyViaductProvider : ViaductProvider {
-    override fun getViaduct(): Viaduct {
+class MyViaductFactory : ViaductFactory {
+    override fun mkViaduct(): Viaduct {
         // Return your Viaduct instance configured with DI
         return myDiFramework.getBean(Viaduct::class.java)
     }
@@ -78,8 +78,8 @@ The serve server automatically discovers your implementation via classpath scann
 
 ```kotlin
 @ViaductServerConfiguration
-class MicronautViaductProvider : ViaductProvider {
-    override fun getViaduct(): Viaduct {
+class MicronautViaductFactory : ViaductFactory {
+    override fun mkViaduct(): Viaduct {
         val context = ApplicationContext.builder()
             .packages(
                 "com.example.app.injector",
@@ -95,8 +95,8 @@ class MicronautViaductProvider : ViaductProvider {
 
 ```kotlin
 @ViaductServerConfiguration
-class MyViaductProvider : ViaductProvider {
-    override fun getViaduct(): Viaduct {
+class MyViaductFactory : ViaductFactory {
+    override fun mkViaduct(): Viaduct {
         return ViaductBuilder()
             .withTenantModule(MyTenantModule())
             .build()
@@ -125,7 +125,7 @@ You will see this warning when running in default mode:
 ║  If your resolvers require injected dependencies, they will fail.         ║
 ║                                                                            ║
 ║  To enable DI, create a class annotated with @ViaductServerConfiguration  ║
-║  that implements ViaductProvider and returns your Viaduct instance.       ║
+║  that implements ViaductFactory and returns your Viaduct instance.       ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 ```
 

@@ -3,7 +3,7 @@ package viaduct.tenant.runtime.select
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.UnExecutableSchemaGenerator
 import viaduct.engine.api.ViaductSchema
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
 class SelectTestFeatureAppTest : FeatureAppTestBase() {
@@ -12,7 +12,7 @@ class SelectTestFeatureAppTest : FeatureAppTestBase() {
             ViaductSchema(
                 UnExecutableSchemaGenerator.makeUnExecutableSchema(
                     SchemaParser().parse(SelectTestFeatureAppTest().sdl).apply {
-                        DefaultSchemaProvider.addDefaults(this)
+                        DefaultSchemaFactory.addDefaults(this)
                     }
                 )
             )

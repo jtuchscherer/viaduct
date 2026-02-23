@@ -49,7 +49,7 @@ import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.engine.runtime.mocks.createDispatcherRegistry
 import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.engine.runtime.select.EngineSelectionSetImpl
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 
 typealias CheckerFn = suspend (arguments: Map<String, Any?>, objectDataMap: Map<String, EngineObjectData>) -> Unit
 typealias NodeBatchResolverFn = suspend (selectors: List<NodeResolverExecutor.Selector>, context: EngineExecutionContext) -> Map<NodeResolverExecutor.Selector, Result<EngineObjectData>>
@@ -114,7 +114,7 @@ class MockVariablesResolver(
  */
 fun createSchema(sdl: String): ViaductSchema {
     val tdr = SchemaParser().parse(sdl).apply {
-        DefaultSchemaProvider.addDefaults(this)
+        DefaultSchemaFactory.addDefaults(this)
     }
     return ViaductSchema(SchemaGenerator().makeExecutableSchema(tdr, RuntimeWiring.MOCKED_WIRING))
 }
@@ -128,7 +128,7 @@ fun createSchema(sdl: String): ViaductSchema {
 fun createSchemaWithWiring(sdl: String): ViaductSchema {
     val tdr = SchemaParser().parse(sdl)
     try {
-        DefaultSchemaProvider.addDefaults(tdr)
+        DefaultSchemaFactory.addDefaults(tdr)
     } catch (e: Exception) {
         throw ViaductSchemaLoadException(
             "Failed to add default schema components.",
@@ -137,7 +137,7 @@ fun createSchemaWithWiring(sdl: String): ViaductSchema {
     }
     val actualWiringFactory = ViaductWiringFactory(DefaultCoroutineInterop)
     val wiring = RuntimeWiring.newRuntimeWiring().wiringFactory(actualWiringFactory).apply {
-        DefaultSchemaProvider.defaultScalars().forEach { scalar(it) }
+        DefaultSchemaFactory.defaultScalars().forEach { scalar(it) }
     }.build()
 
     // Let SchemaProblem and other GraphQL validation errors pass through

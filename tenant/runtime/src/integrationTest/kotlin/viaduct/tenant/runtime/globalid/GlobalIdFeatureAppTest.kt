@@ -3,7 +3,7 @@ package viaduct.tenant.runtime.globalid
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.UnExecutableSchemaGenerator
 import viaduct.engine.api.ViaductSchema
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
 class GlobalIdFeatureAppTest : FeatureAppTestBase() {
@@ -12,7 +12,7 @@ class GlobalIdFeatureAppTest : FeatureAppTestBase() {
             ViaductSchema(
                 UnExecutableSchemaGenerator.makeUnExecutableSchema(
                     SchemaParser().parse(GlobalIdFeatureAppTest().sdl).apply {
-                        DefaultSchemaProvider.addDefaults(this)
+                        DefaultSchemaFactory.addDefaults(this)
                     }
                 )
             )

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import viaduct.api.FieldValue
 import viaduct.api.Resolver
 import viaduct.engine.api.ViaductSchema
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.tenant.runtime.execution.FieldBatchResolverExecutorImpl
 import viaduct.tenant.runtime.execution.FieldUnbatchedResolverExecutorImpl
 import viaduct.tenant.runtime.execution.NodeBatchResolverExecutorImpl
@@ -93,7 +93,7 @@ class TenantAPIBootstrapperFeatureAppTest : FeatureAppTestBase() {
 
     private fun mkSchema(sdl: String): ViaductSchema {
         val tdr = SchemaParser().parse(sdl).apply {
-            DefaultSchemaProvider.addDefaults(this)
+            DefaultSchemaFactory.addDefaults(this)
         }
         return ViaductSchema(SchemaGenerator().makeExecutableSchema(tdr, RuntimeWiring.MOCKED_WIRING))
     }

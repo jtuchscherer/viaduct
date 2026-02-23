@@ -17,8 +17,8 @@ import viaduct.service.api.Viaduct
  * **Example with Micronaut:**
  * ```kotlin
  * @ViaductServerConfiguration
- * class MicronautViaductProvider : ViaductProvider {
- *     override fun getViaduct(): Viaduct {
+ * class MicronautViaductFactory : ViaductFactory {
+ *     override fun mkViaduct(): Viaduct {
  *         val context = ApplicationContext.run()
  *         return context.getBean(Viaduct::class.java)
  *     }
@@ -28,8 +28,8 @@ import viaduct.service.api.Viaduct
  * **Example with manual configuration:**
  * ```kotlin
  * @ViaductServerConfiguration
- * class MyViaductProvider : ViaductProvider {
- *     override fun getViaduct(): Viaduct {
+ * class MyViaductFactory : ViaductFactory {
+ *     override fun mkViaduct(): Viaduct {
  *         return ViaductBuilder()
  *             .withTenantModule(MyTenantModule())
  *             .build()
@@ -44,7 +44,7 @@ import viaduct.service.api.Viaduct
  *
  * @see ViaductServerConfiguration
  */
-interface ViaductProvider {
+interface ViaductFactory {
     /**
      * Returns the Viaduct instance to be used by the serve server.
      *
@@ -53,5 +53,5 @@ interface ViaductProvider {
      *
      * @return The Viaduct instance to use for serving GraphQL requests
      */
-    fun getViaduct(): Viaduct
+    fun mkViaduct(): Viaduct
 }

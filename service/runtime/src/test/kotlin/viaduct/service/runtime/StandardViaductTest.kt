@@ -23,7 +23,7 @@ import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.GraphQLBuildError
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.execution.TenantNameResolver
-import viaduct.graphql.utils.DefaultSchemaProvider
+import viaduct.graphql.utils.DefaultSchemaFactory
 import viaduct.service.api.ExecutionInput
 import viaduct.service.api.SchemaId
 import viaduct.service.api.spi.FlagManager
@@ -228,7 +228,7 @@ private fun makeSchema(schema: String): ViaductSchema {
     return ViaductSchema(
         UnExecutableSchemaGenerator.makeUnExecutableSchema(
             SchemaParser().parse(schema).apply {
-                DefaultSchemaProvider.addDefaults(this)
+                DefaultSchemaFactory.addDefaults(this)
             }
         )
     )
