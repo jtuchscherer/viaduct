@@ -138,7 +138,6 @@ class EngineExecutionContextImpl(
     }
 
     override suspend fun resolveSelectionSet(
-        resolverId: String,
         selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions,
     ): EngineObjectData {

@@ -153,7 +153,6 @@ interface EngineExecutionContext {
      * This method requires a non-null [executionHandle]. If the handle is null (e.g., because
      * execution hasn't started yet), it will throw [SubqueryExecutionException].
      *
-     * @param resolverId Identifier for instrumentation and tracing
      * @param selectionSet The [EngineSelectionSet] containing the fields to resolve
      * @param options Execution options controlling behavior. Default executes as a Query.
      * @return The resolved [EngineObjectData]
@@ -162,7 +161,6 @@ interface EngineExecutionContext {
      * @see ResolveSelectionSetOptions For available options
      */
     suspend fun resolveSelectionSet(
-        resolverId: String,
         selectionSet: EngineSelectionSet,
         options: ResolveSelectionSetOptions = ResolveSelectionSetOptions.DEFAULT,
     ): EngineObjectData

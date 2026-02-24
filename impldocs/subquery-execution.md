@@ -24,7 +24,7 @@ Selection execution uses a three-tier API architecture:
 | Tier | API | Purpose | Consumers |
 |------|-----|---------|-----------|
 | **Tenant** | `ctx.query(SelectionSet<T>)` / `ctx.mutation(SelectionSet<T>)` | Typed, simple, opinionated | Resolver code |
-| **Engine API** | `EEC.resolveSelectionSet(resolverId, selectionSet, options)` | Flexible, configurable, triggers resolution | Advanced tenant runtime integrations, engine internals |
+| **Engine API** | `EEC.resolveSelectionSet(selectionSet, options)` | Flexible, configurable, triggers resolution | Advanced tenant runtime integrations, engine internals |
 | **Engine API** | `EEC.completeSelectionSet(selectionSet, arguments, options)` | Complete already-resolved fields | Classic-on-Modern shims path |
 | **Wiring** | `Engine.resolveSelectionSet(handle, selectionSet, options)` | Implementation detail | Only called by EEC |
 | **Wiring** | `Engine.completeSelectionSet(handle, selectionSet, ...)` | Implementation detail | Only called by EEC |
@@ -110,7 +110,7 @@ When a resolver calls `ctx.query(selections)`, the call flows through the bridge
 
 1. `ResolverExecutionContextImpl.query()` delegates to `EngineExecutionContextWrapperImpl.query()`
 2. The wrapper converts the tenant's `SelectionSet<T>` into an `EngineSelectionSet`
-3. It calls `EngineExecutionContext.resolveSelectionSet(resolverId, engineSelectionSet, options)`
+3. It calls `EngineExecutionContext.resolveSelectionSet(engineSelectionSet, options)`
 
 This bridge is the only place the tenant runtime touches the engine. It converts:
 - **To engine**: `SelectionSet<Query>` → `EngineSelectionSet` (the `ExecutionHandle` is accessed internally)
@@ -262,7 +262,7 @@ The engine provides two methods for selection set execution with different purpo
 
 ```kotlin
 // Use resolveSelectionSet when you need to trigger new resolution
-val data = eec.resolveSelectionSet(resolverId, selectionSet, options)
+val data = eec.resolveSelectionSet(selectionSet, options)
 ```
 
 **Use `completeSelectionSet` when:**

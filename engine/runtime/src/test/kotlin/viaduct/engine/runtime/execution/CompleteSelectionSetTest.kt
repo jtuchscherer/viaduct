@@ -273,7 +273,6 @@ class CompleteSelectionSetTest {
                         val rss = ctx.engineSelectionSetFactory
                             .engineSelectionSet("Query", "rootValue name", emptyMap())
                         ctx.resolveSelectionSet(
-                            "Container.completedResult",
                             rss,
                             ResolveSelectionSetOptions(targetResult = oer)
                         )

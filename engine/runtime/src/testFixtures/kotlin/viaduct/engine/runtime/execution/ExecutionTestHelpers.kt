@@ -405,12 +405,8 @@ object CheckerDispatchers {
  * `EngineExecutionContext.query()` method. For production code, use
  * [EngineExecutionContext.resolveSelectionSet] directly.
  */
-suspend fun EngineExecutionContext.query(
-    resolverId: String,
-    selectionSet: EngineSelectionSet
-): EngineObjectData =
+suspend fun EngineExecutionContext.query(selectionSet: EngineSelectionSet): EngineObjectData =
     resolveSelectionSet(
-        resolverId,
         selectionSet,
         ResolveSelectionSetOptions.DEFAULT
     )
@@ -422,12 +418,8 @@ suspend fun EngineExecutionContext.query(
  * `EngineExecutionContext.mutation()` method. For production code, use
  * [EngineExecutionContext.resolveSelectionSet] directly.
  */
-suspend fun EngineExecutionContext.mutation(
-    resolverId: String,
-    selectionSet: EngineSelectionSet
-): EngineObjectData =
+suspend fun EngineExecutionContext.mutation(selectionSet: EngineSelectionSet): EngineObjectData =
     resolveSelectionSet(
-        resolverId,
         selectionSet,
         ResolveSelectionSetOptions.MUTATION
     )

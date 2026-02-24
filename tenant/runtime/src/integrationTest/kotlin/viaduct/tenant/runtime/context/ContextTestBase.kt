@@ -48,26 +48,24 @@ abstract class ContextTestBase {
 
             override suspend fun <T : Query> query(
                 ctx: InternalContext,
-                resolverId: String,
                 selections: SelectionSet<T>
             ): T {
                 if (queryMock != null) {
                     @Suppress("UNCHECKED_CAST")
                     return queryMock as T
                 }
-                return realWrapper.query(ctx, resolverId, selections)
+                return realWrapper.query(ctx, selections)
             }
 
             override suspend fun <T : Mutation> mutation(
                 ctx: InternalContext,
-                resolverId: String,
                 selections: SelectionSet<T>
             ): T {
                 if (mutationMock != null) {
                     @Suppress("UNCHECKED_CAST")
                     return mutationMock as T
                 }
-                return realWrapper.mutation(ctx, resolverId, selections)
+                return realWrapper.mutation(ctx, selections)
             }
 
             override fun <T : NodeObject> nodeFor(
