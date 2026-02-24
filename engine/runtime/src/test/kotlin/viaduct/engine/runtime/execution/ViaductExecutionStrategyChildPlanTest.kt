@@ -1411,6 +1411,101 @@ class ViaductExecutionStrategyChildPlanTest {
 
     @Test
     @Suppress("UNCHECKED_CAST")
+    fun `type checker fieldTypeChildPlan with nested field resolver child plan executes both`() {
+        runExecutionTest {
+            withContext(nextTickDispatcher) {
+                val capturedExecutions = ConcurrentLinkedQueue<Pair<String, String>>()
+                // Count 2: one for authField (fieldTypeChildPlan), one for id (nested child plan)
+                val childPlansLatch = CountDownLatch(2)
+
+                val sdl = """
+                    type Query {
+                        currentUser: User
+                    }
+
+                    type User {
+                        id: ID!
+                        name: String
+                        authField: String
+                    }
+                """
+
+                val query = """
+                    {
+                        currentUser {
+                            name
+                        }
+                    }
+                """
+
+                val resolvers = mapOf(
+                    "Query" to mapOf(
+                        "currentUser" to DataFetcher { _ ->
+                            mapOf("id" to "user-123", "name" to "Alice")
+                        }
+                    ),
+                    "User" to mapOf(
+                        "id" to DataFetcher { env ->
+                            val path = env.executionStepInfo.path.toString()
+                            capturedExecutions.add("nested-child:User.id" to path)
+                            childPlansLatch.countDown()
+                            env.getSource<Map<String, Any>>()!!["id"]
+                        },
+                        "name" to DataFetcher { _ ->
+                            // Wait for both child plans to complete before returning.
+                            // This keeps the request alive so child plans can finish.
+                            childPlansLatch.await()
+                            "Alice"
+                        },
+                        "authField" to DataFetcher { env ->
+                            val path = env.executionStepInfo.path.toString()
+                            capturedExecutions.add("type-checker-rss:User.authField" to path)
+                            childPlansLatch.countDown()
+                            "auth-value"
+                        }
+                    )
+                )
+
+                // Type checker on User needs { authField } → creates fieldTypeChildPlan
+                // Field resolver on User.authField needs { id } → creates nested child plan
+                val requiredSelectionSetRegistry = MockRequiredSelectionSetRegistry.builder()
+                    .typeCheckerEntry("User", "authField")
+                    .fieldResolverEntry("User" to "authField", "id")
+                    .build()
+
+                val executionResult = executeViaductModernGraphQL(
+                    sdl = sdl,
+                    resolvers = resolvers,
+                    query = query,
+                    requiredSelectionSetRegistry = requiredSelectionSetRegistry,
+                    typeCheckerDispatchers = mapOf("User" to CheckerDispatchers.success())
+                )
+
+                val data = executionResult.getData<Map<String, Any?>>()
+                assertNotNull(data)
+                val user = data["currentUser"] as Map<String, Any?>
+                assertEquals("Alice", user["name"])
+
+                assertTrue(capturedExecutions.size >= 2, "Expected both fieldTypeChildPlan and nested child plan to execute")
+
+                val authFieldExecution = capturedExecutions.find { it.first == "type-checker-rss:User.authField" }
+                assertNotNull(
+                    authFieldExecution,
+                    "Type checker RSS should trigger fetching of authField via fieldTypeChildPlan"
+                )
+
+                val nestedChildExecution = capturedExecutions.find { it.first == "nested-child:User.id" }
+                assertNotNull(
+                    nestedChildExecution,
+                    "Nested child plan (field resolver RSS for authField needing 'id') should also execute. " +
+                        "This verifies that fieldTypeChildPlans recurse into plan.childPlans."
+                )
+            }
+        }
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
     fun `child plans for interface fields wrap selection set in inline fragment`() {
         runExecutionTest {
             withContext(nextTickDispatcher) {

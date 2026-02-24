@@ -18,7 +18,6 @@ import viaduct.engine.runtime.EngineExecutionContextExtensions.executeAccessChec
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.Value
-import viaduct.engine.runtime.execution.FieldExecutionHelpers.resolveQueryPlanVariables
 import viaduct.engine.runtime.execution.FieldExecutionHelpers.resolveRSSVariables
 import viaduct.utils.slf4j.ifDebug
 import viaduct.utils.slf4j.logger
@@ -83,39 +82,18 @@ class AccessCheckRunner(
         if (fieldTypeChildPlans.isNotEmpty()) {
             val env = dataFetchingEnvironmentSupplier.get()
             fieldTypeChildPlans.forEach { childPlan ->
-                if (!childPlan.executionCondition.shouldExecute(env)) {
-                    log.ifDebug {
-                        debug(
-                            "[AccessCheck] Type checker '${checkerDispatcher.checkerMetadata?.checkerName}' for type '$typeName' " +
-                                "has child plan with selection set '${childPlan.selectionSet}', will not be executed due to execution condition'"
-                        )
-                    }
-                    return@forEach
+                log.ifDebug {
+                    debug("[AccessCheck] Pre-fetching field type child plan for field '${field.fieldName}' of type '$typeName', selection set: '${childPlan.selectionSet}'")
                 }
-
-                parameters.launchOnRootScope {
-                    log.ifDebug {
-                        debug("[AccessCheck] Pre-fetching field type child plan for field '${field.fieldName}' of type '$typeName', selection set: '${childPlan.selectionSet}'")
-                    }
-                    val variables = resolveQueryPlanVariables(
-                        childPlan,
-                        parameters.executionStepInfo.arguments,
-                        parameters.parentEngineResult,
-                        parameters.queryEngineResult,
-                        engineExecutionContext,
-                        parameters.executionContext.graphQLContext,
-                        parameters.executionContext.locale
-                    )
-                    val planParameters = parameters.forChildPlan(
-                        childPlan,
-                        variables,
-                        ExecutionParameters.ChildPlanTarget.FieldType(
-                            parentOER = fieldResolutionResult.engineResult as ObjectEngineResultImpl,
-                            source = fieldResolutionResult.originalSource,
-                        ),
-                    )
-                    fieldResolver.fetchObject(childPlan.parentType as GraphQLObjectType, planParameters)
-                }
+                fieldResolver.launchQueryPlan(
+                    parameters,
+                    childPlan,
+                    env,
+                    ExecutionParameters.ChildPlanTarget.FieldType(
+                        parentOER = fieldResolutionResult.engineResult as ObjectEngineResultImpl,
+                        source = fieldResolutionResult.originalSource,
+                    ),
+                )
             }
         }
         return executeChecker(parameters, dataFetchingEnvironmentSupplier, checkerDispatcher, objectEngineResult, emptyMap(), CheckerExecutor.CheckerType.TYPE)

@@ -254,18 +254,35 @@ class FieldResolver(
         val overall: Value<Unit>
     )
 
-    private fun launchQueryPlan(
+    /**
+     * Launches a child query plan by checking its execution condition, recursively launching
+     * nested child plans, then resolving variables and calling fetchObject.
+     *
+     * @param parameters The execution parameters for the current field
+     * @param plan The child query plan to launch
+     * @param executionConditionEnv The DataFetchingEnvironment to evaluate the execution condition against, or null
+     *        if no DFE is available at plan launch time. Null is a valid value per the QueryPlanExecutionCondition contract.
+     * @param target Controls OER/source/stepInfo selection for non-Query plans
+     */
+    internal fun launchQueryPlan(
         parameters: ExecutionParameters,
-        plan: QueryPlan
+        plan: QueryPlan,
+        executionConditionEnv: DataFetchingEnvironment? = null,
+        target: ExecutionParameters.ChildPlanTarget = ExecutionParameters.ChildPlanTarget.FromContext,
     ) {
-        if (!plan.executionCondition.shouldExecute(null)) {
+        if (!plan.executionCondition.shouldExecute(executionConditionEnv)) {
+            log.ifDebug {
+                debug(
+                    "Skipping child plan for field '${parameters.field?.fieldName}' of type '${(plan.parentType as? GraphQLObjectType)?.name}' with selection set '${plan.selectionSet}' due to execution condition"
+                )
+            }
             return
         }
 
-        plan.childPlans.forEach { launchQueryPlan(parameters, it) }
+        plan.childPlans.forEach {
+            launchQueryPlan(parameters, it, executionConditionEnv)
+        }
 
-        // Produce the object data and field arguments for the current field and make them available to child
-        // plan VariablesResolver.
         parameters.launchOnRootScope {
             val variables = FieldExecutionHelpers.resolveQueryPlanVariables(
                 plan,
@@ -276,7 +293,7 @@ class FieldResolver(
                 parameters.executionContext.graphQLContext,
                 parameters.executionContext.locale,
             )
-            val planParameters = parameters.forChildPlan(plan, variables)
+            val planParameters = parameters.forChildPlan(plan, variables, target)
             fetchObject(plan.parentType as GraphQLObjectType, planParameters)
         }
     }

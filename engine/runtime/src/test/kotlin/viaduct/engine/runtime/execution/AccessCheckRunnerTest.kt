@@ -12,7 +12,6 @@ import io.mockk.mockk
 import java.util.function.Supplier
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -202,24 +201,12 @@ class AccessCheckRunnerTest {
         }
 
     @Test
-    fun `typeCheck - skips child plan when executionCondition returns false`(): Unit =
-        runBlocking {
-            withThreadLocalCoroutineContext {
-                val neverExecuteCondition = QueryPlanExecutionCondition { false }
-
-                val childPlanLaunched = checkTypeWithExecutionCondition(neverExecuteCondition)
-
-                assertEquals(false, childPlanLaunched, "Child plan should NOT be launched when executionCondition returns false")
-            }
-        }
-
-    @Test
-    fun `typeCheck - executes child plan when executionCondition returns true`(): Unit =
+    fun `typeCheck - delegates child plan launching to launchQueryPlan`(): Unit =
         runBlocking {
             withThreadLocalCoroutineContext {
                 val childPlanLaunched = checkTypeWithExecutionCondition(QueryPlanExecutionCondition.ALWAYS_EXECUTE)
 
-                assertEquals(true, childPlanLaunched, "Child plan should be launched when executionCondition returns true")
+                assertEquals(true, childPlanLaunched, "Child plan should be launched via launchQueryPlan")
             }
         }
 
@@ -245,6 +232,13 @@ class AccessCheckRunnerTest {
             type = fooObjectType
             data = emptyMap()
         }
+        val fieldResolutionResult = FieldResolutionResult(
+            engineResult = oer,
+            emptyList(),
+            ContextMocks().localContext,
+            emptyMap(),
+            null,
+        )
         val params = mockk<ExecutionParameters> {
             every { this@mockk.engineExecutionContext } returns engineExecutionContext
             every { instrumentation } returns mockk {
@@ -265,9 +259,10 @@ class AccessCheckRunnerTest {
                 every { fieldName } returns "testField"
                 every { fieldTypeChildPlans } returns mapOf(fooObjectType to lazy { listOf(mockChildPlan) })
             }
-            every { launchOnRootScope(any()) } answers {
+        }
+        val mockFieldResolver = mockk<FieldResolver> {
+            every { launchQueryPlan(any(), any(), any(), any()) } answers {
                 childPlanLaunched = true
-                mockk<Job>()
             }
         }
 
@@ -275,8 +270,8 @@ class AccessCheckRunnerTest {
             params,
             mockSupplier,
             oer,
-            mockk(),
-            mockk()
+            fieldResolutionResult,
+            mockFieldResolver
         )
 
         result.await()
