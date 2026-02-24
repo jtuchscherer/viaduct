@@ -40,6 +40,7 @@ import viaduct.engine.runtime.execution.FieldCompleter
 import viaduct.engine.runtime.execution.FieldExecutionHelpers
 import viaduct.engine.runtime.execution.FieldResolver
 import viaduct.engine.runtime.execution.QueryPlan
+import viaduct.engine.runtime.execution.QueryPlanFactory
 import viaduct.engine.runtime.execution.ViaductExecutionStrategy
 import viaduct.engine.runtime.execution.WrappedCoroutineExecutionStrategy
 import viaduct.engine.runtime.execution.asExecutionParameters
@@ -62,13 +63,14 @@ class EngineImpl(
     override val schema: ViaductSchema,
     documentProvider: PreparsedDocumentProvider,
     private val fullSchema: ViaductSchema,
+    private val queryPlanFactory: QueryPlanFactory,
 ) : Engine, EngineGraphQLJavaCompat {
     private val coroutineInterop: CoroutineInterop = config.coroutineInterop
-    private val flagManager: FlagManager = config.flagManager
     private val temporaryBypassAccessCheck: TemporaryBypassAccessCheck = config.temporaryBypassAccessCheck
     private val dataFetcherExceptionHandler: DataFetcherExceptionHandler = config.dataFetcherExceptionHandler
     private val meterRegistry: MeterRegistry? = config.meterRegistry
     private val additionalInstrumentation: Instrumentation? = config.additionalInstrumentation
+    private val flagManager: FlagManager = config.flagManager
 
     private val resolverDataFetcherInstrumentation = ResolverDataFetcherInstrumentation(
         dispatcherRegistry,
@@ -109,7 +111,7 @@ class EngineImpl(
         ViaductExecutionStrategy.Factory.Impl(
             dataFetcherExceptionHandler,
             ExecutionParameters.Factory(
-                flagManager
+                queryPlanFactory
             ),
             accessCheckRunner,
             coroutineInterop,
@@ -196,7 +198,7 @@ class EngineImpl(
         val eecImpl = parentParams.engineExecutionContext as EngineExecutionContextImpl
 
         val selectionParams = try {
-            val queryPlan = QueryPlan.buildFromSelections(
+            val queryPlan = queryPlanFactory.buildFromSelections(
                 parameters = eecImpl.queryPlanParameters(),
                 rss = selectionSet,
             )
@@ -276,7 +278,7 @@ class EngineImpl(
         val eecImpl = parentParams.engineExecutionContext as EngineExecutionContextImpl
 
         val childParams = try {
-            val queryPlan = QueryPlan.buildFromParsedSelections(
+            val queryPlan = queryPlanFactory.buildFromParsedSelections(
                 parameters = eecImpl.queryPlanParameters(),
                 parsedSelections = selectionSet.selections,
                 attribution = selectionSet.attribution,

@@ -21,7 +21,7 @@ import viaduct.engine.runtime.execution.ExecutionTestHelpers.runExecutionTest
 import viaduct.engine.runtime.select.EngineSelectionSetImpl
 
 /**
- * Tests for [QueryPlan.buildFromSelections] which builds a QueryPlan from a EngineSelectionSet
+ * Tests for [QueryPlanFactory.buildFromSelections] which builds a QueryPlan from a EngineSelectionSet
  * for subquery execution.
  *
  * These tests validate:
@@ -93,7 +93,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("Query", "user { id name }")
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("Query")
             // EngineSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
@@ -113,7 +113,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("User", "id name email")
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("User")
             // EngineSelectionSet.toSelectionSet() wraps fields in inline fragments by type condition
@@ -130,7 +130,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("Query", "viewer { user { profile { bio } } }")
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("Query")
 
@@ -148,7 +148,7 @@ class QueryPlanBuildFromSelectionsTest {
 
             val exception = assertThrows<IllegalArgumentException> {
                 runExecutionTest {
-                    QueryPlan.buildFromSelections(params, emptyRss)
+                    QueryPlanFactory.Default.buildFromSelections(params, emptyRss)
                 }
             }
 
@@ -161,30 +161,27 @@ class QueryPlanBuildFromSelectionsTest {
     @Test
     fun `caches QueryPlan for identical selections`(): Unit =
         runExecutionTest {
-            QueryPlan.resetCache()
-
+            val factory = QueryPlanFactory.Cached()
             val rss1 = mkRss("Query", "user { id }")
             val rss2 = mkRss("Query", "user { id }")
             val params = mkParameters()
 
-            val plan1 = QueryPlan.buildFromSelections(params, rss1)
-            val plan2 = QueryPlan.buildFromSelections(params, rss2)
+            val plan1 = factory.buildFromSelections(params, rss1)
+            val plan2 = factory.buildFromSelections(params, rss2)
 
-            // Same selection text should produce same cached plan
+            // Same selection text should produce same cached plan within the same factory instance
             expectThat(plan1).isSameInstanceAs(plan2)
         }
 
     @Test
     fun `produces different QueryPlans for different selections`(): Unit =
         runExecutionTest {
-            QueryPlan.resetCache()
-
             val rss1 = mkRss("Query", "user { id }")
             val rss2 = mkRss("Query", "user { name }")
             val params = mkParameters()
 
-            val plan1 = QueryPlan.buildFromSelections(params, rss1)
-            val plan2 = QueryPlan.buildFromSelections(params, rss2)
+            val plan1 = QueryPlanFactory.Default.buildFromSelections(params, rss1)
+            val plan2 = QueryPlanFactory.Default.buildFromSelections(params, rss2)
 
             expectThat(plan1).isNotSameInstanceAs(plan2)
         }
@@ -195,7 +192,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("Item", "id ... on User { name email }")
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("Item")
             // Should have inline fragments for Item (id) and User (name, email)
@@ -209,7 +206,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("Query", "item(id: \$itemId) { id }", mapOf("itemId" to "123"))
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("Query")
             expectThat(plan.selectionSet.selections).hasSize(1)
@@ -226,7 +223,7 @@ class QueryPlanBuildFromSelectionsTest {
             val rss = mkRss("User", "userId: id userName: name")
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("User")
             // Wrapped in inline fragment
@@ -241,15 +238,14 @@ class QueryPlanBuildFromSelectionsTest {
     @Test
     fun `uses different cache keys for different parent types`(): Unit =
         runExecutionTest {
-            QueryPlan.resetCache()
-
+            val factory = QueryPlanFactory.Cached()
             // Same field name but different parent types
             val rssUser = mkRss("User", "id")
             val rssItem = mkRss("Item", "id")
             val params = mkParameters()
 
-            val planUser = QueryPlan.buildFromSelections(params, rssUser)
-            val planItem = QueryPlan.buildFromSelections(params, rssItem)
+            val planUser = factory.buildFromSelections(params, rssUser)
+            val planItem = factory.buildFromSelections(params, rssItem)
 
             expectThat(planUser.parentTypeName()).isEqualTo("User")
             expectThat(planItem.parentTypeName()).isEqualTo("Item")
@@ -271,7 +267,7 @@ class QueryPlanBuildFromSelectionsTest {
             )
             val params = mkParameters()
 
-            val plan = QueryPlan.buildFromSelections(params, rss)
+            val plan = QueryPlanFactory.Default.buildFromSelections(params, rss)
 
             expectThat(plan.parentTypeName()).isEqualTo("User")
             // EngineSelectionSet.toSelectionSet() inlines fragment spreads, so we should

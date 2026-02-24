@@ -21,7 +21,10 @@ import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLTypeUtil
 import java.util.concurrent.Executors
 import kotlin.jvm.optionals.getOrNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.future.future
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionAttribution
@@ -192,50 +195,24 @@ data class QueryPlan(
     }
 
     companion object {
-        private val queryPlanBuilderExecutor = Executors.newFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
-        )
-            // ensure that threads in this pool are created as daemons, otherwise this thread pool
-            // prevents graceful shutdown in ExecutionBenchmark
-            { runnable ->
-                Executors.defaultThreadFactory().newThread(runnable).also { it.setDaemon(true) }
-            }
-
-        private val queryPlanCache = Caffeine.newBuilder()
-            .maximumSize(10000)
-            .executor(queryPlanBuilderExecutor)
-            .buildAsync<QueryPlanCacheKey, QueryPlan>()
-
-        private data class QueryPlanCacheKey(val documentText: String, val documentKey: DocumentKey, val schemaHashCode: Int, val executeAccessChecksInModstrat: Boolean)
-
-        fun resetCache() {
-            queryPlanCache.synchronous().invalidateAll()
-        }
-
-        internal val cacheSize: Long get() = queryPlanCache.synchronous().estimatedSize()
-
         /**
          * Builds a [QueryPlan] from a GraphQL [Document].
+         *
+         * This is an uncached build. Callers that want caching should use [QueryPlanFactory.Cached].
          *
          * @param parameters The parameters containing the schema.
          * @param document The GraphQL document.
          * @param documentKey A pointer into [document] describing the element to build a QueryPlan around
          * @return A new [QueryPlan] instance.
          */
-        suspend fun build(
+        internal fun build(
             parameters: Parameters,
             document: Document,
             documentKey: DocumentKey? = null,
-            useCache: Boolean = true,
             attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
         ): QueryPlan {
             val fragmentsByName = NodeUtil.getFragmentsByName(document)
-            val operations = document.getDefinitionsOfType(OperationDefinition::class.java)
-
-            val docKey = documentKey
-                ?: operations.firstOrNull()?.let { DocumentKey.Operation(it.name) }
-                ?: document.getFirstDefinitionOfType(GJFragmentDefinition::class.java).getOrNull()?.let { DocumentKey.Fragment(it.name) }
-                ?: throw IllegalStateException("document contains no fragment or operation definitions")
+            val docKey = resolveDocumentKey(document, documentKey)
 
             val (selectionSet, parentType) = when (val key = docKey) {
                 is DocumentKey.Operation -> {
@@ -259,7 +236,24 @@ data class QueryPlan(
                 }
             }
 
-            return build(parameters, selectionSet, docKey, parentType, fragmentsByName, useCache, attribution)
+            return build(parameters, selectionSet, docKey, parentType, fragmentsByName, attribution)
+        }
+
+        /**
+         * Resolves the [DocumentKey] for a [Document], using [documentKey] if provided or
+         * auto-detecting the first operation or fragment.
+         *
+         * Exposed for use by [QueryPlanFactory] when computing cache keys.
+         */
+        internal fun resolveDocumentKey(
+            document: Document,
+            documentKey: DocumentKey?
+        ): DocumentKey {
+            val operations = document.getDefinitionsOfType(OperationDefinition::class.java)
+            return documentKey
+                ?: operations.firstOrNull()?.let { DocumentKey.Operation(it.name) }
+                ?: document.getFirstDefinitionOfType(GJFragmentDefinition::class.java).getOrNull()?.let { DocumentKey.Fragment(it.name) }
+                ?: throw IllegalStateException("document contains no fragment or operation definitions")
         }
 
         /**
@@ -288,104 +282,17 @@ data class QueryPlan(
             }
         }
 
-        /**
-         * Builds a [QueryPlan] from a selection set, parent type, and fragments.
-         *
-         * @param parameters The parameters containing the schema.
-         * @param selectionSet The selection set.
-         * @param parentType The parent GraphQL type.
-         * @param fragmentsByName A map of fragment definitions by name.
-         * @return A new [QueryPlan] instance.
-         */
-        private suspend fun build(
+        /** Builds a [QueryPlan] from a selection set, parent type, and fragments. */
+        internal fun build(
             parameters: Parameters,
             selectionSet: GJSelectionSet,
             documentKey: DocumentKey,
             parentType: GraphQLCompositeType,
             fragmentsByName: Map<String, GJFragmentDefinition>,
-            useCache: Boolean = true,
             attribution: ExecutionAttribution?,
-        ): QueryPlan {
-            fun build(): QueryPlan =
-                QueryPlanBuilder(parameters, fragmentsByName, emptyList())
-                    .build(selectionSet, parentType, attribution, parameters.executionCondition, emptySet())
-
-            return if (useCache) {
-                val cacheKey = QueryPlanCacheKey(parameters.query, documentKey, parameters.schema.hashCode(), parameters.executeAccessChecksInModstrat)
-                queryPlanCache.get(cacheKey) { _ -> build() }.await()
-            } else {
-                build()
-            }
-        }
-
-        /**
-         * Convenience overload that extracts [ParsedSelections]-equivalent data from
-         * an [EngineSelectionSet] and delegates to [buildFromParsedSelections].
-         *
-         * Note: the RSS's @skip/@include pre-processing is redundant since the
-         * QueryPlanBuilder evaluates conditional directives internally.
-         */
-        suspend fun buildFromSelections(
-            parameters: Parameters,
-            rss: EngineSelectionSet,
-            attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
-            executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE,
-            fragmentsByName: Map<String, GJFragmentDefinition> = emptyMap()
-        ): QueryPlan {
-            if (rss.isEmpty()) {
-                throw IllegalArgumentException("EngineSelectionSet.Empty is not supported for subquery execution")
-            }
-            return buildFromParsedSelections(
-                parameters = parameters,
-                parsedSelections = ParsedSelectionsImpl(
-                    typeName = rss.type,
-                    selections = rss.toSelectionSet(),
-                    fragmentMap = fragmentsByName,
-                ),
-                attribution = attribution,
-                executionCondition = executionCondition,
-            )
-        }
-
-        /**
-         * Builds a [QueryPlan] from [ParsedSelections] for subquery execution and
-         * selection set completion.
-         *
-         * The QueryPlanBuilder handles @skip/@include directive evaluation internally,
-         * so callers do not need to pre-process selections.
-         *
-         * @param parameters The parameters containing the schema and registry.
-         * @param parsedSelections The parsed selections to build a plan from.
-         * @param attribution Attribution for this query plan execution.
-         * @param executionCondition Condition under which this plan should execute.
-         * @return A new [QueryPlan] instance.
-         * @throws IllegalArgumentException if selections are empty
-         */
-        suspend fun buildFromParsedSelections(
-            parameters: Parameters,
-            parsedSelections: ParsedSelections,
-            attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
-            executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE,
-        ): QueryPlan {
-            val gjSelectionSet = parsedSelections.selections
-            require(gjSelectionSet.selections.isNotEmpty()) {
-                "Empty selections are not supported for completeSelectionSet execution"
-            }
-            val parentType = parameters.schema.schema.getTypeAs<GraphQLCompositeType>(parsedSelections.typeName)
-
-            val queryText = parsedSelections.printAsFieldSet()
-            val documentKey = DocumentKey.Fragment("subquery:${parentType.name}")
-
-            return build(
-                parameters = parameters.copy(query = queryText, executionCondition = executionCondition),
-                selectionSet = gjSelectionSet,
-                documentKey = documentKey,
-                parentType = parentType,
-                fragmentsByName = parsedSelections.fragmentMap,
-                useCache = true,
-                attribution = attribution
-            )
-        }
+        ): QueryPlan =
+            QueryPlanBuilder(parameters, fragmentsByName, emptyList())
+                .build(selectionSet, parentType, attribution, parameters.executionCondition, emptySet())
     }
 }
 
@@ -767,6 +674,177 @@ sealed class DocumentKey {
     data class Operation(val name: String?) : DocumentKey() {
         init {
             require(name == null || name.isNotEmpty()) { "Operation name may not be an empty string" }
+        }
+    }
+}
+
+/**
+ * Factory for building [QueryPlan] objects.
+ *
+ * The cache (if any) is scoped to this factory instance, ensuring that cached QueryPlans
+ * are never reused across engine instances that have different
+ * [viaduct.engine.api.RequiredSelectionSet] configurations.
+ *
+ * Use [QueryPlanFactory.Cached] for production (wraps [QueryPlanFactory.Default] with a
+ * Caffeine async cache), or [QueryPlanFactory.Default] where no caching is needed.
+ */
+interface QueryPlanFactory {
+    /**
+     * Builds a [QueryPlan] from a GraphQL [Document].
+     */
+    suspend fun build(
+        parameters: QueryPlan.Parameters,
+        document: Document,
+        documentKey: DocumentKey? = null,
+        attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
+    ): QueryPlan
+
+    /**
+     * Builds a [QueryPlan] from [ParsedSelections].
+     */
+    suspend fun buildFromParsedSelections(
+        parameters: QueryPlan.Parameters,
+        parsedSelections: ParsedSelections,
+        attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
+        executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE,
+    ): QueryPlan
+
+    /**
+     * Convenience overload that extracts [ParsedSelections]-equivalent data from an
+     * [EngineSelectionSet] and delegates to [buildFromParsedSelections].
+     *
+     * Note: the RSS's @skip/@include pre-processing is redundant since the
+     * QueryPlanBuilder evaluates conditional directives internally.
+     */
+    suspend fun buildFromSelections(
+        parameters: QueryPlan.Parameters,
+        rss: EngineSelectionSet,
+        attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
+        executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE,
+        fragmentsByName: Map<String, GJFragmentDefinition> = emptyMap()
+    ): QueryPlan {
+        if (rss.isEmpty()) {
+            throw IllegalArgumentException("EngineSelectionSet.Empty is not supported for subquery execution")
+        }
+        return buildFromParsedSelections(
+            parameters = parameters,
+            parsedSelections = ParsedSelectionsImpl(
+                typeName = rss.type,
+                selections = rss.toSelectionSet(),
+                fragmentMap = fragmentsByName,
+            ),
+            attribution = attribution,
+            executionCondition = executionCondition,
+        )
+    }
+
+    /** Builds a fresh [QueryPlan] on every call with no caching. */
+    object Default : QueryPlanFactory {
+        override suspend fun build(
+            parameters: QueryPlan.Parameters,
+            document: Document,
+            documentKey: DocumentKey?,
+            attribution: ExecutionAttribution?,
+        ): QueryPlan = QueryPlan.build(parameters, document, documentKey, attribution)
+
+        override suspend fun buildFromParsedSelections(
+            parameters: QueryPlan.Parameters,
+            parsedSelections: ParsedSelections,
+            attribution: ExecutionAttribution?,
+            executionCondition: QueryPlanExecutionCondition,
+        ): QueryPlan {
+            val gjSelectionSet = parsedSelections.selections
+            require(gjSelectionSet.selections.isNotEmpty()) {
+                "Empty selections are not supported for completeSelectionSet execution"
+            }
+            val parentType = parameters.schema.schema.getTypeAs<GraphQLCompositeType>(parsedSelections.typeName)
+            return QueryPlan.build(
+                parameters = parameters.copy(query = parsedSelections.printAsFieldSet(), executionCondition = executionCondition),
+                selectionSet = gjSelectionSet,
+                documentKey = DocumentKey.Fragment("subquery:${parentType.name}"),
+                parentType = parentType,
+                fragmentsByName = parsedSelections.fragmentMap,
+                attribution = attribution,
+            )
+        }
+    }
+
+    /** Wraps a [QueryPlanFactory] with an instance-scoped async cache. */
+    class Cached(private val underlying: QueryPlanFactory = Default) : QueryPlanFactory {
+        companion object {
+            /**
+             * Shared executor for Caffeine async cache population. This is static (companion-scoped)
+             * rather than per-[Cached] instance because live threads are GC roots -- a per-instance
+             * pool would pin the entire owning Viaduct object graph in memory until the pool is
+             * explicitly shut down.
+             */
+            private val queryPlanBuilderExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+            ) { runnable ->
+                Executors.defaultThreadFactory().newThread(runnable).also { it.setDaemon(true) }
+            }
+
+            /** Pre-computed dispatcher to avoid allocating a new wrapper on every cache miss. */
+            private val queryPlanBuilderDispatcher = queryPlanBuilderExecutor.asCoroutineDispatcher()
+        }
+
+        private data class CacheKey(
+            val documentText: String,
+            val documentKey: DocumentKey,
+            val schemaHashCode: Int,
+            val executeAccessChecksInModstrat: Boolean,
+        )
+
+        private val cache = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .executor(queryPlanBuilderExecutor)
+            .buildAsync<CacheKey, QueryPlan>()
+
+        override suspend fun build(
+            parameters: QueryPlan.Parameters,
+            document: Document,
+            documentKey: DocumentKey?,
+            attribution: ExecutionAttribution?,
+        ): QueryPlan {
+            val resolvedKey = QueryPlan.resolveDocumentKey(document, documentKey)
+            val cacheKey = CacheKey(
+                parameters.query,
+                resolvedKey,
+                parameters.schema.hashCode(),
+                parameters.executeAccessChecksInModstrat,
+            )
+            return cache.get(cacheKey) { _, _ ->
+                CoroutineScope(queryPlanBuilderDispatcher).future {
+                    underlying.build(parameters, document, documentKey, attribution)
+                }
+            }.await()
+        }
+
+        override suspend fun buildFromParsedSelections(
+            parameters: QueryPlan.Parameters,
+            parsedSelections: ParsedSelections,
+            attribution: ExecutionAttribution?,
+            executionCondition: QueryPlanExecutionCondition,
+        ): QueryPlan {
+            val queryText = parsedSelections.printAsFieldSet()
+            val cacheKey = CacheKey(
+                queryText,
+                DocumentKey.Fragment("subquery:${parsedSelections.typeName}"),
+                parameters.schema.hashCode(),
+                parameters.executeAccessChecksInModstrat,
+            )
+            // Cache using ALWAYS_EXECUTE so that executionCondition (which may be a SAM lambda
+            // with identity-based hashCode) doesn't prevent cache sharing across calls with
+            // different conditions but identical query text and schema. executionCondition is
+            // pure metadata stored on the root plan but not used during plan construction.
+            val cached = cache.get(cacheKey) { _, _ ->
+                CoroutineScope(queryPlanBuilderDispatcher).future {
+                    underlying.buildFromParsedSelections(parameters, parsedSelections, attribution, ALWAYS_EXECUTE)
+                }
+            }.await()
+            // Skip the copy when ALWAYS_EXECUTE is requested — the cached plan already has that
+            // condition, so no allocation is needed and cached-instance identity is preserved.
+            return if (executionCondition === ALWAYS_EXECUTE) cached else cached.copy(executionCondition = executionCondition)
         }
     }
 }

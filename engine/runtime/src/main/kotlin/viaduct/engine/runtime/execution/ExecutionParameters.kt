@@ -33,8 +33,6 @@ import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.context.CompositeLocalContext
 import viaduct.engine.runtime.context.updateCompositeLocalContext
 import viaduct.engine.runtime.observability.ExecutionObservabilityContext
-import viaduct.service.api.spi.FlagManager
-import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.utils.slf4j.logger
 
 /**
@@ -398,7 +396,7 @@ data class ExecutionParameters(
     class Factory
         @Inject
         constructor(
-            private val flagManager: FlagManager,
+            private val queryPlanFactory: QueryPlanFactory,
         ) {
             companion object {
                 private val log by logger()
@@ -426,7 +424,7 @@ data class ExecutionParameters(
 
                 // Build the query plan
                 val (queryPlan, duration) = measureTimedValue {
-                    QueryPlan.build(
+                    queryPlanFactory.build(
                         QueryPlan.Parameters(
                             executionContext.executionInput.query,
                             engineExecutionContext.activeSchema,
@@ -438,7 +436,6 @@ data class ExecutionParameters(
                         executionContext.executionInput.operationName
                             ?.takeIf(String::isNotEmpty)
                             ?.let(DocumentKey::Operation),
-                        useCache = !flagManager.isEnabled(Flags.DISABLE_QUERY_PLAN_CACHE),
                         attribution = planAttribution
                     )
                 }

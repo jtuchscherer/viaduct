@@ -5,6 +5,7 @@ import graphql.execution.preparsed.PreparsedDocumentProvider
 import viaduct.engine.api.Engine
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.execution.QueryPlanFactory
 
 /**
  * Factory for creating Engine instances with specific schema and document caching configurations.
@@ -12,6 +13,7 @@ import viaduct.engine.runtime.DispatcherRegistry
 class EngineFactory(
     private val config: EngineConfiguration = EngineConfiguration.default,
     private val dispatcherRegistry: DispatcherRegistry = DispatcherRegistry.Empty,
+    private val queryPlanFactory: QueryPlanFactory = QueryPlanFactory.Cached(),
 ) {
     /**
      * Creates a new Engine instance.
@@ -32,6 +34,7 @@ class EngineFactory(
             schema,
             documentProvider,
             fullSchema,
+            queryPlanFactory,
         )
     }
 }

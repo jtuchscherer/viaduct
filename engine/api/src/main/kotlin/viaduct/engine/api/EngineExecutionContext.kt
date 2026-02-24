@@ -177,7 +177,7 @@ interface EngineExecutionContext {
      *
      * This method internally:
      * 1. Resolves RSS variables using the provided arguments and engine data from the handle
-     * 2. Builds a QueryPlan from the selection set (cache-backed via QueryPlan.buildFromSelections)
+     * 2. Builds a QueryPlan from the selection set (cache-backed via QueryPlanFactory.buildFromSelections)
      * 3. Waits for field resolution to complete
      * 4. Transforms the OER values into an ExecutionResult with data and errors
      *

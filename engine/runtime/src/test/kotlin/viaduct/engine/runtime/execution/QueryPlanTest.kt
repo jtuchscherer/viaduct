@@ -27,7 +27,9 @@ import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
+import strikt.assertions.isNotSameInstanceAs
 import strikt.assertions.isNull
+import strikt.assertions.isSameInstanceAs
 import strikt.assertions.single
 import strikt.assertions.withSingle
 import strikt.assertions.withValue
@@ -43,7 +45,6 @@ import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.MockRequiredSelectionSetRegistry
 import viaduct.engine.api.select.SelectionsParser
-import viaduct.engine.runtime.execution.ExecutionTestHelpers.executeViaductModernGraphQL
 import viaduct.engine.runtime.execution.ExecutionTestHelpers.runExecutionTest
 import viaduct.engine.runtime.execution.QueryPlan.CollectedField
 import viaduct.engine.runtime.execution.QueryPlan.Field
@@ -53,8 +54,6 @@ import viaduct.engine.runtime.execution.QueryPlan.Fragments
 import viaduct.engine.runtime.execution.QueryPlan.InlineFragment
 import viaduct.engine.runtime.execution.QueryPlan.Selection
 import viaduct.engine.runtime.execution.QueryPlan.SelectionSet
-import viaduct.service.api.spi.FlagManager.Flags
-import viaduct.service.api.spi.mocks.MockFlagManager
 
 class QueryPlanTest {
     @Test
@@ -562,30 +561,49 @@ class QueryPlanTest {
     }
 
     @Test
-    fun `QueryPlanBuilder -- uses cache by default`() {
-        // sanity
-        QueryPlan.resetCache()
-        assertEquals(0, QueryPlan.cacheSize)
+    fun `QueryPlanFactory_Cached -- caches plan within same instance`() {
+        val factory = QueryPlanFactory.Cached()
+        val schema = ViaductSchema("type Query {x:Int}".asSchema)
+        val params = mkQPParameters("{__typename}", schema)
         runExecutionTest {
-            executeViaductModernGraphQL("type Query {x:Int}", resolvers = emptyMap(), "{__typename}")
+            val plan1 = factory.build(params, "{__typename}".asDocument)
+            val plan2 = factory.build(params, "{__typename}".asDocument)
+            expectThat(plan1).isSameInstanceAs(plan2)
         }
-        assertEquals(1, QueryPlan.cacheSize)
     }
 
     @Test
-    fun `QueryPlanBuilder -- bypasses cache when configured`() {
-        // sanity
-        QueryPlan.resetCache()
-        assertEquals(0, QueryPlan.cacheSize)
+    fun `QueryPlanFactory_Default -- does not cache`() {
+        val schema = ViaductSchema("type Query {x:Int}".asSchema)
+        val params = mkQPParameters("{__typename}", schema)
         runExecutionTest {
-            executeViaductModernGraphQL(
-                "type Query {x:Int}",
-                resolvers = emptyMap(),
-                "{__typename}",
-                flagManager = MockFlagManager.create(Flags.DISABLE_QUERY_PLAN_CACHE)
-            )
+            val plan1 = QueryPlanFactory.Default.build(params, "{__typename}".asDocument)
+            val plan2 = QueryPlanFactory.Default.build(params, "{__typename}".asDocument)
+            expectThat(plan1).isNotSameInstanceAs(plan2)
         }
-        assertEquals(0, QueryPlan.cacheSize)
+    }
+
+    @Test
+    fun `QueryPlanFactory_Cached -- buildFromParsedSelections -- overlays executionCondition without invalidating cache`() {
+        val factory = QueryPlanFactory.Cached()
+        val schema = ViaductSchema("type Query {x:Int}".asSchema)
+        val params = mkQPParameters("{__typename}", schema)
+        val condition1 = QueryPlanExecutionCondition { true }
+        val condition2 = QueryPlanExecutionCondition { false }
+        val parsedSelections = SelectionsParser.parse("Query", "__typename")
+        runExecutionTest {
+            val plan1 = factory.buildFromParsedSelections(params, parsedSelections, executionCondition = condition1)
+            val plan2 = factory.buildFromParsedSelections(params, parsedSelections, executionCondition = condition2)
+            val planAlways = factory.buildFromParsedSelections(params, parsedSelections, executionCondition = ALWAYS_EXECUTE)
+            val planAlways2 = factory.buildFromParsedSelections(params, parsedSelections, executionCondition = ALWAYS_EXECUTE)
+
+            // Each plan has the correct executionCondition overlaid
+            expectThat(plan1.executionCondition).isSameInstanceAs(condition1)
+            expectThat(plan2.executionCondition).isSameInstanceAs(condition2)
+            expectThat(planAlways.executionCondition).isSameInstanceAs(ALWAYS_EXECUTE)
+            // ALWAYS_EXECUTE returns the cached plan directly (no copy) — same instance
+            expectThat(planAlways).isSameInstanceAs(planAlways2)
+        }
     }
 
     @Test

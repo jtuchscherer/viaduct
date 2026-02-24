@@ -41,7 +41,7 @@ open class QueryPlanBenchmark {
 
         fun toQueryPlan() {
             runBlocking {
-                QueryPlan.build(parameters, document, useCache = false)
+                QueryPlanFactory.Default.build(parameters, document)
             }
         }
     }

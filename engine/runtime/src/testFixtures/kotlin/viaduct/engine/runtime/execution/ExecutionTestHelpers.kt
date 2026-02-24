@@ -67,7 +67,7 @@ object ExecutionTestHelpers {
         fieldCheckerDispatchers: Map<Coordinate, CheckerDispatcher> = emptyMap(),
         typeCheckerDispatchers: Map<String, CheckerDispatcher> = emptyMap(),
         instrumentations: List<ViaductModernInstrumentation> = emptyList(),
-        flagManager: FlagManager = FlagManager.default,
+        queryPlanFactory: QueryPlanFactory = QueryPlanFactory.Default,
         dispatcherRegistry: DispatcherRegistry? = null,
         requiredSelectionSetRegistry: RequiredSelectionSetRegistry = RequiredSelectionSetRegistry.Empty
     ): ExecutionResult {
@@ -87,7 +87,7 @@ object ExecutionTestHelpers {
         val modernGraphQL = createViaductGraphQL(
             schema,
             instrumentations = instrumentations,
-            flagManager = flagManager
+            queryPlanFactory = queryPlanFactory
         )
         return executeQuery(schema, modernGraphQL, query, variables, effectiveDispatcherRegistry)
     }
@@ -177,10 +177,10 @@ object ExecutionTestHelpers {
         instrumentations: List<ViaductModernInstrumentation> = emptyList(),
         gjInstrumentations: List<Instrumentation> = emptyList(),
         coroutineInterop: CoroutineInterop = DefaultCoroutineInterop,
-        flagManager: FlagManager = FlagManager.default
+        queryPlanFactory: QueryPlanFactory = QueryPlanFactory.Default
     ): GraphQL {
         val execParamFactory = ExecutionParameters.Factory(
-            flagManager
+            queryPlanFactory
         )
         val accessCheckRunner = AccessCheckRunner(coroutineInterop)
 
@@ -251,8 +251,6 @@ object ExecutionTestHelpers {
         variables: Map<String, Any?>,
         dispatcherRegistry: DispatcherRegistry = DispatcherRegistry.Empty
     ): ExecutionResult {
-        // clear query plan cache
-        QueryPlan.resetCache()
         val executionInput = createExecutionInput(schema, query, variables, dispatcherRegistry = dispatcherRegistry)
         return graphQL.executeAsync(executionInput).await()
     }

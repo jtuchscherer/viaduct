@@ -1066,7 +1066,7 @@ class ViaductExecutionStrategyTest {
             ViaductExecutionStrategy(
                 dataFetcherExceptionHandler = SimpleDataFetcherExceptionHandler(),
                 executionParametersFactory = ExecutionParameters.Factory(
-                    flagManager = FlagManager.default
+                    queryPlanFactory = QueryPlanFactory.Default
                 ),
                 accessCheckRunner = AccessCheckRunner(DefaultCoroutineInterop),
                 isSerial = false

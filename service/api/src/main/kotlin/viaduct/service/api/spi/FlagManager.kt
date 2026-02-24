@@ -53,9 +53,6 @@ interface FlagManager {
         /** Controls whether access-check directives are enforced during execution. */
         EXECUTE_ACCESS_CHECKS("execute_access_checks_in_modern_execution_strategy"),
 
-        /** Disables the query-plan cache, forcing re-planning on every request. */
-        DISABLE_QUERY_PLAN_CACHE("disable_query_plan_cache"),
-
         /** Killswitch for non-blocking enqueue flush in the coroutine dispatcher. */
         KILLSWITCH_NON_BLOCKING_ENQUEUE_FLUSH("common.kotlin.nextTickDispatcher.killswitch.nonBlockingEnqueueFlush"),
         ENABLE_SYNC_VALUE_COMPUTATION("enable_sync_value_computation"),
