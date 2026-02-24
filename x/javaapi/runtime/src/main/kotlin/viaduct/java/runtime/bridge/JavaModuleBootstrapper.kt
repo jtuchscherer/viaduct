@@ -65,6 +65,9 @@ class JavaModuleBootstrapper(
         private val log = LoggerFactory.getLogger(JavaModuleBootstrapper::class.java)
     }
 
+    // Factory for creating RequiredSelectionSets from @Resolver annotations
+    private val requiredSelectionSetFactory = JavaRequiredSelectionSetFactory()
+
     override fun fieldResolverExecutors(schema: ViaductSchema): Iterable<Pair<Pair<String, String>, FieldResolverExecutor>> {
         val result = mutableMapOf<Pair<String, String>, FieldResolverExecutor>()
 
@@ -155,12 +158,22 @@ class JavaModuleBootstrapper(
                     "Resolver class $resolverClass does not have a 'resolve' method"
                 )
 
-            // Extract the Arguments class from the resolver base's generic type parameters
+            // Extract the Arguments and object value classes from the resolver base's generic type parameters
             val argumentsClass = extractArgumentsClass(baseClass)
+            val objectValueClass = extractObjectValueClass(baseClass)
 
             // Create the executor
             val resolverId = "$typeName.$fieldName"
             val resolverName = resolverClass.name
+
+            // Get the @Resolver annotation and create RequiredSelectionSets
+            val resolverAnnotation = resolverClass.getAnnotation(Resolver::class.java)
+            val requiredSelections = requiredSelectionSetFactory.mkRequiredSelectionSets(
+                schema = schema,
+                annotation = resolverAnnotation,
+                resolverForType = typeName,
+                resolverClassName = resolverName
+            )
 
             log.info(
                 "- Adding entry for resolver for '{}.{}' to {} via {}",
@@ -175,6 +188,9 @@ class JavaModuleBootstrapper(
                 resolverId = resolverId,
                 resolverName = resolverName,
                 argumentsClass = argumentsClass,
+                objectSelectionSet = requiredSelections.objectSelections,
+                querySelectionSet = requiredSelections.querySelections,
+                objectValueClass = objectValueClass,
             )
 
             val coordinate = typeName to fieldName
@@ -192,6 +208,27 @@ class JavaModuleBootstrapper(
     override fun nodeResolverExecutors(schema: ViaductSchema): Iterable<Pair<String, NodeResolverExecutor>> {
         // Node resolver support is deferred - requires JavaNodeResolverExecutor bridge
         return emptyList()
+    }
+
+    /**
+     * Extracts the object value class from a resolver base class's generic type parameters.
+     *
+     * FieldResolverBase<T, O, Q, A, S> — O (index 1) is the object value type.
+     * Returns null if the type cannot be determined.
+     */
+    private fun extractObjectValueClass(baseClass: Class<*>): Class<*>? {
+        for (iface in baseClass.genericInterfaces) {
+            if (iface is ParameterizedType && iface.rawType == FieldResolverBase::class.java) {
+                val typeArgs = iface.actualTypeArguments
+                if (typeArgs.size >= 2) {
+                    val objType = typeArgs[1]
+                    if (objType is Class<*>) {
+                        return objType
+                    }
+                }
+            }
+        }
+        return null
     }
 
     /**

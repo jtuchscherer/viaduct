@@ -31,6 +31,9 @@ dependencies {
     // GraphQL schema types
     implementation(libs.graphql.java)
 
+    // Shared GraphQL utils (for collectVariableReferences extension)
+    implementation(libs.viaduct.shared.graphql)
+
     // Testing
     testImplementation(libs.assertj.core)
     testImplementation(libs.io.mockk.jvm)

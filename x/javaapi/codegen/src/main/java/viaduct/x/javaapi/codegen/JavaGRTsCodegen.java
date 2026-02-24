@@ -33,7 +33,7 @@ public class JavaGRTsCodegen {
   }
 
   /**
-   * Generates Java GRTs from GraphQL schema files.
+   * Generates Java GRTs from GraphQL schema files with optional root type inclusion.
    *
    * <p>GRT types are written to {@code grtOutputDir} in package subdirectories.
    *

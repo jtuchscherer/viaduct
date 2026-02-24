@@ -5,6 +5,7 @@ package viaduct.java.runtime.fixtures
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
+import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.mocks.MockTenantAPIBootstrapper
 import viaduct.java.runtime.bridge.DefaultJavaResolverClassFinder
 import viaduct.java.runtime.bridge.JavaModuleBootstrapper
@@ -161,6 +162,26 @@ abstract class JavaFeatureAppTestBase {
      * Returns custom scope configuration. Override to provide custom scopes.
      */
     open fun getScopeConfig(): Set<SchemaConfiguration.ScopeConfig> = emptySet()
+
+    /**
+     * Returns the field resolver executor for a given type and field.
+     * Useful for testing that required selections are properly wired.
+     *
+     * @param typeName The GraphQL type name (e.g., "Person")
+     * @param fieldName The field name (e.g., "fullAddress")
+     * @return The FieldResolverExecutor if found, null otherwise
+     */
+    protected fun getFieldResolverExecutor(
+        typeName: String,
+        fieldName: String
+    ): FieldResolverExecutor? {
+        tryBuildViaductService()
+        val schema = viaductService.engineRegistry.getSchema(SchemaId.Full)
+        val executors = bootstrapper.fieldResolverExecutors(schema)
+        return executors.find { (coordinate, _) ->
+            coordinate.first == typeName && coordinate.second == fieldName
+        }?.second
+    }
 
     /**
      * Attempts to build the [StandardViaduct] instance if it has not been initialized yet.
