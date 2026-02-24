@@ -39,7 +39,8 @@ internal class KotlinGRTFilesBuilderImpl(
                 val d = File(args.dirForOutput, "$n.kt")
                 inputKotlinGen(
                     InputTypeDescriptor(n, field.args, null),
-                    cfg.ARGUMENTS_GRT.toString()
+                    cfg.ARGUMENTS_GRT.toString(),
+                    field
                 ).write(d)
             }
         }

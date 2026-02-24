@@ -255,3 +255,22 @@ val ViaductSchema.Object.typeOfNodeField: String
             "@edge type ${this.name} has no `node` field."
         }
     }
+
+/**
+ * True if this type has the @connection directive applied.
+ */
+val ViaductSchema.TypeDef.hasConnectionDirective: Boolean
+    get() = this is ViaductSchema.Object && hasAppliedDirective("connection")
+
+/**
+ * For a Connection type, extracts the Edge type name from the edges field.
+ *
+ * @return The name of the Edge type, or null if this is not a Connection type
+ *         or the edges field is not found
+ */
+val ViaductSchema.Object.connectionEdgeTypeName: String?
+    get() {
+        if (!hasConnectionDirective) return null
+        val edgesField = field("edges") ?: return null
+        return edgesField.type.baseTypeDef.name
+    }

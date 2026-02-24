@@ -31,7 +31,7 @@ abstract class KotlinGRTFilesBuilder protected constructor(
     /**
      * The schema being processed. Available after [addAll] is called.
      */
-    protected lateinit var schema: ViaductSchema
+    internal lateinit var schema: ViaductSchema
         private set
 
     /**
