@@ -1,6 +1,7 @@
 plugins {
     id("conventions.kotlin")
     id("conventions.kotlin-static-analysis")
+    id("me.champeau.jmh").version("0.7.3")
     id("jacoco-integration-base")
     `maven-publish`
 }
@@ -38,6 +39,14 @@ dependencies {
     testImplementation(libs.jackson.annotations)
     testImplementation(libs.slf4j.api)
     testImplementation(libs.kotest.property.jvm)
+
+    jmh(libs.jmh.annotation.processor)
+    jmhAnnotationProcessor(libs.jmh.annotation.processor)
+    jmhApi(libs.jmh.core)
+
+    jmhImplementation(testFixtures(libs.viaduct.shared.viaductschema))
+    jmhImplementation(libs.graphql.java)
+    jmhImplementation(libs.guava)
 }
 
 tasks.test {

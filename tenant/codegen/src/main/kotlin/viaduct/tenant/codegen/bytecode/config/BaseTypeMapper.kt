@@ -116,6 +116,9 @@ class ViaductBaseTypeMapper(
             is ViaductSchema.Input, is ViaductSchema.Enum -> {
                 kmClassFilesBuilder.addExternalClassReference(fqn, nested = nested)
             }
+            is ViaductSchema.Scalar -> {
+                kmClassFilesBuilder.addExternalClassReference(fqn)
+            }
         }
     }
 

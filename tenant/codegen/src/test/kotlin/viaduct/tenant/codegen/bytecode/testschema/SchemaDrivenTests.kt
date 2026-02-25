@@ -6,6 +6,7 @@ import java.io.File
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
 import viaduct.codegen.utils.JavaName
 import viaduct.engine.api.ViaductSchema
@@ -90,6 +91,40 @@ class SchemaDrivenTests {
             timer = Timer(),
             baseTypeMapper = ViaductBaseTypeMapper(schema),
         )
+
+    /**
+     * Regression test: codegen must not throw when a schema contains custom scalars absent from
+     * [baseGraphqlScalarTypeMapping] (e.g. scalars with anonymized names like those in large-schema-4).
+     *
+     * Two fixes are required together:
+     * 1. [GRTClassFilesBuilder.isGenerated] must return `false` for scalars so that
+     *    [GRTClassFilesBuilderBase.addSchemaGRTReference] doesn't return early and skip registering
+     *    a Javassist ClassPool placeholder for the scalar.
+     * 2. [ViaductBaseTypeMapper.addSchemaGRTReference] must handle [ViaductSchema.Scalar] so that
+     *    the placeholder is actually registered — previously the `when` had no `Scalar` branch and
+     *    silently did nothing.
+     *
+     * Without both fixes, `buildClassLoader` throws `javassist.NotFoundException` for any field
+     * whose type is an unmapped custom scalar.
+     */
+    @Test
+    fun `buildClassLoader succeeds with custom scalar types`() {
+        val sdl = """
+            scalar CustomScalar
+            type Query {
+                customField: CustomScalar
+            }
+        """.trimIndent()
+
+        val schema = ViaductGraphQLSchema.fromTypeDefinitionRegistry(SchemaParser().parse(sdl))
+        val args = prepareCodeGenArgs(schema, "viaduct.api.grts")
+
+        assertDoesNotThrow {
+            GRTClassFilesBuilder(args)
+                .addAll(schema)
+                .buildClassLoader()
+        }
+    }
 
     @Test
     fun invariantChecker() {
