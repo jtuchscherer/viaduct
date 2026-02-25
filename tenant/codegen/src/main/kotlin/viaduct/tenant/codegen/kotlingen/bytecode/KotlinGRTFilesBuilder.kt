@@ -35,6 +35,11 @@ abstract class KotlinGRTFilesBuilder protected constructor(
         private set
 
     /**
+     * Returns a type definition by name from the schema.
+     */
+    internal fun getType(type: String): ViaductSchema.TypeDef? = schema.types[type]
+
+    /**
      * Returns true if the given object type is the query root type in the schema.
      */
     internal fun ViaductSchema.Object.isQueryType(): Boolean = this === schema.queryTypeDef

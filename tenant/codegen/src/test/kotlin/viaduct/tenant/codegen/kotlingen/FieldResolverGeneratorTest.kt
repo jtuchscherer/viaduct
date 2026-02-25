@@ -205,6 +205,53 @@ class FieldResolverGeneratorTest {
     }
 
     @Test
+    fun `generates ConnectionFieldExecutionContext for connection fields`() {
+        val contents = gen(
+            """
+                directive @connection on OBJECT
+                directive @edge on OBJECT
+
+                type Query { placeholder: Int }
+                type Mutation { placeholder: Int }
+                type Subscription { placeholder: Int }
+
+                type Book {
+                    title: String!
+                }
+
+                type BookEdge @edge {
+                    cursor: String!
+                    node: Book
+                }
+
+                type BookConnection @connection {
+                    edges: [BookEdge!]!
+                }
+
+                type Subject {
+                    books(first: Int!, after: String): BookConnection!
+                    title: String
+                }
+            """.trimIndent(),
+            "Subject"
+        )
+
+        // Connection field should use ConnectionFieldExecutionContext
+        assertContains(contents, "ConnectionFieldExecutionContext")
+        assertContains(
+            contents,
+            "ConnectionFieldExecutionContext<viaduct.api.grts.Subject, viaduct.api.grts.Query, viaduct.api.grts.Subject_Books_Arguments, viaduct.api.grts.BookConnection>"
+        )
+
+        // Regular field should still use FieldExecutionContext (not Connection variant)
+        assertContains(contents, "FieldExecutionContext<viaduct.api.grts.Subject, viaduct.api.grts.Query,")
+
+        // Both resolver classes should be generated
+        assertContains(contents, "class Books ")
+        assertContains(contents, "class Title ")
+    }
+
+    @Test
     fun `generates resolvers that return ID scalars`() {
         gen(
             """
