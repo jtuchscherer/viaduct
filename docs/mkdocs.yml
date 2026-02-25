@@ -141,6 +141,9 @@ nav:
       - Generated Code: docs/developers/generated_code/index.md
       - Global IDs: docs/developers/globalids/index.md
       - Pagination: docs/developers/pagination/index.md
+      - Api Stability:
+        - docs/developers/api_stability/index.md
+        - Contributors guide: docs/developers/api_stability/contributors_guide.md
       - Scopes: docs/developers/scopes/index.md
       - Schema Reference: docs/developers/schema_reference/index.md
       - Serve: docs/developers/serve/index.md
