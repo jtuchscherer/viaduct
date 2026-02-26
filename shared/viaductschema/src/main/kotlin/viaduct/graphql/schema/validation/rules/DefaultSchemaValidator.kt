@@ -14,7 +14,7 @@ import viaduct.graphql.schema.validation.SchemaValidator
  * - [ApplicationOnlyDefinitionsRule]: Directives and scalars must be defined at application level
  */
 object DefaultSchemaValidator {
-    private val allowedScalarNames = GraphQLBuiltIns.SCALARS
+    private val allowedScalarNames = GraphQLBuiltIns.SCALARS + GraphQLBuiltIns.VIADUCT_SCALARS
     private val modulePartitionPathPrefix = "partition/"
 
     private val validator = SchemaValidator(
