@@ -1,4 +1,5 @@
 @file:Suppress("ForbiddenImport")
+@file:OptIn(VisibleForTest::class, InternalApi::class)
 
 package viaduct.api.internal
 
@@ -34,6 +35,8 @@ import viaduct.api.testschema.O2
 import viaduct.api.testschema.RecursiveObject
 import viaduct.api.testschema.TestType
 import viaduct.api.testschema.TestUser
+import viaduct.apiannotations.InternalApi
+import viaduct.apiannotations.VisibleForTest
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.common.KotestPropertyBase
 import viaduct.arbitrary.graphql.InputObjectValueWeight
@@ -52,7 +55,8 @@ import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
 
-class GRTConvTest : KotestPropertyBase() {
+class DefaultGRTConvFactoryTest : KotestPropertyBase() {
+    private val factory = DefaultGRTConvFactory
     private val schema = SchemaUtils.getSchema()
     private val internalContext = MockInternalContext.create(schema, "viaduct.api.testschema")
     private val executionContext = internalContext.executionContext
@@ -63,7 +67,7 @@ class GRTConvTest : KotestPropertyBase() {
         assertTrue(schema.typeAs<GraphQLObjectType>("O1").interfaces.any { it.name == "Node" })
 
         assertRoundtrip(
-            GRTConv(
+            factory.createForOutputField(
                 internalContext,
                 schema.field("O1" to "id"),
                 schema.typeAs("O1"),
@@ -77,7 +81,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- id field of non-Node type is a String`() {
         assertRoundtrip(
-            GRTConv(
+            factory.createForOutputField(
                 internalContext,
                 schema.field("ObjectWithGlobalIds" to "id"),
                 schema.typeAs("ObjectWithGlobalIds"),
@@ -91,7 +95,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- id-typed object field with idOf directive is a GlobalID`() {
         assertRoundtrip(
-            GRTConv(
+            factory.createForOutputField(
                 internalContext,
                 schema.field("ObjectWithGlobalIds" to "id"),
                 schema.typeAs("ObjectWithGlobalIds"),
@@ -105,7 +109,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- list-id-typed object field is a list of String`() {
         assertRoundtrip(
-            GRTConv(
+            factory.createForOutputField(
                 internalContext,
                 schema.field("ObjectWithGlobalIds" to "id8"),
                 schema.typeAs("ObjectWithGlobalIds"),
@@ -119,7 +123,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- list-id-typed object field with idOf directive is a list of GlobalID`() {
         assertRoundtrip(
-            GRTConv(
+            factory.createForOutputField(
                 internalContext,
                 schema.field("ObjectWithGlobalIds" to "id4"),
                 schema.typeAs("ObjectWithGlobalIds"),
@@ -138,7 +142,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- id field of input type is a String`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.inputField("InputWithGlobalIDs" to "id")),
+            factory.createForInputField(internalContext, schema.inputField("InputWithGlobalIDs" to "id")),
             "foo",
             IR.Value.String("foo")
         )
@@ -147,7 +151,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- id field of input type with idOf directive is a GlobalID`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.inputField("InputWithGlobalIDs" to "id2")),
+            factory.createForInputField(internalContext, schema.inputField("InputWithGlobalIDs" to "id2")),
             GlobalIDImpl(TestUser.Reflection, "foo"),
             IR.Value.String(TestUser.Reflection.testGlobalId("foo"))
         )
@@ -156,7 +160,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `ID -- list-id-typed input field with idOf directive is a GlobalID`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.inputField("InputWithGlobalIDs" to "id3")),
+            factory.createForInputField(internalContext, schema.inputField("InputWithGlobalIDs" to "id3")),
             listOf(
                 GlobalIDImpl(O1.Reflection, "foo"),
                 GlobalIDImpl(O1.Reflection, "bar"),
@@ -174,7 +178,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `scalars -- arb`(): Unit =
         runBlocking {
             val scalars = schema.type("Scalars")
-            val conv = GRTConv(internalContext, scalars)
+            val conv = factory.create(internalContext, scalars)
             Arb.ir(schema, scalars).forAll { ir ->
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
@@ -184,7 +188,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `input obj -- empty`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("Input2")),
+            factory.create(internalContext, schema.type("Input2")),
             Input2.Builder(executionContext).build(),
             IR.Value.Object("Input2", emptyMap())
         )
@@ -193,7 +197,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `input obj -- simple`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("Input2")),
+            factory.create(internalContext, schema.type("Input2")),
             Input2.Builder(executionContext).stringField("str").build(),
             IR.Value.Object(
                 "Input2",
@@ -207,7 +211,7 @@ class GRTConvTest : KotestPropertyBase() {
         // Input3.inputField has a default value. We should be able to roundtrip through IR
         // without setting the value in either the IR or the roundtripped value
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("Input3")),
+            factory.create(internalContext, schema.type("Input3")),
             Input3.Builder(executionContext).build(),
             IR.Value.Object("Input3", emptyMap())
         )
@@ -216,7 +220,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `input obj -- nested`() {
         val inp = assertRoundtrip(
-            GRTConv(internalContext, schema.type("Input3")),
+            factory.create(internalContext, schema.type("Input3")),
             Input3.Builder(executionContext)
                 .inputField(
                     Input2.Builder(executionContext)
@@ -244,7 +248,7 @@ class GRTConvTest : KotestPropertyBase() {
             val cfg = Config.default + (OutputObjectValueWeight to 0.0)
 
             Arb.objectIR(schema, cfg).forAll { ir ->
-                val conv = GRTConv(internalContext, schema.type(ir.name))
+                val conv = factory.create(internalContext, schema.type(ir.name))
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
             }
@@ -253,7 +257,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `output obj -- empty`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("TestType")),
+            factory.create(internalContext, schema.type("TestType")),
             TestType.Builder(executionContext).build(),
             IR.Value.Object("TestType", emptyMap())
         )
@@ -262,7 +266,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `output obj -- simple`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("TestType")),
+            factory.create(internalContext, schema.type("TestType")),
             TestType.Builder(executionContext).id("foo").build(),
             IR.Value.Object(
                 "TestType",
@@ -275,7 +279,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `output obj -- nested`(): Unit =
         runBlocking {
             val o1 = assertRoundtrip(
-                GRTConv(internalContext, schema.type("O1")),
+                factory.create(internalContext, schema.type("O1")),
                 O1.Builder(executionContext)
                     .objectField(
                         O2.Builder(executionContext)
@@ -303,7 +307,7 @@ class GRTConvTest : KotestPropertyBase() {
             // TestType.id is non-nullable and not set
             // The object can be roundtripped but the field will throw when accessed
             assertRoundtrip(
-                GRTConv(internalContext, schema.type("TestType")),
+                factory.create(internalContext, schema.type("TestType")),
                 TestType.Builder(executionContext).build(),
                 IR.Value.Object("TestType", emptyMap())
             ).let {
@@ -318,7 +322,7 @@ class GRTConvTest : KotestPropertyBase() {
         runBlocking {
             // O2.argumentedField takes field arguments
             val o2 = assertRoundtrip(
-                GRTConv(internalContext, schema.type("O2")),
+                factory.create(internalContext, schema.type("O2")),
                 O2.Builder(executionContext).argumentedField("x").build(),
                 IR.Value.Object(
                     "O2",
@@ -333,7 +337,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `output obj -- abstract-typed fields`(): Unit =
         runBlocking {
             val obj = assertRoundtrip(
-                GRTConv(internalContext, schema.type("HasAbstractField")),
+                factory.create(internalContext, schema.type("HasAbstractField")),
                 HasAbstractField.Builder(executionContext)
                     .u2(Concrete.Builder(executionContext).x(1).build())
                     .build(),
@@ -363,7 +367,7 @@ class GRTConvTest : KotestPropertyBase() {
                 (TypenameValueWeight to 1.0)
 
             Arb.objectIR(schema, cfg).forAll { ir ->
-                val conv = GRTConv(internalContext, schema.type(ir.name))
+                val conv = factory.create(internalContext, schema.type(ir.name))
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
             }
@@ -371,7 +375,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj with selections -- handles nested selections`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O1"),
             mkEngineSelectionSet(
@@ -407,7 +411,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj with selections -- the same type can be selected multiple times with different selections`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("RecursiveObject"),
             mkEngineSelectionSet(
@@ -438,7 +442,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj with selections -- a field can be selected multiple times`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O2"),
             mkEngineSelectionSet(
@@ -462,7 +466,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj key mapping -- FieldNameToFieldName`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O2"),
             mkEngineSelectionSet(
@@ -478,7 +482,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj key mapping -- SelectionToSelection`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O2"),
             mkEngineSelectionSet(
@@ -496,7 +500,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `output obj key mapping -- FieldNameToSelection`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O2"),
             mkEngineSelectionSet(
@@ -514,7 +518,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `interface -- simple`() {
         // I1 is a concrete type that implements I0
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("I0")),
+            factory.create(internalContext, schema.type("I0")),
             I1.Builder(executionContext).commonField("str").build(),
             IR.Value.Object(
                 "I1",
@@ -525,7 +529,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `interface with selections -- simple`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("I0"),
             mkEngineSelectionSet("I0", "x:commonField"),
@@ -545,7 +549,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `union -- simple`() {
         // I1 is a member of union U1
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("U1")),
+            factory.create(internalContext, schema.type("U1")),
             I1.Builder(executionContext).commonField("str").build(),
             IR.Value.Object(
                 "I1",
@@ -556,7 +560,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `union with selections -- simple`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("U1"),
             mkEngineSelectionSet("U1", "... on I1 { x:commonField }"),
@@ -575,7 +579,7 @@ class GRTConvTest : KotestPropertyBase() {
     @Test
     fun `enum -- simple`() {
         assertRoundtrip(
-            GRTConv(internalContext, schema.type("E1")),
+            factory.create(internalContext, schema.type("E1")),
             E1.A,
             IR.Value.String("A")
         )
@@ -600,7 +604,7 @@ class GRTConvTest : KotestPropertyBase() {
             }
 
             typeIRPairs.forAll { (type, ir) ->
-                val conv = GRTConv(internalContext, type)
+                val conv = factory.create(internalContext, type)
                 val ir2 = conv(conv.invert(ir))
                 ir == ir2
             }
@@ -610,7 +614,7 @@ class GRTConvTest : KotestPropertyBase() {
     fun `mutually recursive types -- roundtrip`() {
         // O1.objectField -> O2, O2.objectField -> O1
         // Exercises mutual cycle handling via type-level memoization.
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O1"),
             null,
@@ -651,7 +655,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `self-recursive type -- roundtrip`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("RecursiveObject"),
             null,
@@ -694,7 +698,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `interface field in nested position -- roundtrip`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O1"),
             null,
@@ -724,7 +728,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `union field in nested position -- roundtrip`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("HasAbstractField"),
             null,
@@ -750,7 +754,7 @@ class GRTConvTest : KotestPropertyBase() {
 
     @Test
     fun `enum field in nested position -- unbounded roundtrip`() {
-        val conv = GRTConv(
+        val conv = factory.create(
             internalContext,
             schema.type("O1"),
             null,
@@ -777,7 +781,7 @@ class GRTConvTest : KotestPropertyBase() {
                 (TypenameValueWeight to 1.0)
 
             Arb.objectIR(schema, cfg).forAll { ir ->
-                val grtConv = GRTConv(internalContext, schema.type(ir.name))
+                val grtConv = factory.create(internalContext, schema.type(ir.name))
                 val engineConv = EngineValueConv(schema, schema.type(ir.name), null)
 
                 val grtRoundtrip = grtConv(grtConv.invert(ir))

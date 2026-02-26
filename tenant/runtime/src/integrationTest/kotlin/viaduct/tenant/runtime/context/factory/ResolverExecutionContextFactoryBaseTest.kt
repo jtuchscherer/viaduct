@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.api.NodeResolverBase
 import viaduct.api.context.FieldExecutionContext
+import viaduct.api.internal.DefaultGRTConvFactory
 import viaduct.api.mocks.MockType
 import viaduct.api.mocks.mockReflectionLoader
 import viaduct.api.types.Arguments
@@ -34,7 +35,7 @@ class ResolverExecutionContextFactoryBaseTest {
     @Test
     fun `NodeExecutionContextFactory with Composite type and null selections throws IllegalArgumentException`() {
         val type = MockType("User", User::class)
-        val nodeFactory = NodeExecutionContextFactory(resolverBase, globalIDCodec, reflectionLoader, type)
+        val nodeFactory = NodeExecutionContextFactory(resolverBase, globalIDCodec, reflectionLoader, type, DefaultGRTConvFactory)
 
         val exception = assertThrows<IllegalArgumentException> {
             // Call the factory to trigger toSelectionSet validation
@@ -57,7 +58,7 @@ class ResolverExecutionContextFactoryBaseTest {
         @Suppress("UNCHECKED_CAST")
         val notCompositeType = MockType("FakeNotComposite", CompositeOutput.NotComposite::class as KClass<out User>)
 
-        val nodeFactory = NodeExecutionContextFactory(resolverBase, globalIDCodec, reflectionLoader, notCompositeType)
+        val nodeFactory = NodeExecutionContextFactory(resolverBase, globalIDCodec, reflectionLoader, notCompositeType, DefaultGRTConvFactory)
 
         // Create a mock EngineSelectionSet (non-null) to trigger the validation
         val mockEngineSelectionSet = mockk<EngineSelectionSet>()
@@ -84,7 +85,7 @@ class ResolverExecutionContextFactoryBaseTest {
         val type = MockType("User", User::class)
 
         val exception = assertThrows<IllegalArgumentException> {
-            NodeExecutionContextFactory(badResolverBase, globalIDCodec, reflectionLoader, type)
+            NodeExecutionContextFactory(badResolverBase, globalIDCodec, reflectionLoader, type, DefaultGRTConvFactory)
         }
 
         assertTrue(

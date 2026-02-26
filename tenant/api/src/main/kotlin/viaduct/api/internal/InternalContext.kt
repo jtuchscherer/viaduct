@@ -32,6 +32,9 @@ interface InternalContext {
     /** An interface that can serve GRT's and type information for GraphQL types */
     val reflectionLoader: ReflectionLoader
 
+    /** Factory for creating [viaduct.mapping.graphql.Conv]s that map between GRT and IR values. */
+    val grtConvFactory: GRTConvFactory
+
     /**
      * Deserializes a GlobalID string into a typed [GlobalID] object.
      *

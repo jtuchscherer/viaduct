@@ -32,15 +32,15 @@ import viaduct.mapping.graphql.IR
  * Factory methods for [Conv]s that map between [viaduct.api.types.GRT] and
  * [IR] representations.
  *
- * @see invoke
+ * @see create
  */
 @InternalApi
-object GRTConv {
+object DefaultGRTConvFactory : GRTConvFactory {
     /**
      * Create a [Conv] for [viaduct.api.types.GRT] values backed by [type].
      *
      * Some GRT conversions require more context than just a [type] --
-     * prefer using the overloads of [invoke] that operate on fields.
+     * prefer using [createForInputField] or [createForOutputField] that operate on fields.
      *
      * @param type the GraphQL type for which a [Conv] will be created.
      * @param selectionSet A [EngineSelectionSet] possible projection of [type].
@@ -50,11 +50,11 @@ object GRTConv {
      * @param keyMapping A [KeyMapping] that describes how object keys should be mapped.
      *   If null, a default [KeyMapping] will be chosen based on the value of [selectionSet]
      */
-    operator fun invoke(
+    override fun create(
         internalCtx: InternalContext,
         type: GraphQLType,
-        selectionSet: EngineSelectionSet? = null,
-        keyMapping: KeyMapping? = null
+        selectionSet: EngineSelectionSet?,
+        keyMapping: KeyMapping?
     ): Conv<Any?, IR.Value> =
         Builder(internalCtx, keyMapping ?: KeyMapping.defaultKeyMapping(selectionSet))
             .build(
@@ -67,7 +67,7 @@ object GRTConv {
      * Create a [Conv] that maps between [viaduct.api.types.GRT] and [IR] representations
      * for the provided input [field].
      */
-    operator fun invoke(
+    override fun createForInputField(
         internalCtx: InternalContext,
         field: GraphQLInputObjectField
     ): Conv<Any?, IR.Value> =
@@ -82,7 +82,7 @@ object GRTConv {
      * Create a [Conv] that maps between [viaduct.api.types.GRT] and [IR] representations
      * for the provided output [field].
      */
-    operator fun invoke(
+    fun createForOutputField(
         internalCtx: InternalContext,
         field: GraphQLFieldDefinition,
         parentType: GraphQLCompositeType,

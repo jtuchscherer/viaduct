@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import strikt.api.expectThat
 import strikt.assertions.isA
+import viaduct.api.internal.DefaultGRTConvFactory
 import viaduct.api.internal.InternalContext
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.MockReflectionLoader
@@ -39,7 +40,7 @@ class NodeReferenceFactoryImplTest {
             }
 
             val reflectionLoader = ReflectionLoaderImpl { TODO("unused") }
-            val result = factory.nodeFor(globalId, InternalContextImpl(schema, GlobalIDCodecDefault, reflectionLoader))
+            val result = factory.nodeFor(globalId, InternalContextImpl(schema, GlobalIDCodecDefault, reflectionLoader, DefaultGRTConvFactory))
             expectThat(result.engineObject).isA<NodeReference>()
         }
 

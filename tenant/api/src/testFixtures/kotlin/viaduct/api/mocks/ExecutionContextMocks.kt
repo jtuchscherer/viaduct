@@ -7,6 +7,8 @@ import viaduct.api.context.MutationFieldExecutionContext
 import viaduct.api.context.ResolverExecutionContext
 import viaduct.api.context.SelectiveNodeExecutionContext
 import viaduct.api.globalid.GlobalID
+import viaduct.api.internal.DefaultGRTConvFactory
+import viaduct.api.internal.GRTConvFactory
 import viaduct.api.internal.InternalContext
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.internal.select.SelectionSetFactory
@@ -81,7 +83,8 @@ val InternalContext.resolverExecutionContext: ResolverExecutionContext<Query>
 class MockInternalContext(
     override val schema: ViaductSchema,
     override val globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault,
-    override val reflectionLoader: ReflectionLoader = mockReflectionLoader("viaduct.api.grts")
+    override val reflectionLoader: ReflectionLoader = mockReflectionLoader("viaduct.api.grts"),
+    override val grtConvFactory: GRTConvFactory = DefaultGRTConvFactory,
 ) : InternalContext {
     override fun <T : NodeCompositeOutput> deserializeGlobalID(serialized: String): GlobalID<T> {
         val (typeName, localID) = globalIDCodec.deserialize(serialized)

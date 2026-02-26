@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import viaduct.api.FieldValue
 import viaduct.api.context.BaseFieldExecutionContext
 import viaduct.api.context.NodeExecutionContext
+import viaduct.api.internal.DefaultGRTConvFactory
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.reflect.Type
 import viaduct.api.types.Arguments
@@ -224,7 +225,8 @@ class FeatureTestBuilder(
                 NodeExecutionContextFactory.FakeResolverBase::class.java,
                 globalIDCodec,
                 reflectionLoaderForFeatureTestBootstrapper,
-                resultType
+                resultType,
+                DefaultGRTConvFactory
             ),
             resolverName,
         ) { ctx ->
@@ -263,6 +265,7 @@ class FeatureTestBuilder(
                 globalIDCodec,
                 reflectionLoaderForFeatureTestBootstrapper,
                 resultType,
+                DefaultGRTConvFactory,
             ),
             resolverName,
         ) { ctxs ->

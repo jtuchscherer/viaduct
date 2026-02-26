@@ -52,7 +52,7 @@ abstract class InputLikeBase : InputLike {
                 IR.Value.Null
             }
 
-            val grtConv = GRTConv(context, fieldDefinition)
+            val grtConv = context.grtConvFactory.createForInputField(context, fieldDefinition)
             grtConv.invert(irValue) as T
         }
 
@@ -82,7 +82,7 @@ abstract class InputLikeBase : InputLike {
             val field = requireNotNull(graphQLInputObjectType.getField(fieldName)) {
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             }
-            val conv = GRTConv(context, field) andThen EngineValueConv(context.schema, field.type, null).inverse()
+            val conv = context.grtConvFactory.createForInputField(context, field) andThen EngineValueConv(context.schema, field.type, null).inverse()
             inputData.put(fieldName, conv(value))
         }
 

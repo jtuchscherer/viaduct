@@ -7,6 +7,8 @@ import viaduct.api.NodeResolverBase
 import viaduct.api.Resolver
 import viaduct.api.ResolverBase
 import viaduct.api.Variables
+import viaduct.api.internal.DefaultGRTConvFactory
+import viaduct.api.internal.GRTConvFactory
 import viaduct.api.internal.NodeResolverFor
 import viaduct.api.internal.ResolverFor
 import viaduct.api.reflect.Type
@@ -41,6 +43,7 @@ class ViaductTenantModuleBootstrapper(
     private val tenantCodeInjector: TenantCodeInjector,
     private val tenantResolverClassFinder: TenantResolverClassFinder,
     private val globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault,
+    private val grtConvFactory: GRTConvFactory = DefaultGRTConvFactory,
 ) : TenantModuleBootstrapper {
     private val reflectionLoader = ReflectionLoaderImpl { name -> tenantResolverClassFinder.grtClassForName(name) }
 
@@ -122,6 +125,7 @@ class ViaductTenantModuleBootstrapper(
                 schema = schema,
                 typeName = typeName,
                 fieldName = fieldName,
+                grtConvFactory = grtConvFactory,
             )
 
             val (objectSelectionSet, querySelectionSet) = requiredSelectionSetFactory.createRequiredSelectionSets(
@@ -252,7 +256,7 @@ class ViaductTenantModuleBootstrapper(
             @Suppress("UNCHECKED_CAST")
             val reflectiveType = reflectionLoader.reflectionFor(typeName) as Type<NodeObject>
             val resolverContextFactory: NodeExecutionContextFactory =
-                NodeExecutionContextFactory(baseClass, globalIDCodec, reflectionLoader, reflectiveType)
+                NodeExecutionContextFactory(baseClass, globalIDCodec, reflectionLoader, reflectiveType, grtConvFactory)
 
             if (nodeResolverClasses.size != 1) {
                 throw TenantModuleException(

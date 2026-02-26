@@ -9,6 +9,7 @@ import viaduct.api.VariablesProvider
 import viaduct.api.context.BaseFieldExecutionContext
 import viaduct.api.context.FieldExecutionContext
 import viaduct.api.context.VariablesProviderContext
+import viaduct.api.internal.DefaultGRTConvFactory
 import viaduct.api.internal.InternalContext
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.types.Arguments
@@ -68,6 +69,7 @@ class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
             schema = schema,
             typeName = coord.first,
             fieldName = coord.second,
+            grtConvFactory = DefaultGRTConvFactory,
         )
 
     fun requiredSelectionSets(
