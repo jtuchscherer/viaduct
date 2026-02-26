@@ -158,3 +158,4 @@ checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "ch
 
 # Linting
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
+detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
