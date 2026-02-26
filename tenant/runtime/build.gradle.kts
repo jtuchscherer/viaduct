@@ -11,6 +11,7 @@ viaductPublishing {
 }
 
 dependencies {
+    implementation(libs.caffeine)
     implementation(libs.graphql.java)
     implementation(libs.guice)
     implementation(libs.javax.inject)
@@ -20,6 +21,7 @@ dependencies {
     implementation(libs.viaduct.service.api)
 
     implementation(libs.viaduct.shared.graphql)
+    implementation(libs.viaduct.shared.mapping)
     implementation(libs.viaduct.shared.apiannotations)
     implementation(libs.viaduct.shared.utils)
     implementation(libs.classgraph)

@@ -3,6 +3,7 @@ package viaduct.api.bootstrap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import viaduct.api.internal.GRTConvFactory
 import viaduct.engine.api.TenantAPIBootstrapper
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.service.api.spi.GlobalIDCodec
@@ -14,6 +15,7 @@ import viaduct.tenant.runtime.bootstrap.TenantResolverClassFinderFactory
 import viaduct.tenant.runtime.bootstrap.ViaductTenantModuleBootstrapper
 import viaduct.tenant.runtime.bootstrap.ViaductTenantPackageFinder
 import viaduct.tenant.runtime.bootstrap.ViaductTenantResolverClassFinderFactory
+import viaduct.tenant.runtime.internal.CachingGRTConvFactory
 import viaduct.utils.slf4j.logger
 
 /**
@@ -26,6 +28,7 @@ class ViaductTenantAPIBootstrapper
         private val tenantPackageFinder: TenantPackageFinder,
         private val tenantResolverClassFinderFactory: TenantResolverClassFinderFactory,
         private val globalIDCodec: GlobalIDCodec,
+        private val grtConvFactory: GRTConvFactory,
     ) : TenantAPIBootstrapper {
         /*
          * Discovers all Viaduct TenantModule(s) and creates ViaductTenantModuleBootstrapper for each tenant.
@@ -45,6 +48,7 @@ class ViaductTenantAPIBootstrapper
                             tenantCodeInjector,
                             tenantResolverClassFinderFactory.create(tenantModuleName),
                             globalIDCodec,
+                            grtConvFactory,
                         )
                     }
                 }.awaitAll()
@@ -60,6 +64,7 @@ class ViaductTenantAPIBootstrapper
             private var tenantPackageFinder: TenantPackageFinder? = null
             private var tenantResolverClassFinderFactory: TenantResolverClassFinderFactory? = null
             private var globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault
+            private var grtConvFactory: GRTConvFactory = CachingGRTConvFactory()
 
             fun tenantCodeInjector(tenantCodeInjector: TenantCodeInjector) =
                 apply {
@@ -95,6 +100,11 @@ class ViaductTenantAPIBootstrapper
                     this.globalIDCodec = globalIDCodec
                 }
 
+            fun grtConvFactory(grtConvFactory: GRTConvFactory) =
+                apply {
+                    this.grtConvFactory = grtConvFactory
+                }
+
             override fun create(): ViaductTenantAPIBootstrapper {
                 val tenantPackageFinder = when {
                     tenantPackagePrefix != null -> TenantPackageFinder { setOf(tenantPackagePrefix!!) }
@@ -110,6 +120,7 @@ class ViaductTenantAPIBootstrapper
                     tenantPackageFinder = tenantPackageFinder,
                     tenantResolverClassFinderFactory = finalTenantResolverClassFinderFactory,
                     globalIDCodec = globalIDCodec,
+                    grtConvFactory = grtConvFactory,
                 )
             }
         }
