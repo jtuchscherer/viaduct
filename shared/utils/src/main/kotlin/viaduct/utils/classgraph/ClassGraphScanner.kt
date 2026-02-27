@@ -1,6 +1,7 @@
 package viaduct.utils.classgraph
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.Scheduler
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.ClassInfoList
 import io.github.classgraph.ScanResult
@@ -94,6 +95,7 @@ class ClassGraphScanner(private val packagePrefixes: Collection<String>) {
                 // it's not necessary to keep these around forever. 10m should be sufficient to allow for
                 // server startup + warmup which is where this is primarily used.
                 .expireAfterWrite(10, TimeUnit.MINUTES)
+                .scheduler(Scheduler.systemScheduler())
                 .build<Collection<String>, ScanResult>()
     }
 
