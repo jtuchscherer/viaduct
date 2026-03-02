@@ -821,7 +821,7 @@ class QueryPlanTest {
             val plan = runExecutionTest {
                 val params = mkQPParameters("{x}", ViaductSchema(schema), requiredSelectionSetRegistry)
                     .copy(executionCondition = customCondition)
-                QueryPlan.build(params, "{x}".asDocument)
+                QueryPlanFactory.Default.build(params, "{x}".asDocument)
             }
 
             // Verify the ExecutionCondition is stored in the plan
@@ -842,7 +842,7 @@ class QueryPlanTest {
             val plan = runExecutionTest {
                 val params = mkQPParameters("{x}", ViaductSchema(schema), reg)
                     .copy(executionCondition = customCondition)
-                QueryPlan.build(params, "{x}".asDocument)
+                QueryPlanFactory.Default.build(params, "{x}".asDocument)
             }
 
             // Verify the root plan has the custom ExecutionCondition from parameters
@@ -1025,7 +1025,7 @@ internal fun buildPlan(
 ): QueryPlan =
     runExecutionTest {
         mkQPParameters(doc, schema, requiredSelectionSetRegistry).let { params ->
-            QueryPlan.build(params, doc.asDocument)
+            QueryPlanFactory.Default.build(params, doc.asDocument)
         }
     }
 
