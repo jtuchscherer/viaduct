@@ -10,7 +10,7 @@ import viaduct.apiannotations.StableApi
  * Use this to wrap all entry points into the tenant API. This will catch any exception
  * and attribute it to the framework unless it's a ViaductTenantUsageException.
  */
-internal fun <T> handleTenantAPIErrors(
+internal fun <T> wrapFrameworkErrors(
     message: String,
     block: () -> T
 ): T {
@@ -24,9 +24,9 @@ internal fun <T> handleTenantAPIErrors(
 }
 
 /**
- * Same as handleTenantAPIErrors but for suspend functions
+ * Same as wrapFrameworkErrors but for suspend functions
  */
-internal suspend fun <T> handleTenantAPIErrorsSuspend(
+internal suspend fun <T> wrapFrameworkErrorsSuspend(
     message: String,
     block: suspend () -> T
 ): T {

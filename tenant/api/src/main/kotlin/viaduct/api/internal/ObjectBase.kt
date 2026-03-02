@@ -22,10 +22,10 @@ import viaduct.api.ViaductFrameworkException
 import viaduct.api.ViaductTenantException
 import viaduct.api.ViaductTenantUsageException
 import viaduct.api.globalid.GlobalID
-import viaduct.api.handleTenantAPIErrors
 import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
+import viaduct.api.wrapFrameworkErrors
 import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineObject
 import viaduct.engine.api.EngineObjectData
@@ -236,7 +236,7 @@ abstract class ObjectBase(
         private val wrapper = EODBuilderWrapper(type, context.globalIDCodec)
 
         protected fun buildEngineObjectData(): EngineObjectData =
-            handleTenantAPIErrors("ObjectBase.Builder.buildEngineObjectData failed") {
+            wrapFrameworkErrors("ObjectBase.Builder.buildEngineObjectData failed") {
                 val overlay = wrapper.getEngineObjectData()
                 baseEngineObjectData?.let { base ->
                     OverlayEngineObjectData(overlay, base)
@@ -250,7 +250,7 @@ abstract class ObjectBase(
         protected fun putInternal(
             fieldName: String,
             value: Any?
-        ) = handleTenantAPIErrors("ObjectBase.Builder.putInternal failed") {
+        ) = wrapFrameworkErrors("ObjectBase.Builder.putInternal failed") {
             wrapper.put(fieldName, value)
         }
 

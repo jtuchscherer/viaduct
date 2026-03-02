@@ -6,8 +6,8 @@ import graphql.schema.GraphQLTypeUtil
 import kotlin.reflect.KClass
 import viaduct.api.ViaductTenantUsageException
 import viaduct.api.context.ExecutionContext
-import viaduct.api.handleTenantAPIErrors
 import viaduct.api.types.GRT
+import viaduct.api.wrapFrameworkErrors
 import viaduct.apiannotations.InternalApi
 
 /**
@@ -45,7 +45,7 @@ class ViaductObjectBuilder<T : GRT> private constructor(
         DynamicValueBuilderTypeChecker(context).checkType(fieldDefinition.type, value, fieldContext)
 
         val unwrappedType = GraphQLTypeUtil.unwrapNonNull(fieldDefinition.type)
-        handleTenantAPIErrors("ValueObjectBuilder.put failed") {
+        wrapFrameworkErrors("ValueObjectBuilder.put failed") {
             if (isViaductObjectBuilderValue(unwrappedType, value)) {
                 underlyingWrapper.put(name, (value as ViaductObjectBuilder<*>).underlyingWrapper.getEngineObjectData())
             } else {

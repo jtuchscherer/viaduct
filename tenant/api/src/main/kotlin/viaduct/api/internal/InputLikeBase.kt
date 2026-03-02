@@ -5,8 +5,8 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLTypeUtil
 import viaduct.api.ViaductFrameworkException
 import viaduct.api.ViaductTenantUsageException
-import viaduct.api.handleTenantAPIErrors
 import viaduct.api.types.InputLike
+import viaduct.api.wrapFrameworkErrors
 import viaduct.apiannotations.InternalApi
 import viaduct.mapping.graphql.GJValueConv
 import viaduct.mapping.graphql.IR
@@ -33,7 +33,7 @@ abstract class InputLikeBase : InputLike {
     fun isPresent(fieldName: String): Boolean = inputData.containsKey(fieldName)
 
     protected fun <T> get(fieldName: String): T =
-        handleTenantAPIErrors("InputLikeBase.get failed for ${graphQLInputObjectType.name}.$fieldName") {
+        wrapFrameworkErrors("InputLikeBase.get failed for ${graphQLInputObjectType.name}.$fieldName") {
             val fieldDefinition = graphQLInputObjectType.getField(fieldName) ?: throw IllegalArgumentException(
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             )
@@ -78,7 +78,7 @@ abstract class InputLikeBase : InputLike {
         protected fun put(
             fieldName: String,
             value: Any?
-        ) = handleTenantAPIErrors("InputLikeBase.Builder.put failed for ${graphQLInputObjectType.name}.$fieldName") {
+        ) = wrapFrameworkErrors("InputLikeBase.Builder.put failed for ${graphQLInputObjectType.name}.$fieldName") {
             val field = requireNotNull(graphQLInputObjectType.getField(fieldName)) {
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             }

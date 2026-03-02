@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test
 
 class ExceptionsTest {
     @Test
-    fun `test handleTenantAPIErrors with ViaductTenantException`() {
+    fun `test wrapFrameworkErrors with ViaductTenantException`() {
         val exception = ViaductTenantUsageException("Tenant error")
         val thrown = assertThrows(ViaductTenantUsageException::class.java) {
-            handleTenantAPIErrors("Test message") {
+            wrapFrameworkErrors("Test message") {
                 throw exception
             }
         }
@@ -20,10 +20,10 @@ class ExceptionsTest {
     }
 
     @Test
-    fun `test handleTenantAPIErrors with other exception`() {
+    fun `test wrapFrameworkErrors with other exception`() {
         val exception = RuntimeException("Runtime error")
         val thrown = assertThrows(ViaductFrameworkException::class.java) {
-            handleTenantAPIErrors("Test message") {
+            wrapFrameworkErrors("Test message") {
                 throw exception
             }
         }
@@ -32,11 +32,11 @@ class ExceptionsTest {
     }
 
     @Test
-    fun `test handleTenantAPIErrorsSuspend with ViaductTenantException`() {
+    fun `test wrapFrameworkErrorsSuspend with ViaductTenantException`() {
         val exception = ViaductTenantUsageException("Tenant error")
         val thrown = assertThrows(ViaductTenantUsageException::class.java) {
             runBlocking {
-                handleTenantAPIErrorsSuspend("Test message") {
+                wrapFrameworkErrorsSuspend("Test message") {
                     throw exception
                 }
             }
@@ -45,11 +45,11 @@ class ExceptionsTest {
     }
 
     @Test
-    fun `test handleTenantAPIErrorsSuspend with other exception`() {
+    fun `test wrapFrameworkErrorsSuspend with other exception`() {
         val exception = RuntimeException("Runtime error")
         val thrown = assertThrows(ViaductFrameworkException::class.java) {
             runBlocking {
-                handleTenantAPIErrorsSuspend("Test message") {
+                wrapFrameworkErrorsSuspend("Test message") {
                     throw exception
                 }
             }
