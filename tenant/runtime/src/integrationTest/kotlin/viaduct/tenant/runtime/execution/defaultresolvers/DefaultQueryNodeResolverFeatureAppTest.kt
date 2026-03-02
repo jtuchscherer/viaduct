@@ -1,6 +1,7 @@
 package viaduct.tenant.runtime.execution.defaultresolvers
 
 import org.junit.jupiter.api.Test
+import viaduct.tenant.runtime.execution.defaultresolvers.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.featuretests.fixtures.assertJson
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 

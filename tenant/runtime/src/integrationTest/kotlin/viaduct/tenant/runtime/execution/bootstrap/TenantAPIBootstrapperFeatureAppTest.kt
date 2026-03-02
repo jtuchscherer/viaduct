@@ -16,6 +16,7 @@ import viaduct.tenant.runtime.execution.FieldBatchResolverExecutorImpl
 import viaduct.tenant.runtime.execution.FieldUnbatchedResolverExecutorImpl
 import viaduct.tenant.runtime.execution.NodeBatchResolverExecutorImpl
 import viaduct.tenant.runtime.execution.NodeUnbatchedResolverExecutorImpl
+import viaduct.tenant.runtime.execution.batchresolver.bootstrap.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.batchresolver.bootstrap.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 

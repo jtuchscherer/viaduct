@@ -16,6 +16,7 @@ import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.test.assertEquals
 import viaduct.service.api.spi.mocks.MockFlagManager
+import viaduct.tenant.runtime.execution.policycheck.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.policycheck.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 

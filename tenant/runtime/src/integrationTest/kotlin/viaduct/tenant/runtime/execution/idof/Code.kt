@@ -3,6 +3,7 @@ package viaduct.tenant.runtime.execution.idof
 import kotlin.reflect.full.isSubclassOf
 import viaduct.api.Resolver
 import viaduct.api.globalid.GlobalID
+import viaduct.tenant.runtime.execution.idof.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.idof.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.execution.idof.resolverbases.UserResolvers
 

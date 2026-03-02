@@ -8,6 +8,7 @@ import viaduct.api.context.nodeFor
 import viaduct.api.mapping.GRTDomain
 import viaduct.api.mapping.JsonDomain
 import viaduct.graphql.test.assertEquals
+import viaduct.tenant.runtime.execution.mapping.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.mapping.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.execution.mapping.resolverbases.UserResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase

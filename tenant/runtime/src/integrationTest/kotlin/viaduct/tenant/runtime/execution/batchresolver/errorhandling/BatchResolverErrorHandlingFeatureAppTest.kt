@@ -6,6 +6,7 @@ import viaduct.api.FieldValue
 import viaduct.api.Resolver
 import viaduct.api.SelectiveResolver
 import viaduct.graphql.test.assertEquals
+import viaduct.tenant.runtime.execution.batchresolver.errorhandling.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.batchresolver.errorhandling.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
