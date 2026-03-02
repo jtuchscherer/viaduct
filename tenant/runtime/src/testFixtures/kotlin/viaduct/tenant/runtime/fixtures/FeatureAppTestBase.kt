@@ -69,7 +69,7 @@ abstract class FeatureAppTestBase : AbstractFeatureAppTestBase() {
     protected open val validateResolverCompleteness: Boolean = true
 
     private val injector: Injector by lazy { Guice.createInjector() }
-    private val guiceTenantCodeInjector by lazy { GuiceTenantCodeInjector(injector) }
+    protected val guiceTenantCodeInjector by lazy { GuiceTenantCodeInjector(injector) }
 
     // GlobalID codec for creating GlobalID strings in tests
     private val globalIdCodec = GlobalIDCodecDefault
@@ -85,7 +85,7 @@ abstract class FeatureAppTestBase : AbstractFeatureAppTestBase() {
         grtPackagePrefix = derivedClassPackagePrefix
     )
 
-    protected val viaductTenantAPIBootstrapperBuilder =
+    protected open val viaductTenantAPIBootstrapperBuilder =
         ViaductTenantAPIBootstrapper.Builder()
             .tenantCodeInjector(guiceTenantCodeInjector)
             .tenantResolverClassFinderFactory(tenantResolverClassFinderFactory)

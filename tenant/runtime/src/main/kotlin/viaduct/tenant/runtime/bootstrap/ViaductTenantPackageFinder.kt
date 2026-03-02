@@ -2,7 +2,6 @@ package viaduct.tenant.runtime.bootstrap
 
 import viaduct.api.TenantModule
 import viaduct.utils.classgraph.ClassGraphScanner
-import viaduct.utils.slf4j.logger
 
 /**
  * An implementation of the TenantPackageFinder interface that uses
@@ -24,8 +23,6 @@ class ViaductTenantPackageFinder : TenantPackageFinder {
     }
 
     companion object {
-        private val log by logger()
-
         // TODO: do not expose airbnb internals to OSS repo.
         private const val TENANT_PACKAGE_PREFIX = "com.airbnb.viaduct"
     }

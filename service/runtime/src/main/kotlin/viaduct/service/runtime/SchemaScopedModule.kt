@@ -22,7 +22,8 @@ import viaduct.service.api.spi.TenantAPIBootstrapper as BaseTenantAPIBootstrappe
 import viaduct.utils.slf4j.logger
 
 internal class SchemaScopedModule(
-    private val schemaConfig: SchemaConfiguration
+    private val schemaConfig: SchemaConfiguration,
+    private val existingRegistry: EngineRegistry? = null,
 ) : AbstractModule() {
     companion object {
         private val log by logger()
@@ -33,10 +34,12 @@ internal class SchemaScopedModule(
 
         bind(RequiredSelectionSetRegistry::class.java).to(DispatcherRegistry::class.java)
 
-        install(SchemaRegistryModule())
+        install(SchemaRegistryModule(existingRegistry))
     }
 
-    private class SchemaRegistryModule : PrivateModule() {
+    private class SchemaRegistryModule(
+        private val existingRegistry: EngineRegistry?
+    ) : PrivateModule() {
         override fun configure() {
         }
 
@@ -51,7 +54,10 @@ internal class SchemaScopedModule(
             factory: EngineRegistry.Factory,
             config: SchemaConfiguration,
         ): EngineRegistry {
-            return factory.create(config)
+            return when {
+                existingRegistry != null -> factory.createWithReusedSchemas(existingRegistry)
+                else -> factory.create(config)
+            }
         }
 
         @Provides
@@ -103,7 +109,7 @@ internal class SchemaScopedModule(
         val startTime = System.currentTimeMillis()
         val dispatcherRegistry = DispatcherRegistryFactory(tenantBootstrapper, validator, checkerExecutorFactory, resolverInstrumentation).create(schema)
         val elapsedTime = System.currentTimeMillis() - startTime
-        log.info("Created DispatcherRegistry for Viaduct Modern after [$elapsedTime] ms")
+        log.info("Created DispatcherRegistry for Viaduct Modern after [{}] ms", elapsedTime)
         return dispatcherRegistry
     }
 

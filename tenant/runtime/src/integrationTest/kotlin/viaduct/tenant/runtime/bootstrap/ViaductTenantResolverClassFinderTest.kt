@@ -1,26 +1,31 @@
 package viaduct.tenant.runtime.bootstrap
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Named
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 class ViaductTenantResolverClassFinderTest {
-    private lateinit var tenantResolverClassFinder: ViaductTenantResolverClassFinder
-
     companion object {
         private const val PACKAGE_NAME = "viaduct.api.bootstrap.test"
+
+        @JvmStatic
+        fun classFinderModes() =
+            listOf(
+                Named.of(
+                    "default mode (withNewScanner=false)",
+                    ViaductTenantResolverClassFinder(PACKAGE_NAME, "$PACKAGE_NAME.grts", withNewScanner = false)
+                ),
+                Named.of(
+                    "new scanner mode (withNewScanner=true)",
+                    ViaductTenantResolverClassFinder(PACKAGE_NAME, "$PACKAGE_NAME.grts", withNewScanner = true)
+                ),
+            )
     }
 
-    @BeforeEach
-    fun setUp() {
-        tenantResolverClassFinder = ViaductTenantResolverClassFinder(
-            tenantPackage = PACKAGE_NAME,
-            grtPackagePrefix = "$PACKAGE_NAME.grts"
-        )
-    }
-
-    @Test
-    fun `set of resolver classes is as expected`() {
+    @ParameterizedTest
+    @MethodSource("classFinderModes")
+    fun `set of resolver classes is as expected`(finder: ViaductTenantResolverClassFinder) {
         assertEquals(
             setOf(
                 "viaduct.api.bootstrap.test.TestTypeModernResolvers\$AField",
@@ -29,57 +34,49 @@ class ViaductTenantResolverClassFinderTest {
                 "viaduct.api.bootstrap.test.TestTypeModernResolvers\$ParameterizedField",
                 "viaduct.api.bootstrap.test.TestTypeModernResolvers\$WhenMappingsTest",
             ),
-            tenantResolverClassFinder.resolverClassesInPackage().map { it.name }.toSet()
+            finder.resolverClassesInPackage().map { it.name }.toSet()
         )
     }
 
-    @Test
-    fun `set of node resolver classes is as expected`() {
+    @ParameterizedTest
+    @MethodSource("classFinderModes")
+    fun `set of node resolver classes is as expected`(finder: ViaductTenantResolverClassFinder) {
         assertEquals(
             setOf(
                 "viaduct.api.bootstrap.test.TestBatchNodeResolverBase",
                 "viaduct.api.bootstrap.test.TestMissingResolverBase",
                 "viaduct.api.bootstrap.test.TestNodeResolverBase",
             ),
-            tenantResolverClassFinder.nodeResolverForClassesInPackage().map { it.name }.toSet()
+            finder.nodeResolverForClassesInPackage().map { it.name }.toSet()
         )
     }
 
-    @Test
-    fun `set of subtypes of resolver base is as expected`() {
+    @ParameterizedTest
+    @MethodSource("classFinderModes")
+    fun `set of subtypes of resolver base is as expected`(finder: ViaductTenantResolverClassFinder) {
         assertEquals(
-            setOf(
-                "viaduct.api.bootstrap.test.TestNodeResolver"
-            ),
-            tenantResolverClassFinder.getSubTypesOf(
-                Class.forName("viaduct.api.bootstrap.test.TestNodeResolverBase")
-            ).map { it.name }.toSet()
+            setOf("viaduct.api.bootstrap.test.TestNodeResolver"),
+            finder.getSubTypesOf(Class.forName("viaduct.api.bootstrap.test.TestNodeResolverBase")).map { it.name }.toSet()
         )
         assertEquals(
-            setOf(
-                "viaduct.api.bootstrap.test.TestBatchNodeResolver"
-            ),
-            tenantResolverClassFinder.getSubTypesOf(
-                Class.forName("viaduct.api.bootstrap.test.TestBatchNodeResolverBase")
-            ).map { it.name }.toSet()
+            setOf("viaduct.api.bootstrap.test.TestBatchNodeResolver"),
+            finder.getSubTypesOf(Class.forName("viaduct.api.bootstrap.test.TestBatchNodeResolverBase")).map { it.name }.toSet()
         )
         assertEquals(
-            setOf(
-                "viaduct.api.bootstrap.test.AFieldResolver"
-            ),
-            tenantResolverClassFinder.getSubTypesOf(
-                Class.forName("viaduct.api.bootstrap.test.TestTypeModernResolvers\$AField")
-            ).map { it.name }.toSet()
+            setOf("viaduct.api.bootstrap.test.AFieldResolver"),
+            finder.getSubTypesOf(Class.forName("viaduct.api.bootstrap.test.TestTypeModernResolvers\$AField")).map { it.name }.toSet()
         )
     }
 
-    @Test
-    fun `grt class can be determined`() {
-        assertEquals("viaduct.api.bootstrap.test.grts.TestType", tenantResolverClassFinder.grtClassForName("TestType").qualifiedName)
+    @ParameterizedTest
+    @MethodSource("classFinderModes")
+    fun `grt class can be determined`(finder: ViaductTenantResolverClassFinder) {
+        assertEquals("viaduct.api.bootstrap.test.grts.TestType", finder.grtClassForName("TestType").qualifiedName)
     }
 
-    @Test
-    fun `argument class can be determined`() {
-        assertEquals("viaduct.api.bootstrap.test.grts.TestType", tenantResolverClassFinder.argumentClassForName("TestType").qualifiedName)
+    @ParameterizedTest
+    @MethodSource("classFinderModes")
+    fun `argument class can be determined`(finder: ViaductTenantResolverClassFinder) {
+        assertEquals("viaduct.api.bootstrap.test.grts.TestType", finder.argumentClassForName("TestType").qualifiedName)
     }
 }

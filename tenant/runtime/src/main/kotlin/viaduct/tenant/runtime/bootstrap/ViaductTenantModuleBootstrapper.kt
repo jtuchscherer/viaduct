@@ -1,7 +1,6 @@
 package viaduct.tenant.runtime.bootstrap
 
 import kotlin.reflect.full.declaredMemberFunctions
-import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import viaduct.api.NodeResolverBase
 import viaduct.api.Resolver
@@ -71,10 +70,10 @@ class ViaductTenantModuleBootstrapper(
         val resolverClassesByBaseClass: Map<Class<out ResolverBase<*>>, List<Class<out ResolverBase<*>>>> =
             resolverBaseClasses.associateWith { type ->
                 // Get all @Resolver subclasses
-                tenantResolverClassFinder.getSubTypesOf(type).filter { it.kotlin.hasAnnotation<Resolver>() } as List<Class<out ResolverBase<*>>>
+                tenantResolverClassFinder.getSubTypesOf(type).filter { it.isAnnotationPresent(Resolver::class.java) } as List<Class<out ResolverBase<*>>>
             }
         for ((baseClass, resolverClasses) in resolverClassesByBaseClass) {
-            val resolverForAnnotation = baseClass.annotations.firstOrNull { it is ResolverFor } as? ResolverFor
+            val resolverForAnnotation = baseClass.getAnnotation(ResolverFor::class.java)
                 ?: throw TenantModuleException("ResolverBase class $baseClass does not have a @ResolverFor annotation")
 
             val typeName = resolverForAnnotation.typeName
@@ -105,13 +104,17 @@ class ViaductTenantModuleBootstrapper(
                 throw TenantModuleException("Resolver class $resolverClass could not be injected into", e)
             }
             val resolverKClass = resolverClass.kotlin
-            val resolverAnnotation = resolverKClass.annotations.firstOrNull { it is Resolver } as? Resolver
+            // Use Java reflection (not Kotlin reflection) to read the @Resolver annotation.
+            // Kotlin's KClass.annotations caches annotation instances lazily and never re-reads
+            // after JBR class redefinition. Java's Class.getAnnotation() returns fresh values
+            // after HotswapAgent redefines a class.
+            val resolverAnnotation = resolverClass.getAnnotation(Resolver::class.java)
                 ?: throw TenantModuleException("Resolver class $resolverKClass does not have a @Resolver annotation")
 
             // validate that the Resolver defines a maximum of one @Variables-annotated class
             resolverClass.declaredClasses
                 .filterNot { it.isSynthetic }
-                .filter { it.kotlin.hasAnnotation<Variables>() }
+                .filter { it.isAnnotationPresent(Variables::class.java) }
                 .let {
                     check(it.size <= 1) {
                         "Resolver class $resolverKClass cannot have more than one nested class with @Variables"
@@ -237,7 +240,8 @@ class ViaductTenantModuleBootstrapper(
                 tenantResolverClassFinder.getSubTypesOf(it) as Set<Class<out NodeResolverBase<*>>>
             }
         for ((baseClass, nodeResolverClasses) in nodeResolverClassesByBaseClass) {
-            val nodeResolverForAnnotation = baseClass.annotations.first { it is NodeResolverFor } as NodeResolverFor
+            val nodeResolverForAnnotation = baseClass.getAnnotation(NodeResolverFor::class.java)
+                ?: throw TenantModuleException("NodeResolverBase class $baseClass does not have a @NodeResolverFor annotation")
             val typeName = nodeResolverForAnnotation.typeName
 
             val nodeType = schema.schema.getObjectType(typeName)

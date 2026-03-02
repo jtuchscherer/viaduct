@@ -11,6 +11,7 @@ import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.TenantCodeInjector
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.TenantPackageFinder
+import viaduct.tenant.runtime.bootstrap.TenantResolverClassFinder
 import viaduct.tenant.runtime.bootstrap.TenantResolverClassFinderFactory
 import viaduct.tenant.runtime.bootstrap.ViaductTenantModuleBootstrapper
 import viaduct.tenant.runtime.bootstrap.ViaductTenantPackageFinder
@@ -21,16 +22,19 @@ import viaduct.utils.slf4j.logger
 /**
  * ViaductTenantAPIBootstrapper is responsible for discovering all Viaduct tenant modules and creating
  * TenantModuleBootstrapper(s), one for each Viaduct TenantModule.
+ *
+ * Subclasses can override [createResolverClassFinder] to control how the class finder is created
+ * for each tenant package (e.g., to support hotswap scenarios with a fresh scanner).
  */
-class ViaductTenantAPIBootstrapper
-    private constructor(
+open class ViaductTenantAPIBootstrapper
+    protected constructor(
         private val tenantCodeInjector: TenantCodeInjector,
         private val tenantPackageFinder: TenantPackageFinder,
         private val tenantResolverClassFinderFactory: TenantResolverClassFinderFactory,
         private val globalIDCodec: GlobalIDCodec,
         private val grtConvFactory: GRTConvFactory,
     ) : TenantAPIBootstrapper {
-        /*
+        /**
          * Discovers all Viaduct TenantModule(s) and creates ViaductTenantModuleBootstrapper for each tenant.
          *
          * @return List of all TenantModuleBootstrapper(s), one for each Viaduct TenantModule.
@@ -43,10 +47,10 @@ class ViaductTenantAPIBootstrapper
             return coroutineScope {
                 tenantModuleNames.map { tenantModuleName ->
                     async {
-                        log.info("Creating bootstrapper for tenant module: $tenantModuleName")
+                        log.info("Creating bootstrapper for tenant module: {}", tenantModuleName)
                         ViaductTenantModuleBootstrapper(
                             tenantCodeInjector,
-                            tenantResolverClassFinderFactory.create(tenantModuleName),
+                            createResolverClassFinder(tenantModuleName),
                             globalIDCodec,
                             grtConvFactory,
                         )
@@ -56,15 +60,27 @@ class ViaductTenantAPIBootstrapper
         }
 
         /**
+         * Creates a [TenantResolverClassFinder] for the given package name.
+         *
+         * Subclasses can override this method to provide custom scanner behavior,
+         * for example to create a fresh scanner when hotswapping classes.
+         *
+         * @param packageName the tenant package name to scan
+         * @return a configured [TenantResolverClassFinder] for the package
+         */
+        @Deprecated("Experimental, for Airbnb use only", level = DeprecationLevel.WARNING)
+        protected open fun createResolverClassFinder(packageName: String): TenantResolverClassFinder = tenantResolverClassFinderFactory.create(packageName)
+
+        /**
          * Builder for creating a ViaductTenantAPIBootstrapper instance.
          */
-        class Builder : TenantAPIBootstrapperBuilder<TenantModuleBootstrapper> {
-            private var tenantCodeInjector: TenantCodeInjector = TenantCodeInjector.Naive
-            private var tenantPackagePrefix: String? = null
-            private var tenantPackageFinder: TenantPackageFinder? = null
-            private var tenantResolverClassFinderFactory: TenantResolverClassFinderFactory? = null
-            private var globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault
-            private var grtConvFactory: GRTConvFactory = CachingGRTConvFactory()
+        open class Builder : TenantAPIBootstrapperBuilder<TenantModuleBootstrapper> {
+            protected var tenantCodeInjector: TenantCodeInjector = TenantCodeInjector.Naive
+            protected var tenantPackagePrefix: String? = null
+            protected var tenantPackageFinder: TenantPackageFinder? = null
+            protected var tenantResolverClassFinderFactory: TenantResolverClassFinderFactory? = null
+            protected var globalIDCodec: GlobalIDCodec = GlobalIDCodecDefault
+            protected var grtConvFactory: GRTConvFactory = CachingGRTConvFactory()
 
             fun tenantCodeInjector(tenantCodeInjector: TenantCodeInjector) =
                 apply {
@@ -105,24 +121,23 @@ class ViaductTenantAPIBootstrapper
                     this.grtConvFactory = grtConvFactory
                 }
 
-            override fun create(): ViaductTenantAPIBootstrapper {
-                val tenantPackageFinder = when {
+            protected fun resolvedTenantPackageFinder(): TenantPackageFinder =
+                when {
                     tenantPackagePrefix != null -> TenantPackageFinder { setOf(tenantPackagePrefix!!) }
                     tenantPackageFinder != null -> tenantPackageFinder!!
                     else -> ViaductTenantPackageFinder()
                 }
 
-                val finalTenantResolverClassFinderFactory =
-                    tenantResolverClassFinderFactory ?: ViaductTenantResolverClassFinderFactory()
+            protected fun resolvedTenantResolverClassFinderFactory(): TenantResolverClassFinderFactory = tenantResolverClassFinderFactory ?: ViaductTenantResolverClassFinderFactory()
 
-                return ViaductTenantAPIBootstrapper(
+            override fun create(): ViaductTenantAPIBootstrapper =
+                ViaductTenantAPIBootstrapper(
                     tenantCodeInjector = tenantCodeInjector,
-                    tenantPackageFinder = tenantPackageFinder,
-                    tenantResolverClassFinderFactory = finalTenantResolverClassFinderFactory,
+                    tenantPackageFinder = resolvedTenantPackageFinder(),
+                    tenantResolverClassFinderFactory = resolvedTenantResolverClassFinderFactory(),
                     globalIDCodec = globalIDCodec,
                     grtConvFactory = grtConvFactory,
                 )
-            }
         }
 
         companion object {
