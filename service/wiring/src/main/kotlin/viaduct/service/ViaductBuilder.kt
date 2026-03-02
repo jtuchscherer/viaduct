@@ -2,6 +2,7 @@ package viaduct.service
 
 import graphql.execution.DataFetcherExceptionHandler
 import io.micrometer.core.instrument.MeterRegistry
+import viaduct.apiannotations.StableApi
 import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.service.api.spi.ErrorReporter
@@ -31,6 +32,7 @@ import viaduct.service.runtime.StandardViaduct
  * @see BasicViaductFactory
  * @see Viaduct
  */
+@StableApi
 class ViaductBuilder {
     val builder = StandardViaduct.Builder()
 
