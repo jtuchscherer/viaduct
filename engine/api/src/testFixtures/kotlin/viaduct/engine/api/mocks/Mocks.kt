@@ -63,7 +63,7 @@ typealias FieldUnbatchedResolverFn = suspend (
 ) -> Any?
 
 typealias FieldBatchResolverFn = suspend (selectors: List<FieldResolverExecutor.Selector>, context: EngineExecutionContext) -> Map<FieldResolverExecutor.Selector, Result<Any?>>
-typealias VariablesResolverFn = suspend (ctx: VariablesResolver.ResolveCtx) -> Map<String, Any?>
+typealias VariablesResolverFn = suspend (ctx: VariablesResolver.ResolveCtx, context: EngineExecutionContext) -> Map<String, Any?>
 
 fun createCoroutineInterop(): CoroutineInterop = DefaultCoroutineInterop
 
@@ -102,7 +102,10 @@ class MockVariablesResolver(
 ) : VariablesResolver {
     override val variableNames: Set<String> = names.toSet()
 
-    override suspend fun resolve(ctx: VariablesResolver.ResolveCtx): Map<String, Any?> = resolveFn(ctx)
+    override suspend fun resolve(
+        ctx: VariablesResolver.ResolveCtx,
+        context: EngineExecutionContext
+    ): Map<String, Any?> = resolveFn(ctx, context)
 }
 
 /**
@@ -454,7 +457,7 @@ object Samples {
         field("TestType" to "parameterizedField") {
             resolver {
                 objectSelections("fragment _ on TestType { aField @include(if: \$experiment) bIntField }") {
-                    variables("experiment") { ctx ->
+                    variables("experiment") { ctx, _ ->
                         mapOf("experiment" to (ctx.arguments["experiment"] ?: false))
                     }
                 }
@@ -473,7 +476,7 @@ object Samples {
         field("TestType" to "dField") {
             resolver {
                 objectSelections("fragment _ on TestType { aField @include(if: \$experiment) bIntField }") {
-                    variables("experiment") { _ ->
+                    variables("experiment") { _, _ ->
                         mapOf("experiment" to true)
                     }
                 }

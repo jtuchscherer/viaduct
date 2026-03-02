@@ -346,7 +346,7 @@ object FieldExecutionHelpers {
                 }
             } ?: ProxyEngineObjectData(currentEngineData, "missing from variable RSS", null)
 
-            val resolved = vr.resolve(VariablesResolver.ResolveCtx(variablesData, arguments, engineExecutionContext))
+            val resolved = vr.resolve(VariablesResolver.ResolveCtx(variablesData, arguments), engineExecutionContext)
             acc + resolved
         }.let {
             ValuesResolver.coerceVariableValues(

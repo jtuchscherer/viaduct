@@ -78,11 +78,11 @@ class VariablesProviderExecutorTest {
                     VariablesResolver.ResolveCtx(
                         objectData,
                         mapOf("a" to 5, "b" to 7),
-                        mockk {
-                            every { fullSchema } returns MockSchema.minimal
-                            every { requestContext } returns null
-                        }
-                    )
+                    ),
+                    mockk {
+                        every { fullSchema } returns MockSchema.minimal
+                        every { requestContext } returns null
+                    }
                 )
             )
         }
@@ -125,11 +125,11 @@ class VariablesProviderExecutorTest {
                     VariablesResolver.ResolveCtx(
                         objectData,
                         mapOf("a" to 5, "b" to 7),
-                        mockk {
-                            every { fullSchema } returns MockSchema.minimal
-                            every { requestContext } returns null
-                        }
-                    )
+                    ),
+                    mockk {
+                        every { fullSchema } returns MockSchema.minimal
+                        every { requestContext } returns null
+                    }
                 )
             )
         }

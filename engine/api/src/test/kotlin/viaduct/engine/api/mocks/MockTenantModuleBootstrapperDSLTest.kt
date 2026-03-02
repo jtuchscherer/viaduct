@@ -202,7 +202,7 @@ class MockTenantModuleBootstrapperDSLTest {
             field("TestType" to "aField") {
                 resolver {
                     objectSelections("fragment _ on TestType { aField bIntField }") {
-                        variables("testVar") { ctx -> mapOf("testVar" to ctx.arguments["input"]) }
+                        variables("testVar") { ctx, _ -> mapOf("testVar" to ctx.arguments["input"]) }
                     }
                     resolverName("test-resolver")
                     fn { _, _, _, _, _ -> "complex-result" }
@@ -431,7 +431,7 @@ class MockTenantModuleBootstrapperDSLTest {
             field("TestType" to "complexField") {
                 resolver {
                     objectSelections("fragment _ on TestType { aField bIntField }") {
-                        variables("param") { ctx -> mapOf("param" to ctx.arguments["input"]) }
+                        variables("param") { ctx, _ -> mapOf("param" to ctx.arguments["input"]) }
                     }
                     resolverName("complex-resolver")
                     fn { _, _, _, _, _ -> "complex-result" }
