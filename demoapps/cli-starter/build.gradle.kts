@@ -23,6 +23,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.jackson.databind)
 
+    implementation(libs.kotlinx.coroutines.jdk8)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.reactive.streams)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.junit.platform.launcher)
