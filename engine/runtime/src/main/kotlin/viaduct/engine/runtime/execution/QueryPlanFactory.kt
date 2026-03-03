@@ -15,6 +15,7 @@ import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLNamedOutputType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLTypeUtil
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +57,7 @@ interface QueryPlanFactory {
         document: Document,
         documentKey: DocumentKey? = null,
         attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
+        rssBuildContext: RssBuildContext? = null,
     ): QueryPlan
 
     /**
@@ -66,6 +68,7 @@ interface QueryPlanFactory {
         parsedSelections: ParsedSelections,
         attribution: ExecutionAttribution? = ExecutionAttribution.DEFAULT,
         executionCondition: QueryPlanExecutionCondition = ALWAYS_EXECUTE,
+        rssBuildContext: RssBuildContext? = null,
     ): QueryPlan
 
     /**
@@ -104,6 +107,7 @@ interface QueryPlanFactory {
             document: Document,
             documentKey: DocumentKey?,
             attribution: ExecutionAttribution?,
+            rssBuildContext: RssBuildContext?,
         ): QueryPlan {
             val fragmentsByName = NodeUtil.getFragmentsByName(document)
             val docKey = resolveDocumentKey(document, documentKey)
@@ -130,8 +134,8 @@ interface QueryPlanFactory {
                 }
             }
 
-            return QueryPlanBuilder(parameters, fragmentsByName, emptyList())
-                .build(selectionSet, parentType, attribution, parameters.executionCondition, emptySet())
+            return QueryPlanBuilder(parameters, fragmentsByName, emptyList(), rssBuildContext ?: RssBuildContext(ConcurrentHashMap()))
+                .build(selectionSet, parentType, attribution, parameters.executionCondition)
         }
 
         override suspend fun buildFromParsedSelections(
@@ -139,6 +143,7 @@ interface QueryPlanFactory {
             parsedSelections: ParsedSelections,
             attribution: ExecutionAttribution?,
             executionCondition: QueryPlanExecutionCondition,
+            rssBuildContext: RssBuildContext?,
         ): QueryPlan {
             val gjSelectionSet = parsedSelections.selections
             require(gjSelectionSet.selections.isNotEmpty()) {
@@ -148,8 +153,9 @@ interface QueryPlanFactory {
             return QueryPlanBuilder(
                 parameters.copy(query = parsedSelections.printAsFieldSet(), executionCondition = executionCondition),
                 parsedSelections.fragmentMap,
-                emptyList()
-            ).build(gjSelectionSet, parentType, attribution, executionCondition, emptySet())
+                emptyList(),
+                rssBuildContext ?: RssBuildContext(ConcurrentHashMap())
+            ).build(gjSelectionSet, parentType, attribution, executionCondition)
         }
 
         /**
@@ -210,11 +216,23 @@ interface QueryPlanFactory {
             .executor(queryPlanBuilderExecutor)
             .buildAsync<CacheKey, QueryPlan>()
 
+        /**
+         * Global cache for RSS child plans, shared across all top-level plan build passes.
+         *
+         * 2 reasons this is a plain [ConcurrentHashMap]:
+         * - Bounded key space: there's a fixed number of RSSes, unlike operations.
+         * - Deadlock avoidance: using async builds to avoid duplicate work would risk deadlock
+         *   if two concurrent build passes have cyclical RSS dependencies.
+         *   This may do duplicate work on concurrent cold misses, but always terminates.
+         */
+        private val rssPlanCache = ConcurrentHashMap<RssCacheKey, QueryPlan>()
+
         override suspend fun build(
             parameters: QueryPlan.Parameters,
             document: Document,
             documentKey: DocumentKey?,
             attribution: ExecutionAttribution?,
+            rssBuildContext: RssBuildContext?,
         ): QueryPlan {
             val resolvedKey = resolveDocumentKey(document, documentKey)
             val cacheKey = CacheKey(
@@ -225,7 +243,7 @@ interface QueryPlanFactory {
             )
             return cache.get(cacheKey) { _, _ ->
                 CoroutineScope(queryPlanBuilderDispatcher).future {
-                    underlying.build(parameters, document, documentKey, attribution)
+                    underlying.build(parameters, document, documentKey, attribution, RssBuildContext(rssPlanCache))
                 }
             }.await()
         }
@@ -235,6 +253,7 @@ interface QueryPlanFactory {
             parsedSelections: ParsedSelections,
             attribution: ExecutionAttribution?,
             executionCondition: QueryPlanExecutionCondition,
+            rssBuildContext: RssBuildContext?,
         ): QueryPlan {
             val queryText = parsedSelections.printAsFieldSet()
             val cacheKey = CacheKey(
@@ -249,7 +268,7 @@ interface QueryPlanFactory {
             // pure metadata stored on the root plan but not used during plan construction.
             val cached = cache.get(cacheKey) { _, _ ->
                 CoroutineScope(queryPlanBuilderDispatcher).future {
-                    underlying.buildFromParsedSelections(parameters, parsedSelections, attribution, ALWAYS_EXECUTE)
+                    underlying.buildFromParsedSelections(parameters, parsedSelections, attribution, ALWAYS_EXECUTE, RssBuildContext(rssPlanCache))
                 }
             }.await()
             // Skip the copy when ALWAYS_EXECUTE is requested — the cached plan already has that
@@ -258,9 +277,6 @@ interface QueryPlanFactory {
         }
     }
 }
-
-/** Tracks seen RequiredSelectionSets to prevent infinite loops during query plan building. */
-private typealias SeenRSSes = Set<RequiredSelectionSet>
 
 /**
  * A stateful builder for QueryPlan. Instances of [QueryPlanBuilder] should only be used to build
@@ -272,7 +288,8 @@ private typealias SeenRSSes = Set<RequiredSelectionSet>
 private class QueryPlanBuilder(
     private val parameters: QueryPlan.Parameters,
     private val fragmentsByName: Map<String, GJFragmentDefinition>,
-    private val variablesResolvers: List<VariablesResolver>
+    private val variablesResolvers: List<VariablesResolver>,
+    private val rssBuildContext: RssBuildContext,
 ) {
     private val variableToResolver = variablesResolvers
         .flatMap { vr -> vr.variableNames.map { vname -> vname to vr } }
@@ -298,7 +315,6 @@ private class QueryPlanBuilder(
         parentType: GraphQLCompositeType,
         attribution: ExecutionAttribution?,
         executionCondition: QueryPlanExecutionCondition,
-        seenRSSes: SeenRSSes,
     ): QueryPlan {
         check(!built) { "Builder cannot be reused" }
         built = true
@@ -311,7 +327,6 @@ private class QueryPlanBuilder(
                 constraints = Constraints.Unconstrained,
                 childPlans = emptyList()
             ),
-            seenRSSes
         )
 
         val variableDefinitions = selectionSet.collectVariableDefinitions(
@@ -336,15 +351,14 @@ private class QueryPlanBuilder(
     private fun buildState(
         selectionSet: GJSelectionSet,
         state: State,
-        seenRSSes: SeenRSSes
     ): State =
         with(state) {
             selectionSet.selections
                 .fold(state) { acc, sel ->
                     when (sel) {
-                        is GJField -> processField(sel, acc, seenRSSes)
-                        is GJInlineFragment -> processInlineFragment(sel, acc, seenRSSes)
-                        is GJFragmentSpread -> processFragmentSpread(sel, acc, seenRSSes)
+                        is GJField -> processField(sel, acc)
+                        is GJInlineFragment -> processInlineFragment(sel, acc)
+                        is GJFragmentSpread -> processFragmentSpread(sel, acc)
                         else -> throw IllegalStateException("Unexpected selection type: ${sel.javaClass}")
                     }
                 }
@@ -353,99 +367,65 @@ private class QueryPlanBuilder(
     private fun buildRequiredSelectionSetPlans(
         possibleParentTypes: MaskedSet<GraphQLObjectType>,
         field: GJField,
-        seenRSSes: SeenRSSes
     ): List<QueryPlan> =
         possibleParentTypes.flatMap { parentType ->
             buildList {
                 val resolverRsses = parameters.registry.getFieldResolverRequiredSelectionSets(parentType.name, field.name)
-                addAll(buildChildPlansFromRequiredSelectionSets(resolverRsses, seenRSSes))
+                addAll(buildChildPlansFromRequiredSelectionSets(resolverRsses))
 
                 val checkerRsses = parameters.registry.getFieldCheckerRequiredSelectionSets(parentType.name, field.name, parameters.executeAccessChecksInModstrat)
-                addAll(buildChildPlansFromRequiredSelectionSets(checkerRsses, seenRSSes))
+                addAll(buildChildPlansFromRequiredSelectionSets(checkerRsses))
             }
         }
 
-    private fun buildFieldTypeChildPlans(
-        fieldType: GraphQLNamedOutputType,
-        seenRSSes: SeenRSSes
-    ): Map<GraphQLObjectType, Lazy<List<QueryPlan>>> {
+    private fun buildFieldTypeChildPlans(fieldType: GraphQLNamedOutputType): Map<GraphQLObjectType, Lazy<List<QueryPlan>>> {
         if (fieldType !is GraphQLCompositeType) {
             return emptyMap()
         }
         val possibleFieldTypes = parameters.schema.rels.possibleObjectTypes(fieldType)
 
-        return possibleFieldTypes.mapNotNull { type ->
+        // Capture by local val so the lazy closure does not retain `this` (the QueryPlanBuilder).
+        // For interface fields with many concrete types, most per-type lazies may never be forced
+        // at runtime (only the resolved concrete type matters), so the builder would otherwise
+        // be pinned for the lifetime of the cached plan.
+        val capturedParameters = parameters
+        val capturedContext = rssBuildContext
+
+        val entries = possibleFieldTypes.mapNotNull { type ->
             val requiredSelectionSets =
                 parameters.registry.getTypeCheckerRequiredSelectionSets(type.name, parameters.executeAccessChecksInModstrat)
             if (requiredSelectionSets.isEmpty()) return@mapNotNull null
             type to lazy {
-                buildChildPlansFromRequiredSelectionSets(requiredSelectionSets, seenRSSes)
+                requiredSelectionSets.mapNotNull { rss -> buildRssPlan(capturedParameters, capturedContext, rss) }
             }
-        }.toMap()
+        }
+        return if (entries.isEmpty()) emptyMap() else entries.toMap()
     }
 
-    private fun buildChildPlansFromRequiredSelectionSets(
-        requiredSelectionSets: List<RequiredSelectionSet>,
-        seenRSSes: SeenRSSes
-    ): List<QueryPlan> {
+    private fun buildChildPlansFromRequiredSelectionSets(requiredSelectionSets: List<RequiredSelectionSet>): List<QueryPlan> {
         if (requiredSelectionSets.isEmpty()) {
             return emptyList()
         }
-        return requiredSelectionSets.mapNotNull { rss ->
-            // Skip if we've already processed this RSS
-            if (rss in seenRSSes) {
-                return@mapNotNull null
-            }
-
-            val newSeen = seenRSSes + rss
-            // Use the typeName from ParsedSelections to determine correct target type
-            val targetType = parameters.schema.schema.getType(rss.selections.typeName) as GraphQLCompositeType
-            QueryPlanBuilder(parameters, rss.selections.fragmentMap, rss.variablesResolvers)
-                .build(
-                    rss.selections.selections,
-                    targetType,
-                    attribution = rss.attribution,
-                    executionCondition = rss.executionCondition,
-                    seenRSSes = newSeen
-                )
-        }
+        return requiredSelectionSets.mapNotNull { rss -> buildRssPlan(rss) }
     }
 
     /** Build a QueryPlan for each variable referenced by a node */
-    private fun buildVariablesPlans(
-        selection: AbstractNode<*>,
-        seenRSSes: SeenRSSes
-    ): List<QueryPlan> {
+    private fun buildVariablesPlans(selection: AbstractNode<*>,): List<QueryPlan> {
         val varRefs = selection.collectVariableReferences()
         if (varRefs.isEmpty()) return emptyList()
 
         return varRefs.mapNotNull { varRef ->
             val vResolver = variableToResolver[varRef] ?: return@mapNotNull null
-
             // if the variable resolver has a required selection set, build a QueryPlan for that selection set
-            // Propagate seen RSS to prevent cycles through variable resolver RSSes
-            vResolver.requiredSelectionSet?.let { rss ->
-                // Skip if we've already processed this RSS
-                if (rss in seenRSSes) {
-                    return@mapNotNull null
-                }
-                val newSeen = seenRSSes + rss
-                QueryPlanBuilder(parameters, rss.selections.fragmentMap, rss.variablesResolvers)
-                    .build(
-                        rss.selections.selections,
-                        parentType = parameters.schema.schema.getTypeAs(rss.selections.typeName),
-                        attribution = rss.attribution,
-                        executionCondition = rss.executionCondition,
-                        seenRSSes = newSeen
-                    )
-            }
+            vResolver.requiredSelectionSet?.let { rss -> buildRssPlan(rss) }
         }
     }
+
+    private fun buildRssPlan(rss: RequiredSelectionSet): QueryPlan? = buildRssPlan(parameters, rssBuildContext, rss)
 
     private fun processField(
         sel: GJField,
         state: State,
-        seenRSSes: SeenRSSes
     ): State =
         with(state) {
             val coord = (state.parentType.name to sel.name)
@@ -462,10 +442,9 @@ private class QueryPlanBuilder(
                 return state
             }
 
-            // Use the seenRSSes from the current context for cycle detection in RSS chains
-            val fieldChildPlans = buildRequiredSelectionSetPlans(possibleParentTypes, sel, seenRSSes)
-            val planChildPlans = buildVariablesPlans(sel, seenRSSes)
-            val fieldTypeChildPlans = buildFieldTypeChildPlans(fieldType, seenRSSes)
+            val fieldChildPlans = buildRequiredSelectionSetPlans(possibleParentTypes, sel)
+            val planChildPlans = buildVariablesPlans(sel)
+            val fieldTypeChildPlans = buildFieldTypeChildPlans(fieldType)
 
             val resolverCoordinate = if (parameters.dispatcherRegistry.getFieldResolverDispatcher(parentType.name, sel.name) != null) {
                 coord
@@ -488,7 +467,6 @@ private class QueryPlanBuilder(
                         constraints = subSelectionConstraints,
                         resolverCoordinate = resolverCoordinate
                     ),
-                    seenRSSes
                 )
             }
 
@@ -499,9 +477,7 @@ private class QueryPlanBuilder(
                 selectionSet = subSelectionState?.selectionSet,
                 childPlans = fieldChildPlans,
                 fieldTypeChildPlans = fieldTypeChildPlans,
-                metadata = QueryPlan.FieldMetadata(
-                    resolverCoordinate = resolverCoordinate
-                )
+                metadata = if (resolverCoordinate != null) QueryPlan.FieldMetadata(resolverCoordinate) else QueryPlan.FieldMetadata.empty
             )
 
             state.copy(
@@ -513,7 +489,6 @@ private class QueryPlanBuilder(
     private fun processInlineFragment(
         sel: GJInlineFragment,
         state: State,
-        seenRSSes: SeenRSSes
     ): State =
         with(state) {
             val typeConditionName = sel.typeCondition?.name ?: state.parentType.name
@@ -537,11 +512,10 @@ private class QueryPlanBuilder(
                     selectionSet = QueryPlan.SelectionSet.empty,
                     constraints = newConstraints
                 ),
-                seenRSSes
             )
 
             val inlineFragment = QueryPlan.InlineFragment(fragmentResult.selectionSet, newConstraints)
-            val variablesPlans = buildVariablesPlans(sel, seenRSSes)
+            val variablesPlans = buildVariablesPlans(sel)
             copy(
                 selectionSet = selectionSet + inlineFragment,
                 childPlans = (childPlans + variablesPlans + fragmentResult.childPlans).distinct()
@@ -551,7 +525,6 @@ private class QueryPlanBuilder(
     private fun processFragmentSpread(
         sel: GJFragmentSpread,
         state: State,
-        seenRSSes: SeenRSSes
     ): State =
         with(state) {
             val name = sel.name
@@ -567,7 +540,6 @@ private class QueryPlanBuilder(
                         constraints = Constraints.Unconstrained,
                         childPlans = emptyList()
                     ),
-                    seenRSSes
                 )
                 fragments[name] = QueryPlan.FragmentDefinition(fragState.selectionSet, gjdef, fragState.childPlans)
                 fragState.childPlans
@@ -584,7 +556,7 @@ private class QueryPlanBuilder(
                 return state
             }
 
-            val variablesPlans = buildVariablesPlans(sel, seenRSSes)
+            val variablesPlans = buildVariablesPlans(sel)
 
             copy(
                 selectionSet = selectionSet + QueryPlan.FragmentSpread(name, newConstraints),
@@ -596,7 +568,6 @@ private class QueryPlanBuilder(
         gjSelectionSet: GJSelectionSet,
         typeConditionName: String,
         state: State,
-        seenRSSes: SeenRSSes
     ): State {
         val typeCondition = checkNotNull(parameters.schema.schema.getType(typeConditionName) as? GraphQLCompositeType) {
             "Type $typeConditionName not found in schema."
@@ -617,9 +588,53 @@ private class QueryPlanBuilder(
                 constraints = newConstraints,
                 parentType = typeCondition,
             ),
-            seenRSSes
         )
     }
+}
+
+/**
+ * Builds (or returns a cached) [QueryPlan] for a single [RequiredSelectionSet]. Extracted as a
+ * file-level function (rather than a [QueryPlanBuilder] method) so that the
+ * [QueryPlan.Field.fieldTypeChildPlans] lazy closures only need to capture [parameters] and
+ * [rssBuildContext] — not the entire builder. For interface fields with many concrete types most
+ * per-type lazies may never be forced at runtime, so keeping the builder reference alive would
+ * pin [QueryPlanBuilder.fragmentsByName] and other per-build state indefinitely.
+ *
+ * Uses a two-level context model so that globally cached plans are never truncated by cycle
+ * detection from another concurrent RSS build.
+ *
+ * Returns null if [rss] is already being built in the current local tree (cycle detected).
+ */
+private fun buildRssPlan(
+    parameters: QueryPlan.Parameters,
+    rssBuildContext: RssBuildContext,
+    rss: RequiredSelectionSet,
+): QueryPlan? {
+    val key = RssCacheKey(rss, parameters.schema.hashCode(), parameters.executeAccessChecksInModstrat)
+    rssBuildContext.cache[key]?.let { return it }
+    if (rss in rssBuildContext.building) return null // cycle within this local build tree
+
+    val localBuildContext = if (rssBuildContext.building.isEmpty()) {
+        // Top-level: use a fresh local cache so sub-RSS plans built transitively are not stored
+        // in the global rssPlanCache. Without isolation, a sub-RSS encountered mid-build (while
+        // ancestors are in `building`) would be globally cached in truncated form.
+        RssBuildContext(ConcurrentHashMap())
+    } else {
+        // Inside a local build: share the current context so cycle detection covers the full
+        // transitive tree, not just one level.
+        rssBuildContext
+    }
+    localBuildContext.building.add(rss)
+    val parentType = parameters.schema.schema.getTypeAs<GraphQLCompositeType>(rss.selections.typeName)
+    val plan = QueryPlanBuilder(parameters, rss.selections.fragmentMap, rss.variablesResolvers, localBuildContext)
+        .build(rss.selections.selections, parentType, rss.attribution, rss.executionCondition)
+    localBuildContext.building.remove(rss)
+    rssBuildContext.cache.putIfAbsent(key, plan)
+    // Populates the local cache so that fieldTypeChildPlans lazies (which capture localBuildContext)
+    // find the plan immediately if the RSS is self-referential (i.e. selects a field whose return
+    // type has the same type checker). No-op when localBuildContext === rssBuildContext.
+    localBuildContext.cache.putIfAbsent(key, plan)
+    return plan
 }
 
 /** A pointer into a QueryPlan-able element of a GraphQL document */
@@ -638,6 +653,29 @@ sealed class DocumentKey {
         }
     }
 }
+
+/** Cache key for globally-shared RSS plan entries in [QueryPlanFactory.Cached]. */
+data class RssCacheKey(
+    val rss: RequiredSelectionSet,
+    val schemaHashCode: Int,
+    val executeAccessChecksInModstrat: Boolean,
+)
+
+/**
+ * Context for building RSS child plans.
+ *
+ * @property cache On the outer context this is the global RSS plan cache on
+ *   [QueryPlanFactory.Cached], shared across all build passes. On fresh local contexts
+ *   (created per cache miss in [QueryPlanBuilder]) this is a local cache that deduplicates
+ *   sub-RSS plans within a single RSS's transitive build tree.
+ * @property building Cycle-detection set for a single RSS's transitive build tree.
+ *   Initialized with the root RSS of the local build; entries are added before visiting a
+ *   sub-RSS and removed after (via finally), so it reflects the current build call stack.
+ */
+class RssBuildContext(
+    val cache: ConcurrentHashMap<RssCacheKey, QueryPlan>,
+    val building: MutableSet<RequiredSelectionSet> = mutableSetOf(),
+)
 
 private fun ParsedSelections.printAsFieldSet(): String = selections.selections.joinToString("\n") { AstPrinter.printAstCompact(it) }
 
