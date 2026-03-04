@@ -15,6 +15,7 @@ import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Query
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.SchemaFactory
 import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.CheckerExecutorFactory
@@ -59,6 +60,7 @@ import viaduct.tenant.runtime.internal.VariablesProviderInfo
  */
 @ExperimentalCoroutinesApi
 @Suppress("ktlint:standard:indent")
+@OptIn(InternalApi::class)
 class FeatureTestBuilder(
     private val sdl: String,
     private val useFakeGRTs: Boolean = false,

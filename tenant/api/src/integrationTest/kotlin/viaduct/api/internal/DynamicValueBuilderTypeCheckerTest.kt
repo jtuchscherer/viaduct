@@ -13,7 +13,9 @@ import viaduct.api.testschema.E1
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
 import viaduct.api.testschema.TestUser
+import viaduct.apiannotations.InternalApi
 
+@OptIn(InternalApi::class)
 class DynamicValueBuilderTypeCheckerTest {
     private val graphqlSchema = SchemaUtils.getSchema()
     private val context = MockInternalContext.create(graphqlSchema, "viaduct.api.testschema")

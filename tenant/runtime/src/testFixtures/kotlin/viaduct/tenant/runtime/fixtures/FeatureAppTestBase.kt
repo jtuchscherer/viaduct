@@ -1,4 +1,5 @@
 @file:Suppress("ForbiddenImport")
+@file:OptIn(VisibleForTest::class, InternalApi::class)
 
 package viaduct.tenant.runtime.fixtures
 
@@ -10,6 +11,8 @@ import viaduct.api.internal.NodeResolverFor
 import viaduct.api.internal.ResolverFor
 import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
+import viaduct.apiannotations.InternalApi
+import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault

@@ -20,6 +20,7 @@ import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.Mutation
 import viaduct.api.types.Query
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.ViaductSchema
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 
@@ -29,6 +30,7 @@ import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
  * This class is package-private and should not be used directly.
  * Use [MutationResolverTester.create] instead.
  */
+@OptIn(InternalApi::class)
 internal class MutationResolverTesterImpl<Q : Query, M : Mutation, A : Arguments, R : CompositeOutput>(
     override val config: ResolverTester.TesterConfig
 ) : MutationResolverTester<Q, M, A, R> {

@@ -69,3 +69,7 @@ public final class viaduct/service/ViaductBuilder {
 	public final fun withTenantAPIBootstrapperBuilders (Ljava/util/List;)Lviaduct/service/ViaductBuilder;
 }
 
+public final class viaduct/service/wiring/graphiql/GraphiQLHtmlKt {
+	public static final fun graphiQLHtml ()Ljava/lang/String;
+}
+

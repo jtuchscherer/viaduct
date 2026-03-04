@@ -28,8 +28,10 @@ import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
 import viaduct.api.testschema.O2_ArgumentedField_Arguments
 import viaduct.api.testschema.TestUser
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.gj
 
+@OptIn(InternalApi::class)
 class InputLikeBaseTest {
     private val gqlSchema = SchemaUtils.getSchema()
     private val internalContext = MockInternalContext.create(gqlSchema, "viaduct.api.testschema")

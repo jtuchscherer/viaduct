@@ -17,8 +17,9 @@ import viaduct.api.testschema.I1
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
 import viaduct.api.testschema.TestUser
+import viaduct.apiannotations.InternalApi
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, InternalApi::class)
 class ViaductObjectBuilderTest {
     private val context = MockInternalContext.create(SchemaUtils.getSchema(), "viaduct.api.testschema")
 

@@ -1,6 +1,6 @@
 package viaduct.service.wiring.graphiql
 
-import viaduct.apiannotations.InternalApi
+import viaduct.apiannotations.StableApi
 
 /**
  * Returns the HTML for the GraphiQL IDE.
@@ -68,7 +68,7 @@ import viaduct.apiannotations.InternalApi
  * @return The GraphiQL HTML content
  * @throws IllegalStateException if the GraphiQL HTML cannot be found in resources
  */
-@InternalApi
+@StableApi
 fun graphiQLHtml(): String {
     val resourcePath = "/graphiql/index.html"
 

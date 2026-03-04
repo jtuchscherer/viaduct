@@ -14,6 +14,7 @@ import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
 import viaduct.api.types.Object
 import viaduct.api.types.Query as QueryType
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
@@ -23,6 +24,7 @@ import viaduct.tenant.runtime.globalid.User
 /**
  * Tests code in ResolverExectionContextFactoryBase
  */
+@OptIn(InternalApi::class)
 class ResolverExecutionContextFactoryBaseTest {
     private val contextMocks = ContextMocks(GlobalIdFeatureAppTest.schema)
     private val globalIDCodec = GlobalIDCodecDefault

@@ -5,11 +5,13 @@ package viaduct.tenant.runtime.execution.reflection
 import kotlin.collections.listOf
 import org.junit.jupiter.api.Test
 import viaduct.api.Resolver
+import viaduct.apiannotations.InternalApi
 import viaduct.graphql.test.assertEquals
 import viaduct.tenant.runtime.execution.reflection.resolverbases.CategoryResolvers
 import viaduct.tenant.runtime.execution.reflection.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
+@OptIn(InternalApi::class)
 class ReflectionFeatureAppTest : FeatureAppTestBase() {
     override var sdl = """
         | #START_SCHEMA

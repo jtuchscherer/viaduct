@@ -17,7 +17,7 @@ import kotlin.annotation.AnnotationTarget.TYPEALIAS
 @Retention(BINARY)
 @RequiresOptIn(
     message = "This API is internal, is not meant to be used outside Viaduct.",
-    level = Level.WARNING,
+    level = Level.ERROR,
 )
 @Target(
     CLASS,

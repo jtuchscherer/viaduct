@@ -6,6 +6,7 @@ import viaduct.api.reflect.Field
 import viaduct.api.reflect.Type
 import viaduct.api.select.SelectionSet
 import viaduct.api.types.CompositeOutput
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.ViaductSchema
 
 /**
@@ -38,6 +39,7 @@ import viaduct.engine.api.ViaductSchema
  * @param schema The Viaduct schema used for type information
  * @since 1.0
  */
+@OptIn(InternalApi::class)
 class MockSelectionSetFactory(
     private val schema: ViaductSchema
 ) : SelectionSetFactory {

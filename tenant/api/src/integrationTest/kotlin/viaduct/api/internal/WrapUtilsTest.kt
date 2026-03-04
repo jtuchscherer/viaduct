@@ -15,9 +15,11 @@ import viaduct.api.schemautils.SchemaUtils
 import viaduct.api.testschema.E1
 import viaduct.api.testschema.Input2
 import viaduct.api.testschema.TestType
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.ResolvedEngineObjectData
 import viaduct.engine.api.gj
 
+@OptIn(InternalApi::class)
 class WrapUtilsTest {
     private val schema = SchemaUtils.getSchema()
     private val internalContext = MockInternalContext.create(schema, "viaduct.api.testschema")

@@ -1,6 +1,7 @@
 package viaduct.tenant.runtime.featuretests.fixtures
 
 import viaduct.api.internal.ReflectionLoader
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeResolverExecutor
@@ -36,6 +37,7 @@ class FeatureTestTenantAPIBootstrapperBuilder(
 }
 
 /** Intended for testing only - the implementation is naive and not scalable. */
+@OptIn(InternalApi::class)
 class FeatureTestTenantModuleBootstrapper(
     val fieldUnbatchedResolverStubs: Map<Coordinate, FieldUnbatchedResolverStub<*>>,
     val nodeUnbatchedResolverStubs: Map<String, NodeUnbatchedResolverStub>,

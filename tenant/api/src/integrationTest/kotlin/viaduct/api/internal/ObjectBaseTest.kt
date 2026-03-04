@@ -22,6 +22,7 @@ import viaduct.api.testschema.E1
 import viaduct.api.testschema.I1
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
+import viaduct.apiannotations.InternalApi
 import viaduct.apiannotations.VisibleForTest
 import viaduct.engine.api.EngineObject
 import viaduct.engine.api.EngineObjectData
@@ -29,7 +30,7 @@ import viaduct.engine.api.EngineObjectDataBuilder
 import viaduct.engine.api.NodeReference
 import viaduct.engine.api.UnsetFieldException
 
-@OptIn(ExperimentalCoroutinesApi::class, VisibleForTest::class)
+@OptIn(ExperimentalCoroutinesApi::class, VisibleForTest::class, InternalApi::class)
 class ObjectBaseTest {
     private val gqlSchema = SchemaUtils.getSchema()
     private val internalContext = MockInternalContext.create(gqlSchema, "viaduct.api.testschema")

@@ -17,6 +17,7 @@ import viaduct.api.types.CompositeOutput
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.CheckerMetadata
 import viaduct.engine.api.CheckerResult
@@ -36,6 +37,7 @@ import viaduct.tenant.runtime.context.factory.NodeExecutionContextFactory
 import viaduct.tenant.runtime.internal.VariablesProviderInfo
 
 @Suppress("UNUSED_PARAMETER", "UNCHECKED_CAST")
+@OptIn(InternalApi::class)
 class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
     val objectSelections: ParsedSelections? = null,
     val querySelections: ParsedSelections? = null,
@@ -91,6 +93,7 @@ class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
     }
 }
 
+@OptIn(InternalApi::class)
 class NodeUnbatchedResolverStub(
     val resolverFactory: NodeExecutionContextFactory,
     val resolverName: String?,
@@ -106,6 +109,7 @@ class NodeUnbatchedResolverStub(
 }
 
 @Suppress("UNUSED_PARAMETER")
+@OptIn(InternalApi::class)
 class NodeBatchResolverStub(
     val resolverFactory: NodeExecutionContextFactory,
     val resolverName: String?,
@@ -164,6 +168,7 @@ fun <A : Arguments> VariablesProviderInfo.Companion.typed(
  * If the receiver is a FakeObject, use FakeObject.get.
  * Otherwise, cast to ObjectBase and use its get method.
  */
+@OptIn(InternalApi::class)
 suspend inline fun <reified T> Object.get(
     fieldName: String,
     alias: String? = null
@@ -180,6 +185,7 @@ suspend inline fun <reified T> Object.get(
  * If the receiver is a FakeArguments, use FakeArguments.get.
  * Otherwise, cast to InputLikeBase and access inputData directly.
  */
+@OptIn(InternalApi::class)
 inline fun <reified T> Arguments.get(name: String): T {
     return when (this) {
         is viaduct.tenant.runtime.FakeArguments -> this.get<T>(name)
@@ -195,6 +201,7 @@ inline fun <reified T> Arguments.get(name: String): T {
  * Extension function on Arguments that works for both FakeArguments and real Arguments.
  * Returns null if the argument is not present or null.
  */
+@OptIn(InternalApi::class)
 inline fun <reified T> Arguments.tryGet(name: String): T? {
     return when (this) {
         is viaduct.tenant.runtime.FakeArguments -> this.tryGet<T>(name)

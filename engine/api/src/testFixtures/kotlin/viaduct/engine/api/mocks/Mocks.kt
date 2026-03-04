@@ -1,4 +1,5 @@
 @file:Suppress("ForbiddenImport")
+@file:OptIn(VisibleForTest::class)
 
 package viaduct.engine.api.mocks
 
@@ -18,6 +19,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import viaduct.apiannotations.VisibleForTest
 import viaduct.dataloader.mocks.MockNextTickDispatcher
 import viaduct.engine.ViaductSchemaLoadException
 import viaduct.engine.ViaductWiringFactory

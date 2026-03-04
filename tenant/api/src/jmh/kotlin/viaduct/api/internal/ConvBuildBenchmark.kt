@@ -20,6 +20,7 @@ import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.MockType
 import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.createEngineSelectionSet
@@ -36,6 +37,7 @@ import viaduct.engine.api.select.SelectionsParser
  *
  * Run with: bazel run //projects/viaduct/oss/tenant/api/src/jmh/kotlin/viaduct/api/internal:conv_build_benchmark
  */
+@OptIn(InternalApi::class)
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

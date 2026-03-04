@@ -18,12 +18,14 @@ import viaduct.api.testschema.Input2
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.Scalars
 import viaduct.api.testschema.TestUser
+import viaduct.apiannotations.InternalApi
 import viaduct.arbitrary.common.KotestPropertyBase
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.engineObjectsAreEquivalent
 import viaduct.mapping.graphql.IR
 import viaduct.mapping.test.DomainValidator
 
+@OptIn(InternalApi::class)
 class GRTDomainTest : KotestPropertyBase() {
     private val schema = SchemaUtils.getSchema()
     private val internalContext = MockInternalContext.create(schema, "viaduct.api.testschema")
@@ -146,6 +148,7 @@ class GRTDomainTest : KotestPropertyBase() {
     }
 }
 
+@OptIn(InternalApi::class)
 private fun grtsEqual(
     expected: Any?,
     actual: Any?

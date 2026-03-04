@@ -55,6 +55,7 @@ import viaduct.engine.api.select.SelectionsParser
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
 
+@OptIn(InternalApi::class)
 class DefaultGRTConvFactoryTest : KotestPropertyBase() {
     private val factory = DefaultGRTConvFactory
     private val schema = SchemaUtils.getSchema()

@@ -14,6 +14,7 @@ import viaduct.api.internal.ObjectBase
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.MockReflectionLoader
 import viaduct.api.mocks.testGlobalId
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.UnsetFieldException
 import viaduct.engine.api.mocks.createEngineObjectData
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
@@ -26,6 +27,7 @@ import viaduct.tenant.runtime.globalid.User
 // The unit-tests in GRTConstructorExtensions test its contents pretty comprehensively.
 // This file adds just a few more tests to ensure that things work as expected with
 // code-generated GRTs.
+@OptIn(InternalApi::class)
 class GRTConstructorExtensionsTest {
     val schema = GlobalIdFeatureAppTest.schema
     val internalContext = MockInternalContext(

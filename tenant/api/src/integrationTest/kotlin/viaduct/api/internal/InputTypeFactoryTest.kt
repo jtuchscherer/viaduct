@@ -11,11 +11,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.api.schemautils.SchemaUtils
+import viaduct.apiannotations.InternalApi
 
 /**
  * Unit tests for InputTypeFactory - the internal factory for creating
  * GraphQLInputObjectType instances for Arguments and Input GRTs.
  */
+@OptIn(InternalApi::class)
 class InputTypeFactoryTest {
     private val schema = SchemaUtils.getSchema()
 

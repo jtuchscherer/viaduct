@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.api.internal.InputTypeFactory
 import viaduct.api.schemautils.SchemaUtils
+import viaduct.apiannotations.InternalApi
 
+@OptIn(InternalApi::class)
 class ArgumentsTest {
     private val schema = SchemaUtils.getSchema()
 

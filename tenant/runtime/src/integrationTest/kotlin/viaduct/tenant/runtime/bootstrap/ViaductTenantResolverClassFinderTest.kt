@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Named
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import viaduct.apiannotations.InternalApi
 
+@OptIn(InternalApi::class)
 class ViaductTenantResolverClassFinderTest {
     companion object {
         private const val PACKAGE_NAME = "viaduct.api.bootstrap.test"

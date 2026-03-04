@@ -10,6 +10,7 @@ import viaduct.api.types.Mutation
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.mocks.ContextMocks
 
@@ -18,6 +19,7 @@ import viaduct.engine.runtime.mocks.ContextMocks
  * Provides helpers to create EngineExecutionContextWrapper implementations that mock
  * query/mutation calls to return constant objects.
  */
+@OptIn(InternalApi::class)
 abstract class ContextTestBase {
     protected object Obj : Object
 

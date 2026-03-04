@@ -19,6 +19,7 @@ import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.MockReflectionLoader
 import viaduct.api.mocks.MockType
 import viaduct.api.types.NodeObject
+import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.NodeReference
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
@@ -26,7 +27,7 @@ import viaduct.tenant.runtime.globalid.GlobalIDImpl
 import viaduct.tenant.runtime.globalid.GlobalIdFeatureAppTest
 import viaduct.tenant.runtime.globalid.User
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, InternalApi::class)
 class NodeReferenceFactoryImplTest {
     @Test
     fun `nodeFor returns a Node Reference`(): Unit =
