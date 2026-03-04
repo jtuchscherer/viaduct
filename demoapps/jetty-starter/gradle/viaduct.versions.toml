@@ -1,6 +1,6 @@
 [versions]
 jetty = "11.0.26"
-kotest = "5.8.1"
+kotest = "5.9.1"
 kotlin = "1.9.24"
 coroutines = "1.5.2"
 jackson = "2.20.1"
