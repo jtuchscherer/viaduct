@@ -47,8 +47,8 @@ class GraphQLTypesTest : KotestPropertyBase() {
         (DefaultValueWeight to 0.0) +
         (AppliedDirectiveWeight to CompoundingWeight.Never) +
         (DirectiveHasArgs to CompoundingWeight.Never) +
-        (FieldHasArgs to CompoundingWeight.Never) +
-        (Listiness to CompoundingWeight.Never) +
+        (FieldArgumentWeight to CompoundingWeight.Never) +
+        (ListTypeWeight to CompoundingWeight.Never) +
         (InterfaceImplementsInterface to CompoundingWeight.Never) +
         (ObjectImplementsInterface to CompoundingWeight.Never) +
         (DescriptionLength to 0..0) +
@@ -60,7 +60,7 @@ class GraphQLTypesTest : KotestPropertyBase() {
         (MaxValueDepth to 0) +
         (StringValueSize to 1..1) +
         (ListValueSize to 0..0) +
-        (OneOfWeight to 0.0)
+        (OneOfTypeWeight to 0.0)
 
     private fun mkGen(
         cfg: Config = minimalConfig,
@@ -110,7 +110,7 @@ class GraphQLTypesTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `GraphQLTypesGen -- Listiness and NonNullableness`(): Unit =
+    fun `GraphQLTypesGen -- ListTypeWeight and NonNullableTypeWeight`(): Unit =
         runBlocking {
             fun GraphQLType.countDecorations(): Pair<Int, Int> {
                 tailrec fun loop(
@@ -133,22 +133,22 @@ class GraphQLTypesTest : KotestPropertyBase() {
                 .pair(
                     Arb.compoundingWeight(),
                     Arb.element(0.0, 1.0),
-                ).checkAll(iterCount) { (listiness, nonNullableness) ->
+                ).checkAll(iterCount) { (listTypeWeight, nonNullableTypeWeight) ->
                     val cfg = minimalConfig +
-                        (Listiness to listiness) +
-                        (NonNullableness to nonNullableness)
+                        (ListTypeWeight to listTypeWeight) +
+                        (NonNullableTypeWeight to nonNullableTypeWeight)
 
                     val (lists, nonNulls) = mkGen(cfg, names)
                         .decorate(Scalars.GraphQLInt)
                         .countDecorations()
 
-                    if (listiness.weight == 1.0 && lists < listiness.max) {
+                    if (listTypeWeight.weight == 1.0 && lists < listTypeWeight.max) {
                         markFailure()
-                    } else if (nonNullableness == 1.0 && nonNulls != (lists + 1)) {
+                    } else if (nonNullableTypeWeight == 1.0 && nonNulls != (lists + 1)) {
                         markFailure()
-                    } else if (listiness.weight == 0.0 && lists != 0) {
+                    } else if (listTypeWeight.weight == 0.0 && lists != 0) {
                         markFailure()
-                    } else if (nonNullableness == 0.0 && nonNulls != 0) {
+                    } else if (nonNullableTypeWeight == 0.0 && nonNulls != 0) {
                         markFailure()
                     } else {
                         markSuccess()
@@ -173,12 +173,12 @@ class GraphQLTypesTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `GraphQLTypes - FieldHasArgs`(): Unit =
+    fun `GraphQLTypes - FieldArgumentWeight`(): Unit =
         runBlocking {
             Arb
                 .compoundingWeight()
                 .flatMap { cw ->
-                    val cfg = minimalConfig + (FieldHasArgs to cw)
+                    val cfg = minimalConfig + (FieldArgumentWeight to cw)
                     Arb.graphQLTypes(cfg).map { cw to it }
                 }.checkInvariants(iterCount) { (cw, types), check ->
                     val fields = (types.objects.values + types.interfaces.values)
@@ -187,13 +187,13 @@ class GraphQLTypesTest : KotestPropertyBase() {
                     if (cw.weight == 1.0 && cw.max > 0 && fields.isNotEmpty()) {
                         check.isTrue(
                             fields.any { it.arguments.isNotEmpty() },
-                            "No field arguments generated with FieldHasArgs $cw",
+                            "No field arguments generated with FieldArgumentWeight $cw",
                         )
                     } else {
                         fields.forEach { f ->
                             check.isTrue(
                                 f.arguments.isEmpty(),
-                                "Unexpected arguments on field ${f.name} with FieldHasArgs $cw",
+                                "Unexpected arguments on field ${f.name} with FieldArgumentWeight $cw",
                             )
                         }
                     }
@@ -329,16 +329,16 @@ class GraphQLTypesTest : KotestPropertyBase() {
         }
 
     @Test
-    fun `GraphQLTypes - OneOfWeight`(): Unit =
+    fun `GraphQLTypes - OneOfTypeWeight`(): Unit =
         runBlocking {
             // disabled
-            Arb.graphQLTypes(minimalConfig + (OneOfWeight to 0.0))
+            Arb.graphQLTypes(minimalConfig + (OneOfTypeWeight to 0.0))
                 .forAll(iterCount) { types ->
                     types.inputs.values.none { it.isOneOf }
                 }
 
             // enabled
-            Arb.graphQLTypes(minimalConfig + (OneOfWeight to 1.0))
+            Arb.graphQLTypes(minimalConfig + (OneOfTypeWeight to 1.0))
                 .forAll(iterCount) { types ->
                     types.inputs.values.all { inp ->
                         inp.isOneOf && inp.fields.all { field ->
@@ -494,7 +494,7 @@ class GraphQLTypesTest : KotestPropertyBase() {
     fun `GraphQLTypes -- generates escape fields for inputs`(): Unit =
         runBlocking {
             // Ensure that we can generate input types even when we insist on non-null non-list fields
-            Arb.graphQLTypes(minimalConfig + (NonNullableness to 1.0))
+            Arb.graphQLTypes(minimalConfig + (NonNullableTypeWeight to 1.0))
                 .forAll(iterCount) { types ->
                     types.inputs.values.all { inp ->
                         inp.fields.isNotEmpty()
@@ -513,7 +513,7 @@ class GraphQLTypesTest : KotestPropertyBase() {
 
             Arb.graphQLTypes(
                 GraphQLNames(mapOf(TypeType.Input to setOf("A"))),
-                minimalConfig + (OneOfWeight to 1.0)
+                minimalConfig + (OneOfTypeWeight to 1.0)
             ).forAll(iterCount) { types ->
                 val a = types.inputs["A"]!!
                 a.fields.any { it.name.startsWith("escape") && it.type is GraphQLScalarType }

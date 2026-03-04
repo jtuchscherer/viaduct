@@ -205,7 +205,7 @@ class GraphQLSchemasTest : KotestPropertyBase() {
                 (InputObjectTypeSize to 1.asIntRange()) +
                 (TypeTypeWeights to TypeTypeWeights.zero + (TypeType.Input to 1.0)) +
                 (ExplicitNullValueWeight to 0.0) +
-                (OneOfWeight to 1.0)
+                (OneOfTypeWeight to 1.0)
 
             // without default values
             Arb.graphQLSchema(cfg + (DefaultValueWeight to 0.0))
@@ -295,9 +295,9 @@ class GraphQLSchemasTest : KotestPropertyBase() {
         runBlocking {
             val names = GraphQLNames(mapOf(TypeType.Input to setOf("A", "B")))
             val cfg = Config.default +
-                (NonNullableness to 1.0) +
-                (Listiness to Never) +
-                (OneOfWeight to 0.0)
+                (NonNullableTypeWeight to 1.0) +
+                (ListTypeWeight to Never) +
+                (OneOfTypeWeight to 0.0)
 
             val arb = arbitrary {
                 val types = Arb.graphQLTypes(names, cfg).bind()
