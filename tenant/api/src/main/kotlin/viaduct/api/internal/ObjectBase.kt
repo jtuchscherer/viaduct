@@ -56,7 +56,7 @@ abstract class ObjectBase(
             if (ex is CancellationException) currentCoroutineContext().ensureActive()
             when (ex) {
                 is ViaductTenantException -> throw ex
-                is EngineObjectDataFetchException -> throw ex.cause!!
+                is ViaductFrameworkException -> throw ex
                 else -> throw ViaductFrameworkException("ObjectBase.fetch failed for ${engineObject.type.name}.$fieldName. ($ex)", ex)
             }
         }
@@ -64,11 +64,12 @@ abstract class ObjectBase(
 
     /**
      * Fetches the given selection from the EngineObjectData and wraps it into a typed GRT or scalar value.
-     * Public function called by extension getter function on the GRT.
+     * Used for accessing BackingData fields, which do not have generated typed getters.
      *
-     * @param selection the GraphQL response key of a selection (see https://spec.graphql.org/draft/#sec-Field-Alias)
+     * @param fieldName the name of the field to fetch (also used as the selection key unless [alias] is provided)
      * @param baseFieldTypeClass the KClass that represents the generated base type of the provided selection
-     * @param fieldName the name of the field being selected by [selection]
+     * @param alias the GraphQL response key of a selection (see https://spec.graphql.org/draft/#sec-Field-Alias),
+     *   if different from [fieldName]
      */
     @Suppress("UNCHECKED_CAST")
     suspend fun <T> get(
@@ -104,7 +105,7 @@ abstract class ObjectBase(
                 when (ex) {
                     is UnsetFieldException -> throw ViaductTenantUsageException(ex.message, ex)
                     is ViaductTenantException, is ViaductFrameworkException -> throw ex
-                    else -> throw EngineObjectDataFetchException("engineObjectData.fetch failed on field $fieldName", ex)
+                    else -> throw ex
                 }
             }
 
@@ -293,9 +294,6 @@ abstract class ObjectBase(
             DynamicValueBuilderTypeChecker(context).checkType(fieldDefinition.type, value, fieldContext)
         }
     }
-
-    // Internal for testing
-    internal class EngineObjectDataFetchException(message: String, cause: Throwable) : RuntimeException(message, cause)
 
     companion object {
         // Used to represent null in the field cache, since ConcurrentHashMap does not allow null values
