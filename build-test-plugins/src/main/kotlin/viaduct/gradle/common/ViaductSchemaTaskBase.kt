@@ -8,14 +8,12 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
-import viaduct.gradle.ViaductPluginCommon
-import viaduct.graphql.schema.ViaductSchema
-import viaduct.graphql.schema.binary.extensions.toBinaryFile
-import viaduct.graphql.schema.graphqljava.extensions.fromGraphQLSchema
-import viaduct.tenant.codegen.cli.SchemaObjectsBytecode
+import org.gradle.workers.WorkerExecutor
+import viaduct.gradle.shared.BuildFlags
 
 /**
  * Base class for schema generation tasks.
@@ -24,6 +22,9 @@ import viaduct.tenant.codegen.cli.SchemaObjectsBytecode
 abstract class ViaductSchemaTaskBase : DefaultTask() {
     @get:Inject
     abstract val projectLayout: ProjectLayout
+
+    @get:Inject
+    abstract val workerExecutor: WorkerExecutor
 
     @get:Input
     abstract val schemaName: Property<String>
@@ -46,6 +47,9 @@ abstract class ViaductSchemaTaskBase : DefaultTask() {
     @get:InputFiles
     abstract val schemaFiles: ConfigurableFileCollection
 
+    @get:Classpath
+    abstract val codegenClasspath: ConfigurableFileCollection
+
     @get:OutputDirectory
     abstract val generatedSrcDir: DirectoryProperty
 
@@ -57,7 +61,7 @@ abstract class ViaductSchemaTaskBase : DefaultTask() {
 
         // Write build flags to temporary file
         val flagFile = temporaryDir.resolve("viaduct_build_flags")
-        flagFile.writeText(ViaductPluginCommon.buildFlagFileContent(buildFlags.get()))
+        flagFile.writeText(BuildFlags.toFileContent(buildFlags.get()))
 
         // Include the default schema along with the configured schema files
         val allSchemaFiles = DefaultSchemaUtil
@@ -69,10 +73,18 @@ abstract class ViaductSchemaTaskBase : DefaultTask() {
         val workerCountArg = workerCount.get().toString()
         val includeEligibleForTesting = includeIneligibleForTesting.get()
 
-        // Generate binary schema file
+        // Generate binary schema file via isolated classloader
         val binarySchemaFile = temporaryDir.resolve("schema.bgql")
-        ViaductSchema.fromGraphQLSchema(allSchemaFiles)
-            .toBinaryFile(binarySchemaFile)
+        workerExecutor.runCodegen(
+            codegenClasspath,
+            CodegenWorkAction.MainClasses.BINARY_SCHEMA_GENERATOR,
+            listOf(
+                "--schema_files",
+                allSchemaFiles.joinToString(",") { it.absolutePath },
+                "--output_file",
+                binarySchemaFile.absolutePath
+            )
+        )
 
         // Clean and prepare directories
         if (outputDir.exists()) outputDir.deleteRecursively()
@@ -101,13 +113,12 @@ abstract class ViaductSchemaTaskBase : DefaultTask() {
             baseArgs
         }
 
-        try {
-            SchemaObjectsBytecode.Main.main(
-                finalArgs.toTypedArray()
-            )
-        } catch (e: Exception) {
-            throw GradleException("SchemaObjectsBytecode execution failed: ${e.message}", e)
-        }
+        // Run schema codegen via isolated classloader
+        workerExecutor.runCodegen(
+            codegenClasspath,
+            CodegenWorkAction.MainClasses.SCHEMA_OBJECTS_BYTECODE,
+            finalArgs
+        )
 
         // Ensure the generated directory has content
         if (!outputDir.exists() || (outputDir.listFiles()?.isEmpty() != false)) {

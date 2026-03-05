@@ -2,7 +2,9 @@ package viaduct.gradle.defaultschema
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
@@ -27,6 +29,35 @@ abstract class DefaultSchemaPlugin : Plugin<Project> {
         fun ensureApplied(project: Project) {
             if (!project.plugins.hasPlugin(DefaultSchemaPlugin::class.java)) {
                 project.pluginManager.apply(DefaultSchemaPlugin::class.java)
+            }
+        }
+
+        /**
+         * Returns the generated resources directory containing the default schema.
+         * Callers targeting a non-"test" source set can use this to wire the
+         * schema resources into their target source set.
+         */
+        fun getGeneratedResourcesDir(project: Project): Provider<Directory> {
+            return project.layout.buildDirectory.dir(DEFAULT_SCHEMA_BUILD_PATH)
+        }
+
+        /**
+         * Wires the default schema generated resources into the given source set and
+         * ensures the corresponding processResources task depends on schema extraction.
+         * No-op if [sourceSetName] is "test" (already wired by [apply]).
+         */
+        fun wireToSourceSet(
+            project: Project,
+            sourceSetName: String
+        ) {
+            if (sourceSetName == "test") return
+            val javaExt = project.extensions.getByType(JavaPluginExtension::class.java)
+            javaExt.sourceSets.getByName(sourceSetName).resources.srcDir(
+                getGeneratedResourcesDir(project)
+            )
+            val processResourcesTaskName = "process${sourceSetName.replaceFirstChar { it.uppercase() }}Resources"
+            project.tasks.named(processResourcesTaskName).configure {
+                dependsOn(TASK_NAME)
             }
         }
     }

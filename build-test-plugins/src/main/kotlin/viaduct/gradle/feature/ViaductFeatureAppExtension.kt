@@ -16,4 +16,11 @@ open class ViaductFeatureAppExtension(project: Project) {
 
     val fileNamePattern: Property<String> = project.objects.property(String::class.java)
         .convention(".*(FeatureApp|FeatureAppTest).*")
+
+    /**
+     * The source set that FeatureApp tests belong to.
+     * Default: "test" — override to "integrationTest" when applying inside a core module.
+     */
+    val sourceSetName: Property<String> = project.objects.property(String::class.java)
+        .convention("test")
 }

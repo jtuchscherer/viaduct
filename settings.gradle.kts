@@ -38,10 +38,6 @@ includeBuild("demoapps/ktor-starter")
 includeBuild("demoapps/micronaut-starter")
 includeBuild("demoapps/starwars")
 
-// integration tests
-include(":tenant:codegen-integration-tests")
-include(":tenant:api-integration-tests")
-include(":tenant:runtime-integration-tests")
 include(":tenant:tutorials")
 
 // misc
@@ -53,6 +49,6 @@ include(":runtime")
 include(":test-fixtures")
 includeBuild("build-logic") {
     dependencySubstitution {
-        substitute(module("com.airbnb.viaduct:common")).using(project(":common"))
+        substitute(module("com.airbnb.viaduct.build:common")).using(project(":common"))
     }
 }

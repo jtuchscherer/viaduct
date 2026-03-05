@@ -22,6 +22,13 @@ open class ViaductClassDiffExtension(private val project: Project) {
     val schemaDiffs: ListProperty<SchemaDiff> = project.objects.listProperty(SchemaDiff::class.java)
 
     /**
+     * The source set to wire generated code into.
+     * Default: "test" — override to "integrationTest" for core module integration tests.
+     */
+    val sourceSetName: Property<String> = project.objects.property(String::class.java)
+        .convention("test")
+
+    /**
      * Create and configure a new schema diff.
      */
     fun schemaDiff(

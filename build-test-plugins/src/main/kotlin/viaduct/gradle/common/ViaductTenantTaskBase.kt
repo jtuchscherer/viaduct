@@ -2,20 +2,17 @@ package viaduct.gradle.common
 
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
-import viaduct.gradle.ViaductPluginCommon
-import viaduct.graphql.schema.ViaductSchema
-import viaduct.graphql.schema.binary.extensions.toBinaryFile
-import viaduct.graphql.schema.graphqljava.extensions.fromGraphQLSchema
-import viaduct.tenant.codegen.cli.ViaductGenerator
+import org.gradle.workers.WorkerExecutor
+import viaduct.gradle.shared.BuildFlags
 
 /**
  * Base class for tenant generation tasks.
@@ -40,6 +37,9 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
     @get:InputFiles
     abstract val schemaFiles: ConfigurableFileCollection
 
+    @get:Classpath
+    abstract val codegenClasspath: ConfigurableFileCollection
+
     @get:OutputDirectory
     abstract val modernModuleSrcDir: DirectoryProperty
 
@@ -51,6 +51,9 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
 
     @get:Inject
     abstract val projectLayout: ProjectLayout
+
+    @get:Inject
+    abstract val workerExecutor: WorkerExecutor
 
     /**
      * Common tenant generation logic that can be called by subclasses
@@ -73,7 +76,7 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
 
         // Write build flags to temporary file
         val flagFile = temporaryDir.resolve("viaduct_build_flags")
-        flagFile.writeText(ViaductPluginCommon.buildFlagFileContent(buildFlags.get()))
+        flagFile.writeText(BuildFlags.toFileContent(buildFlags.get()))
 
         // Include the default schema along with the configured schema files
         val allSchemaFiles = DefaultSchemaUtil
@@ -81,10 +84,18 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
             .toList()
             .sortedBy { it.absolutePath }
 
-        // Generate binary schema file
+        // Generate binary schema file via isolated classloader
         val binarySchemaFile = temporaryDir.resolve("schema.bgql")
-        ViaductSchema.fromGraphQLSchema(allSchemaFiles)
-            .toBinaryFile(binarySchemaFile)
+        workerExecutor.runCodegen(
+            codegenClasspath,
+            CodegenWorkAction.MainClasses.BINARY_SCHEMA_GENERATOR,
+            listOf(
+                "--schema_files",
+                allSchemaFiles.joinToString(",") { it.absolutePath },
+                "--output_file",
+                binarySchemaFile.absolutePath
+            )
+        )
 
         // Build arguments for code generation
         val baseArgs = mutableListOf(
@@ -114,10 +125,11 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
             baseArgs
         }
 
-        try {
-            ViaductGenerator.Main.main(finalArgs.toTypedArray())
-        } catch (e: Exception) {
-            throw GradleException("ViaductGenerator execution failed: ${e.message}", e)
-        }
+        // Run tenant codegen via isolated classloader
+        workerExecutor.runCodegen(
+            codegenClasspath,
+            CodegenWorkAction.MainClasses.VIADUCT_GENERATOR,
+            finalArgs
+        )
     }
 }

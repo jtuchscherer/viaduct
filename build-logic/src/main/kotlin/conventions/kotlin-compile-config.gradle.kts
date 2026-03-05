@@ -4,12 +4,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 tasks.withType<KotlinCompile>().configureEach {
     val taskName = name.lowercase()
-    val projectPath = project.path.lowercase()
 
     // Skip only integrationTest and testFixtures compilations.
     // Everything else (main, test, jmh, etc.) will get the opt-ins.
     val isIntegrationOrFixtures =
-        projectPath.contains("integration-tests") ||
+        taskName.contains("integrationtest") ||
                 taskName.contains("testfixtures")
 
     if (!isIntegrationOrFixtures) {

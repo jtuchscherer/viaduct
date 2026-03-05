@@ -17,9 +17,8 @@ pluginManagement {
     includeBuild("../build-logic")
 }
 
-includeBuild("../gradle-plugins") {
+includeBuild("../build-logic") {
     dependencySubstitution {
-        substitute(module("com.airbnb.viaduct:gradle-plugins-common")).using(project(":common"))
+        substitute(module("com.airbnb.viaduct.build:shared")).using(project(":shared"))
     }
 }
-includeBuild("../included-builds/core")

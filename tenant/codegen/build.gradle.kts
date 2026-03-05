@@ -1,14 +1,25 @@
 plugins {
     id("conventions.kotlin")
     id("conventions.kotlin-static-analysis")
+    id("conventions.integration-test")
+    id("test-classdiff")
     id("me.champeau.jmh").version("0.7.3")
-    id("jacoco-integration-base")
     `maven-publish`
 }
 
 viaductPublishing {
     name.set("Codegen")
     description.set("The Viaduct code generator and command-line interface.")
+}
+
+viaductClassDiff {
+    sourceSetName.set("integrationTest")
+    schemaDiff("schema") {
+        actualPackage.set("actuals.api.generated")
+        expectedPackage.set("viaduct.api.grts")
+        schemaResource("graphql/schema.graphqls")
+        sourceSetNames.set(listOf("main", "integrationTest"))
+    }
 }
 
 dependencies {
@@ -39,6 +50,20 @@ dependencies {
     testImplementation(libs.jackson.annotations)
     testImplementation(libs.slf4j.api)
     testImplementation(libs.kotest.property.jvm)
+
+    /** Codegen classpath for test-classdiff worker isolation **/
+    viaductCodegenClasspath(libs.viaduct.tenant.codegen)
+
+    /** Integration test dependencies **/
+    integrationTestImplementation(libs.viaduct.engine.api)
+    integrationTestImplementation(libs.viaduct.tenant.api)
+    integrationTestImplementation(libs.viaduct.shared.codegen)
+    integrationTestImplementation(libs.viaduct.shared.graphql)
+    integrationTestImplementation(libs.viaduct.shared.viaductschema)
+    integrationTestImplementation(testFixtures(libs.viaduct.shared.viaductschema))
+    integrationTestImplementation(libs.io.mockk.dsl)
+    integrationTestImplementation(libs.io.mockk.jvm)
+    integrationTestImplementation(libs.javassist)
 
     jmh(libs.jmh.annotation.processor)
     jmhAnnotationProcessor(libs.jmh.annotation.processor)

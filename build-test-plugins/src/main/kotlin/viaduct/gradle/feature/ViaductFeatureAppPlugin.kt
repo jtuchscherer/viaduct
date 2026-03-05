@@ -5,13 +5,15 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
-import viaduct.gradle.ViaductPluginCommon
+import viaduct.gradle.common.getOrCreateCodegenClasspath
 import viaduct.gradle.defaultschema.DefaultSchemaPlugin
+import viaduct.gradle.shared.BuildFlags
 import viaduct.gradle.utils.capitalize
 
 /**
@@ -22,16 +24,21 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension = project.extensions.create<ViaductFeatureAppExtension>("viaductFeatureApp", project)
 
+        val codegenClasspath = project.getOrCreateCodegenClasspath()
+
         // Ensure default schema plugin is applied so default schema is available
         DefaultSchemaPlugin.ensureApplied(project)
 
         project.afterEvaluate {
+            val ssName = extension.sourceSetName.get()
+            DefaultSchemaPlugin.wireToSourceSet(project, ssName)
+
             val featureAppFiles = discoverFeatureAppFiles(project, extension)
             if (featureAppFiles.isEmpty()) {
                 return@afterEvaluate
             }
             featureAppFiles.forEach { featureAppFile ->
-                configureFeatureApp(project, featureAppFile, extension)
+                configureFeatureApp(project, featureAppFile, extension, codegenClasspath)
             }
         }
     }
@@ -43,11 +50,12 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
         project: Project,
         extension: ViaductFeatureAppExtension
     ): List<File> {
-        val testSS = project.extensions.getByType(JavaPluginExtension::class.java)
-            .sourceSets.getByName("test")
+        val ssName = extension.sourceSetName.get()
+        val targetSS = project.extensions.getByType(JavaPluginExtension::class.java)
+            .sourceSets.getByName(ssName)
 
         // allSource includes Kotlin sources when the Kotlin plugin is applied
-        val roots = (testSS.allSource.srcDirs + testSS.resources.srcDirs)
+        val roots = (targetSS.allSource.srcDirs + targetSS.resources.srcDirs)
             .filter { it.exists() }
             .toSet()
 
@@ -97,7 +105,8 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
     private fun configureFeatureApp(
         project: Project,
         featureAppFile: File,
-        extension: ViaductFeatureAppExtension
+        extension: ViaductFeatureAppExtension,
+        codegenClasspath: Configuration
     ) {
         // Extract a clean name for the FeatureApp
         val fileName = featureAppFile.nameWithoutExtension
@@ -135,14 +144,15 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
             }
         }
 
+        val ssName = extension.sourceSetName.get()
         val javaExtension = project.extensions.getByType<JavaPluginExtension>()
-        val testSourceSet = javaExtension.sourceSets.getByName("test")
+        val targetSourceSet = javaExtension.sourceSets.getByName(ssName)
 
-        val schemaTask = configureSchemaGeneration(project, featureAppName, schemaFile, packageName, extractionTask)
-        testSourceSet.java.srcDir(schemaTask.map { it.outputs.files })
+        val schemaTask = configureSchemaGeneration(project, featureAppName, schemaFile, packageName, extractionTask, codegenClasspath)
+        targetSourceSet.java.srcDir(schemaTask.map { it.outputs.files })
 
-        val tenantTask = configureTenantGeneration(project, featureAppName, schemaFile, packageName, schemaTask)
-        testSourceSet.java.srcDir(tenantTask.map { it.outputs.files })
+        val tenantTask = configureTenantGeneration(project, featureAppName, schemaFile, packageName, schemaTask, ssName, codegenClasspath)
+        targetSourceSet.java.srcDir(tenantTask.map { it.outputs.files })
     }
 
     /**
@@ -230,7 +240,8 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
         featureAppName: String,
         schemaFile: File,
         packageName: String,
-        extractionTask: TaskProvider<Task>
+        extractionTask: TaskProvider<Task>,
+        codegenClasspath: Configuration
     ): TaskProvider<ViaductFeatureAppSchemaTask> {
         return project.tasks.register<ViaductFeatureAppSchemaTask>(
             "generate${featureAppName.capitalize()}SchemaObjects"
@@ -243,11 +254,12 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
 
             this.schemaName.set("default")
             this.packageName.set(packageName)
-            this.buildFlags.putAll(ViaductPluginCommon.DEFAULT_BUILD_FLAGS)
+            this.buildFlags.putAll(BuildFlags.DEFAULT)
             this.workerNumber.set(0)
             this.workerCount.set(1)
             this.includeIneligibleForTesting.set(true)
             this.schemaFiles.from(schemaFile)
+            this.codegenClasspath.from(codegenClasspath)
             this.generatedSrcDir.set(project.layout.buildDirectory.dir("generated-sources/featureapp/schema/$featureAppName"))
         }
     }
@@ -260,16 +272,19 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
         featureAppName: String,
         schemaFile: File,
         packageName: String,
-        schemaTask: TaskProvider<ViaductFeatureAppSchemaTask>?
+        schemaTask: TaskProvider<ViaductFeatureAppSchemaTask>?,
+        sourceSetName: String,
+        codegenClasspath: Configuration
     ): TaskProvider<ViaductFeatureAppTenantTask> {
         val tenantName = packageName.split(".").last()
         val tenantPackageName = packageName.split(".").dropLast(1).joinToString(".")
 
         val schemaOutputDir = project.layout.buildDirectory.dir("generated-sources/featureapp/schema/$featureAppName").get()
 
-        // Add schema generated classes directory to the test classpath only (not implementation)
+        // Add schema generated classes directory to the target source set classpath only
         // This prevents the generated sources from leaking to consuming projects
-        project.dependencies.add("testImplementation", project.files(schemaOutputDir))
+        val implConfigName = "${sourceSetName}Implementation"
+        project.dependencies.add(implConfigName, project.files(schemaOutputDir))
 
         return project.tasks.register<ViaductFeatureAppTenantTask>(
             "generate${featureAppName.capitalize()}Tenant"
@@ -279,9 +294,10 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
 
             this.tenantName.set(tenantName)
             this.packageNamePrefix.set(tenantPackageName)
-            this.buildFlags.putAll(ViaductPluginCommon.DEFAULT_BUILD_FLAGS)
+            this.buildFlags.putAll(BuildFlags.DEFAULT)
             this.schemaFiles.from(schemaFile)
             this.tenantFromSourceNameRegex.set("(.*)")
+            this.codegenClasspath.from(codegenClasspath)
             this.modernModuleSrcDir.set(project.layout.buildDirectory.dir("generated-sources/featureapp/tenant/$featureAppName/modernmodule"))
             this.resolverSrcDir.set(project.layout.buildDirectory.dir("generated-sources/featureapp/tenant/$featureAppName/resolverbases"))
             this.metaInfSrcDir.set(project.layout.buildDirectory.dir("generated-sources/featureapp/tenant/$featureAppName/META-INF"))

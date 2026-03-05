@@ -4,9 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.viaduct.tenant.codegen)
-    implementation(libs.viaduct.shared.viaductschema)
-    implementation(libs.viaduct.gradle.plugins.common)
+    implementation(libs.viaduct.build.shared)
 
     // Do NOT leak the Kotlin Gradle Plugin at runtime
     compileOnly(libs.kotlin.gradle.plugin)

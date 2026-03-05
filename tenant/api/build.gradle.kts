@@ -6,13 +6,18 @@ plugins {
     id("conventions.kotlin-static-analysis")
     id("conventions.dokka")
     id("conventions.bcv-api")
-    id("jacoco-integration-base")
+    id("conventions.integration-test")
+    id("test-feature-app")
     id("me.champeau.jmh").version("0.7.3")
 }
 
 viaductPublishing {
     name.set("Tenant API")
     description.set("Viaduct Tenant API")
+}
+
+viaductFeatureApp {
+    sourceSetName.set("integrationTest")
 }
 
 dependencies {
@@ -46,6 +51,24 @@ dependencies {
     testImplementation(libs.graphql.java.extension)
     testImplementation(libs.io.mockk.jvm)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    /** Codegen classpath for test-feature-app worker isolation **/
+    viaductCodegenClasspath(libs.viaduct.tenant.codegen)
+
+    /** Integration test dependencies **/
+    integrationTestImplementation(testFixtures(libs.viaduct.tenant.runtime))
+    integrationTestImplementation(libs.viaduct.tenant.runtime)
+    integrationTestImplementation(libs.viaduct.shared.apiannotations)
+    integrationTestImplementation(libs.viaduct.shared.arbitrary)
+    integrationTestImplementation(libs.io.mockk.dsl)
+    integrationTestImplementation(libs.io.mockk.jvm)
+    integrationTestImplementation(libs.kotest.property.jvm)
+    integrationTestImplementation(libs.kotlinx.coroutines.core)
+    integrationTestImplementation(libs.kotlinx.coroutines.test)
+    integrationTestImplementation(libs.strikt.core)
+    integrationTestImplementation(testFixtures(libs.viaduct.shared.mapping))
+    integrationTestImplementation(testFixtures(libs.viaduct.shared.graphql))
+    integrationTestImplementation(testFixtures(libs.viaduct.engine.api))
 
     /** JMH dependencies **/
     jmh(libs.jmh.annotation.processor)
