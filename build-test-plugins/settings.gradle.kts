@@ -22,3 +22,13 @@ includeBuild("../build-logic") {
         substitute(module("com.airbnb.viaduct.build:shared")).using(project(":shared"))
     }
 }
+
+// Redirect build/ dirs if viaduct.distDir is set (see gradlew).
+// The .gradle/ dir is handled by a symlink created in gradlew.
+val distDir = providers.systemProperty("viaduct.distDir").orNull
+if (distDir != null) {
+    val dist = file(distDir).resolve("build-test-plugins")
+    gradle.allprojects {
+        layout.buildDirectory = dist.resolve("build/${project.path.replace(":", "/")}")
+    }
+}
