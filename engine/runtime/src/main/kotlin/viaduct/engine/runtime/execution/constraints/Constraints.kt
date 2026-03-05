@@ -1,4 +1,4 @@
-package viaduct.engine.runtime.execution
+package viaduct.engine.runtime.execution.constraints
 
 import graphql.Directives.IncludeDirective
 import graphql.Directives.SkipDirective
@@ -6,7 +6,9 @@ import graphql.execution.CoercedVariables
 import graphql.language.BooleanValue
 import graphql.language.Directive
 import graphql.language.VariableReference
+import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLObjectType
+import viaduct.engine.api.ViaductSchema
 import viaduct.utils.collections.MaskedSet
 
 /**
@@ -43,12 +45,15 @@ interface Constraints {
          * an unknown variable value, or a type condition that depends on an
          * unknown runtime type.
          */
-        Unsolved
+        Unsolved;
+
+        /** Convenience for checking if this resolution is [Drop] */
+        val isDrop: Boolean get() = this == Drop
     }
 
-    data class Ctx(val variables: CoercedVariables?, val parentTypes: MaskedSet<GraphQLObjectType>) {
+    data class Ctx(val variables: CoercedVariables?, val parentTypes: MaskedSet<GraphQLObjectType>?) {
         companion object {
-            val empty: Ctx = Ctx(null, MaskedSet.empty())
+            val empty: Ctx = Ctx(null, null)
         }
     }
 
@@ -57,6 +62,15 @@ interface Constraints {
 
     /** narrow the current type constraints to be bounded by the provided [possibleTypes] */
     fun narrowTypes(possibleTypes: MaskedSet<GraphQLObjectType>): Constraints
+
+    /** remove all type constraints, preserving any directive constraints */
+    fun clearTypes(): Constraints
+
+    /** narrow the current type constraints to the possible implementations of the provided [type] */
+    fun narrowToImpls(
+        type: GraphQLCompositeType,
+        schema: ViaductSchema
+    ): Constraints = narrowTypes(schema.rels.possibleObjectTypes(type))
 
     /** add a new constraint based on the provided [directive] */
     fun withDirective(directive: Directive): Constraints
@@ -125,6 +139,8 @@ interface Constraints {
 
             override fun narrowTypes(possibleTypes: MaskedSet<GraphQLObjectType>): Constraints = Impl(directives = emptyList(), possibleTypes = possibleTypes)
 
+            override fun clearTypes(): Constraints = this
+
             override fun withDirective(directive: Directive): Constraints = Constraints(listOf(directive), null)
         }
 
@@ -132,6 +148,8 @@ interface Constraints {
             override fun solve(ctx: Ctx): Resolution = Resolution.Drop
 
             override fun narrowTypes(possibleTypes: MaskedSet<GraphQLObjectType>): Constraints = this
+
+            override fun clearTypes(): Constraints = this
 
             override fun withDirective(directive: Directive): Constraints = this
         }
@@ -168,6 +186,9 @@ interface Constraints {
             private fun solveTypes(ctx: Ctx): Resolution {
                 // a null possibleTypes signals no type constraints
                 if (possibleTypes == null) return Resolution.Collect
+
+                // a null parentTypes signals no type bounds on the context — can't prune
+                if (ctx.parentTypes == null) return Resolution.Collect
 
                 if (ctx.parentTypes.isEmpty()) return Resolution.Collect
 
@@ -210,6 +231,8 @@ interface Constraints {
                         copy(possibleTypes = newPossibleTypes)
                     }
                 }
+
+            override fun clearTypes(): Constraints = if (possibleTypes == null) this else copy(possibleTypes = null)
 
             override fun withDirective(directive: Directive): Constraints {
                 val cd = ConditionalDirective.fromDirective(directive) ?: return this

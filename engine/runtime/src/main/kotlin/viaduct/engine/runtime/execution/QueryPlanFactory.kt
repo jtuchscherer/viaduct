@@ -33,6 +33,7 @@ import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.gj
 import viaduct.engine.api.select.ParsedSelectionsImpl
 import viaduct.engine.runtime.execution.QueryPlan.Field
+import viaduct.engine.runtime.execution.constraints.Constraints
 import viaduct.graphql.utils.asNamedElement
 import viaduct.graphql.utils.collectVariableDefinitions
 import viaduct.graphql.utils.collectVariableReferences
@@ -438,6 +439,11 @@ private class QueryPlanBuilder(
                 .withDirectives(sel.directives)
                 .narrowTypes(possibleParentTypes)
 
+            // solve(Ctx.empty) only catches directive-based drops (e.g. @skip(if: true) with a
+            // literal boolean). Type-based pruning is handled by narrowTypes() returning
+            // Constraints.Drop when the type intersection is empty — Ctx.empty has null parentTypes
+            // which short-circuits type resolution to Collect (same as the previous
+            // MaskedSet.empty() behaviour). Constraints.Drop.solve() always returns Drop regardless.
             if (fieldConstraints.solve(Constraints.Ctx.empty) == Constraints.Resolution.Drop) {
                 return state
             }
@@ -501,6 +507,7 @@ private class QueryPlanBuilder(
                     parameters.schema.rels.possibleObjectTypes(typeCondition)
                 )
 
+            // See processField: solve(Ctx.empty) catches directive-based drops only.
             if (newConstraints.solve(Constraints.Ctx.empty) == Constraints.Resolution.Drop) {
                 return state
             }
@@ -552,6 +559,7 @@ private class QueryPlanBuilder(
                     parameters.schema.rels.possibleObjectTypes(fragType)
                 )
 
+            // See processField: solve(Ctx.empty) catches directive-based drops only.
             if (newConstraints.solve(Constraints.Ctx.empty) == Constraints.Resolution.Drop) {
                 return state
             }
@@ -577,7 +585,8 @@ private class QueryPlanBuilder(
             parameters.schema.rels.possibleObjectTypes(typeCondition)
         )
 
-        // Check if this fragment combination is impossible
+        // Check if this fragment combination is impossible.
+        // See processField: solve(Ctx.empty) catches directive-based drops only.
         if (newConstraints.solve(Constraints.Ctx.empty) == Constraints.Resolution.Drop) {
             return state
         }

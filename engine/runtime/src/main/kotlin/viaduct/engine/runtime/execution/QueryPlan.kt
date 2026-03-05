@@ -17,6 +17,7 @@ import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.execution.constraints.Constraints
 
 /**
  * QueryPlan is an intermediate representation of a GraphQL selection set.

@@ -54,6 +54,7 @@ import viaduct.engine.runtime.execution.QueryPlan.Fragments
 import viaduct.engine.runtime.execution.QueryPlan.InlineFragment
 import viaduct.engine.runtime.execution.QueryPlan.Selection
 import viaduct.engine.runtime.execution.QueryPlan.SelectionSet
+import viaduct.engine.runtime.execution.constraints.Constraints
 
 class QueryPlanTest {
     @Test
