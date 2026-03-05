@@ -604,7 +604,6 @@ class ObjectBaseTest {
             )
         }
 
-    @Test
     fun `test various exceptions`(): Unit =
         runBlocking {
             val o11 = O1(
@@ -634,8 +633,8 @@ class ObjectBaseTest {
                     override val id get() = throw RuntimeException("foo")
                 }
             )
-            val e13 = assertThrows<ViaductFrameworkException> { o13.getId() }
-            assertInstanceOf(RuntimeException::class.java, e13.cause)
+            val e13 = runCatching { o13.getId() }.exceptionOrNull()!!
+            assertEquals("EngineObjectDataFetchException", e13::class.simpleName)
             assertEquals("foo", e13.cause!!.message)
         }
 
