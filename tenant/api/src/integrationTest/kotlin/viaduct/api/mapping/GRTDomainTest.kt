@@ -32,7 +32,7 @@ class GRTDomainTest : KotestPropertyBase() {
     private val executionContext = internalContext.executionContext
 
     private val domain = GRTDomain(executionContext)
-    private val validator = DomainValidator(domain, schema.schema, equalsFn = ::grtsEqual)
+    private val validator = DomainValidator(domain, schema.schema, equalsFn = ::grtsEqual, random = randomSource)
 
     @Test
     fun `GRTDomain roundtrips arbitrary IR`() {

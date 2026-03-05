@@ -27,7 +27,7 @@ class JsonDomainTest : KotestPropertyBase() {
     private val internal = MockInternalContext.create(schema, grtPackage = "viaduct.api.testschema")
     private val executionContext = MockExecutionContext(internal)
     private val domain = JsonDomain(executionContext)
-    private val validator = DomainValidator(domain, schema.schema)
+    private val validator = DomainValidator(domain, schema.schema, random = randomSource)
 
     private val GraphQLNamedType.isIntrospectionType: Boolean get() = name.startsWith("__")
 
