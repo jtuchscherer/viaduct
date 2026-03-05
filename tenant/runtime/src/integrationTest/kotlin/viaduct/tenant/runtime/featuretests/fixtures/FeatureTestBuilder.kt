@@ -1,3 +1,5 @@
+@file:OptIn(viaduct.apiannotations.ExperimentalApi::class)
+
 package viaduct.tenant.runtime.featuretests.fixtures
 
 import graphql.execution.instrumentation.Instrumentation
@@ -51,6 +53,11 @@ import viaduct.tenant.runtime.internal.VariablesProviderInfo
  *      .resolver("Query" to "bar") { Bar.newBuilder(it).value(2).build() }
  *      // or configure a simple resolver function that does not read or write GRTs
  *      .resolver("Query" to "baz") { mapOf("value" to 2) }
+ *      // or configure a connection resolver with pagination support
+ *      .connection("Query" to "items") { ctx ->
+ *          val (offset, limit) = ctx.arguments.toOffsetLimit()
+ *          mapOf("edges" to ..., "pageInfo" to ...)
+ *      }
  *      .build()
  * ```
  *
@@ -80,7 +87,7 @@ class FeatureTestBuilder(
 
     // These are all mutated by the resolver-setting functions below
     private val packageToResolverBases = mutableMapOf<String, Set<Class<*>>>()
-    private val resolverStubs = mutableMapOf<Coordinate, FieldUnbatchedResolverStub<*>>()
+    private val resolverStubs = mutableMapOf<Coordinate, FieldResolverStub>()
     private val nodeUnbatchedResolverStubs = mutableMapOf<String, NodeUnbatchedResolverStub>()
     private val nodeBatchResolverStubs = mutableMapOf<String, NodeBatchResolverStub>()
     private val fieldCheckerStubs = mutableMapOf<Coordinate, CheckerExecutorStub>()
@@ -193,6 +200,38 @@ class FeatureTestBuilder(
             resolveFn = resolveFn,
             resolverName = resolverName
         )
+
+    /**
+     * Configure a connection field resolver at the provided [coordinate].
+     *
+     * The provided [resolveFn] receives an [UntypedConnectionContext] which gives access to
+     * pagination arguments via [viaduct.api.context.ConnectionFieldExecutionContext.arguments].
+     * Use [viaduct.api.types.ConnectionArguments.toOffsetLimit] to compute the page offset/limit.
+     *
+     * When using fake GRTs ([useFakeGRTs] = true), the arguments are automatically mapped to
+     * [viaduct.tenant.runtime.FakeConnectionArguments] providing [first] and [after] support.
+     */
+    fun connection(
+        coordinate: Coordinate,
+        resolverName: String? = null,
+        resolveFn: suspend (ctx: UntypedConnectionContext) -> Any?,
+    ): FeatureTestBuilder {
+        // Register coordinate with FakeReflectionLoader so it returns FakeConnectionArguments for this field
+        (reflectionLoaderForFeatureTestBootstrapper as? FakeReflectionLoader)
+            ?.connectionCoordinates?.add(coordinate)
+
+        resolverStubs[coordinate] = ConnectionFieldUnbatchedResolverStub<UntypedConnectionContext>(
+            coord = coordinate,
+            variables = emptyList(),
+            resolveFn = { ctx ->
+                @Suppress("UNCHECKED_CAST")
+                resolveFn(ctx as UntypedConnectionContext)
+            },
+            variablesProvider = null,
+            resolverName = resolverName,
+        )
+        return this
+    }
 
     /**
      * Registers a GraphQL field resolver with no arguments to be run on a test Viaduct Modern engine.

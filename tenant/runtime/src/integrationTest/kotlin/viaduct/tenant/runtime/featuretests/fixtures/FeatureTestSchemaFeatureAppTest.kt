@@ -20,6 +20,10 @@ extend type Query {
   boo: Boo @resolver
   enumField: EnumType @resolver
   idField: ID @idOf(type: "Baz")
+  items(first: Int, after: String): ItemsConnection @resolver
+  itemsFromSlice(first: Int, after: String): ItemsConnection @resolver
+  itemsFromEdges(first: Int, after: String, last: Int, before: String): ItemsConnection @resolver
+  itemsBackward(last: Int, before: String): ItemsConnection @resolver
 }
 
 extend type Mutation {
@@ -57,6 +61,20 @@ type Boo {
 }
 
 enum EnumType { A, B }
+
+type ItemsConnection @connection {
+  edges: [ItemEdge]
+  pageInfo: PageInfo!
+}
+
+type ItemEdge @edge{
+  cursor: String!
+  node: Item
+}
+
+type Item {
+  name: String
+}
 
 #END_SCHEMA
     """.trimIndent()

@@ -1,10 +1,15 @@
+@file:OptIn(viaduct.apiannotations.ExperimentalApi::class)
+
 package viaduct.tenant.runtime.featuretests.fixtures
 
+import viaduct.api.context.ConnectionFieldExecutionContext
 import viaduct.api.context.FieldExecutionContext
 import viaduct.api.context.MutationFieldExecutionContext
 import viaduct.api.context.NodeExecutionContext
 import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
+import viaduct.api.types.Connection
+import viaduct.api.types.ConnectionArguments
 import viaduct.api.types.Mutation
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
@@ -18,3 +23,6 @@ typealias UntypedMutationFieldContext = MutationFieldExecutionContext<Query, Mut
 
 /** An alias for [NodeExecutionContext] that allows a node resolver to read non-GRT data and write either GRT or non-GRT data */
 typealias UntypedNodeContext = NodeExecutionContext<NodeObject>
+
+/** An alias for [ConnectionFieldExecutionContext] that allows a connection resolver to access pagination arguments */
+typealias UntypedConnectionContext = ConnectionFieldExecutionContext<Object, Query, ConnectionArguments, Connection<*, *>>

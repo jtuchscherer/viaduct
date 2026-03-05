@@ -1,3 +1,5 @@
+@file:OptIn(viaduct.apiannotations.ExperimentalApi::class)
+
 package viaduct.tenant.runtime.featuretests.fixtures
 
 import graphql.schema.GraphQLSchema
@@ -7,6 +9,7 @@ import viaduct.api.NodeResolverBase
 import viaduct.api.ResolverBase
 import viaduct.api.VariablesProvider
 import viaduct.api.context.BaseFieldExecutionContext
+import viaduct.api.context.ConnectionFieldExecutionContext
 import viaduct.api.context.FieldExecutionContext
 import viaduct.api.context.VariablesProviderContext
 import viaduct.api.internal.DefaultGRTConvFactory
@@ -14,6 +17,8 @@ import viaduct.api.internal.InternalContext
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.types.Arguments
 import viaduct.api.types.CompositeOutput
+import viaduct.api.types.Connection
+import viaduct.api.types.ConnectionArguments
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
@@ -32,40 +37,64 @@ import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.MockCheckerErrorResult
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.RequiredSelectionSetFactory
+import viaduct.tenant.runtime.context.ConnectionFieldExecutionContextImpl
+import viaduct.tenant.runtime.context.FieldExecutionContextImpl
 import viaduct.tenant.runtime.context.factory.FieldExecutionContextFactory
 import viaduct.tenant.runtime.context.factory.NodeExecutionContextFactory
 import viaduct.tenant.runtime.internal.VariablesProviderInfo
 
-@Suppress("UNUSED_PARAMETER", "UNCHECKED_CAST")
-@OptIn(InternalApi::class)
-class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
-    val objectSelections: ParsedSelections? = null,
-    val querySelections: ParsedSelections? = null,
-    val coord: Coordinate,
-    val variables: List<SelectionSetVariable>,
-    val resolveFn: (suspend (ctx: Any) -> Any?),
-    val variablesProvider: VariablesProviderInfo?,
+/** Common interface for field resolver stubs (regular and connection) used by the bootstrapper. */
+interface FieldResolverStub {
+    val coord: Coordinate
     val resolverName: String?
-) : ResolverBase<Any?> {
-    // Nested Context class required by FieldExecutionContextFactory
-    class Context(ctx: FieldExecutionContext<*, *, *, *>) :
-        FieldExecutionContext<Object, Query, Arguments, CompositeOutput> by (ctx as FieldExecutionContext<Object, Query, Arguments, CompositeOutput>),
-        InternalContext by (ctx as InternalContext)
+    val resolver: Provider<out ResolverBase<*>>
 
     suspend fun resolve(
         self: Any,
         ctx: Any
+    ): Any?
+
+    fun resolverFactory(
+        schema: ViaductSchema,
+        reflectionLoader: ReflectionLoader
+    ): FieldExecutionContextFactory
+
+    fun requiredSelectionSets(
+        coord: Coordinate,
+        schema: GraphQLSchema,
+        reflectionLoader: ReflectionLoader
+    ): Pair<RequiredSelectionSet?, RequiredSelectionSet?>
+}
+
+/**
+ * Shared implementation for field resolver stubs. Subclasses only need to define a nested
+ * `Context` class whose type signature tells [FieldExecutionContextFactory.of] whether to
+ * create a [FieldExecutionContextImpl] or [ConnectionFieldExecutionContextImpl].
+ */
+@Suppress("UNUSED_PARAMETER", "UNCHECKED_CAST")
+@OptIn(InternalApi::class)
+abstract class AbstractFieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
+    val objectSelections: ParsedSelections? = null,
+    val querySelections: ParsedSelections? = null,
+    override val coord: Coordinate,
+    val variables: List<SelectionSetVariable>,
+    val resolveFn: (suspend (ctx: Any) -> Any?),
+    val variablesProvider: VariablesProviderInfo?,
+    override val resolverName: String?
+) : ResolverBase<Any?>, FieldResolverStub {
+    override suspend fun resolve(
+        self: Any,
+        ctx: Any
     ) = resolveFn(ctx)
 
-    val resolver: Provider<FieldUnbatchedResolverStub<Ctx>> = Provider { this }
+    override val resolver: Provider<out ResolverBase<*>> = Provider { this }
 
-    // Create the factory when schema is available (called from FeatureTestTenantModuleBootstrapper)
-    fun resolverFactory(
+    override fun resolverFactory(
         schema: ViaductSchema,
         reflectionLoader: ReflectionLoader
     ): FieldExecutionContextFactory =
         FieldExecutionContextFactory.of(
-            resolverBaseClass = FieldUnbatchedResolverStub::class.java,
+            resolverBaseClass = this::class.java,
             globalIDCodec = GlobalIDCodecDefault,
             reflectionLoader = reflectionLoader,
             schema = schema,
@@ -74,7 +103,7 @@ class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
             grtConvFactory = DefaultGRTConvFactory,
         )
 
-    fun requiredSelectionSets(
+    override fun requiredSelectionSets(
         coord: Coordinate,
         schema: GraphQLSchema,
         reflectionLoader: ReflectionLoader
@@ -91,6 +120,22 @@ class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
             attribution = resolverName?.let { ExecutionAttribution.fromResolver(it) },
         )
     }
+}
+
+/** Resolver stub for regular (non-connection) fields. */
+@OptIn(InternalApi::class)
+class FieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
+    objectSelections: ParsedSelections? = null,
+    querySelections: ParsedSelections? = null,
+    coord: Coordinate,
+    variables: List<SelectionSetVariable>,
+    resolveFn: (suspend (ctx: Any) -> Any?),
+    variablesProvider: VariablesProviderInfo?,
+    resolverName: String?
+) : AbstractFieldUnbatchedResolverStub<Ctx>(objectSelections, querySelections, coord, variables, resolveFn, variablesProvider, resolverName) {
+    class Context(ctx: FieldExecutionContext<*, *, *, *>) :
+        FieldExecutionContext<Object, Query, Arguments, CompositeOutput> by (ctx as FieldExecutionContext<Object, Query, Arguments, CompositeOutput>),
+        InternalContext by (ctx as InternalContext)
 }
 
 @OptIn(InternalApi::class)
@@ -121,6 +166,26 @@ class NodeBatchResolverStub(
     ) = batchResolveFn(ctxs)
 
     val resolver: Provider<NodeResolverBase<*>> = Provider { this }
+}
+
+/**
+ * Resolver stub for connection fields. The nested [Context] class implements
+ * [ConnectionFieldExecutionContext] so that [FieldExecutionContextFactory] creates
+ * a [ConnectionFieldExecutionContextImpl] instead of a plain [FieldExecutionContextImpl].
+ */
+@OptIn(InternalApi::class)
+class ConnectionFieldUnbatchedResolverStub<Ctx : BaseFieldExecutionContext<*, *, *>>(
+    objectSelections: ParsedSelections? = null,
+    querySelections: ParsedSelections? = null,
+    coord: Coordinate,
+    variables: List<SelectionSetVariable>,
+    resolveFn: (suspend (ctx: Any) -> Any?),
+    variablesProvider: VariablesProviderInfo?,
+    resolverName: String?
+) : AbstractFieldUnbatchedResolverStub<Ctx>(objectSelections, querySelections, coord, variables, resolveFn, variablesProvider, resolverName) {
+    class Context(ctx: ConnectionFieldExecutionContext<Object, Query, ConnectionArguments, Connection<*, *>>) :
+        ConnectionFieldExecutionContext<Object, Query, ConnectionArguments, Connection<*, *>> by ctx,
+        InternalContext by (ctx as InternalContext)
 }
 
 class CheckerExecutorStub(
@@ -193,6 +258,7 @@ inline fun <reified T> Arguments.get(name: String): T {
             @Suppress("UNCHECKED_CAST")
             requireNotNull(this.inputData[name] as? T) { "$name is unset or null." }
         }
+
         else -> throw IllegalStateException("Unexpected Arguments type: ${this::class}")
     }
 }
@@ -209,6 +275,7 @@ inline fun <reified T> Arguments.tryGet(name: String): T? {
             @Suppress("UNCHECKED_CAST")
             this.inputData[name] as? T
         }
+
         else -> throw IllegalStateException("Unexpected Arguments type: ${this::class}")
     }
 }

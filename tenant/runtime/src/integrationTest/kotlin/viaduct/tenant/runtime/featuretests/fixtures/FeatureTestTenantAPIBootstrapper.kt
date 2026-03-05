@@ -16,7 +16,7 @@ import viaduct.tenant.runtime.execution.NodeUnbatchedResolverExecutorImpl
 
 /** Intended for testing only - the implementation is naive and not scalable. */
 class FeatureTestTenantAPIBootstrapperBuilder(
-    val fieldUnbatchedResolverStubs: Map<Coordinate, FieldUnbatchedResolverStub<*>>,
+    val fieldUnbatchedResolverStubs: Map<Coordinate, FieldResolverStub>,
     val nodeUnbatchedResolverStubs: Map<String, NodeUnbatchedResolverStub>,
     val nodeBatchResolverStubs: Map<String, NodeBatchResolverStub>,
     val reflectionLoader: ReflectionLoader,
@@ -39,7 +39,7 @@ class FeatureTestTenantAPIBootstrapperBuilder(
 /** Intended for testing only - the implementation is naive and not scalable. */
 @OptIn(InternalApi::class)
 class FeatureTestTenantModuleBootstrapper(
-    val fieldUnbatchedResolverStubs: Map<Coordinate, FieldUnbatchedResolverStub<*>>,
+    val fieldUnbatchedResolverStubs: Map<Coordinate, FieldResolverStub>,
     val nodeUnbatchedResolverStubs: Map<String, NodeUnbatchedResolverStub>,
     val nodeBatchResolverExecutorStubs: Map<String, NodeBatchResolverStub>,
     val reflectionLoader: ReflectionLoader,
