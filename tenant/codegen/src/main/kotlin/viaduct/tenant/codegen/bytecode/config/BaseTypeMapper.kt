@@ -21,8 +21,8 @@ interface BaseTypeMapper {
     fun mapBaseType(
         type: ViaductSchema.TypeExpr<*>,
         pkg: KmName,
-        field: ViaductSchema.HasDefaultValue? = null,
-        isInput: Boolean = false,
+        field: ViaductSchema.HasDefaultValue?,
+        isInput: Boolean,
     ): KmType?
 
     /**
@@ -148,7 +148,7 @@ class ViaductBaseTypeMapper(
     internal fun ViaductSchema.TypeExpr<*>.idKmType(
         pkg: KmName,
         field: ViaductSchema.HasDefaultValue?,
-        isInput: Boolean = false,
+        isInput: Boolean,
     ): KmType {
         val idTypeName = this@ViaductBaseTypeMapper.getGlobalIdType().asKmName // The "GlobalID" in GlobalID<Foo>
         val grtTypeName = field?.grtNameForIdParam() // The "Foo" in GlobalID<Foo>

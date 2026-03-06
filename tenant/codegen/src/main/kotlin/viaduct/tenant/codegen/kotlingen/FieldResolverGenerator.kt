@@ -76,8 +76,8 @@ internal fun genResolver(
     tenantPackage: String,
     grtPackage: String,
     baseTypeMapper: viaduct.tenant.codegen.bytecode.config.BaseTypeMapper,
-    queryTypeName: String? = "Query",
-    mutationTypeName: String? = "Mutation"
+    queryTypeName: String?,
+    mutationTypeName: String?
 ): STContents = STContents(stGroup, ResolversModelImpl(tenantPackage, grtPackage, typeName, fields, baseTypeMapper, queryTypeName, mutationTypeName))
 
 private interface ResolversModel {

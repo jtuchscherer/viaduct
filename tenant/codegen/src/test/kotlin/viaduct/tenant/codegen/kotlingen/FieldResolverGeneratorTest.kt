@@ -26,7 +26,7 @@ class FieldResolverGeneratorTest {
     ): String {
         val schema = mkSchema(sdl)
         val type = schema.types[typeName] as ViaductSchema.Record
-        val contents = genResolver(typeName, type.fields, "pkg.tenant", "viaduct.api.grts", ViaductBaseTypeMapper(schema))
+        val contents = genResolver(typeName, type.fields, "pkg.tenant", "viaduct.api.grts", ViaductBaseTypeMapper(schema), "Query", "Mutation")
         return contents.toString()
     }
 
@@ -159,7 +159,8 @@ class FieldResolverGeneratorTest {
             "pkg.tenant",
             "viaduct.api.grts",
             ViaductBaseTypeMapper(schema),
-            queryTypeName = "AppQuery"
+            queryTypeName = "AppQuery",
+            "Mutation"
         ).toString()
         assertTrue(
             contentsWithCorrectName.contains("viaduct.api.grts.AppQuery"),
@@ -176,7 +177,9 @@ class FieldResolverGeneratorTest {
             type.fields,
             "pkg.tenant",
             "viaduct.api.grts",
-            ViaductBaseTypeMapper(schema)
+            ViaductBaseTypeMapper(schema),
+            "Query",
+            "Mutation"
         ).toString()
         assertTrue(
             contentsWithDefaultName.contains("viaduct.api.grts.Query"),

@@ -101,14 +101,14 @@ fun ViaductSchema.TypeExpr<*>.kmType(
 fun ViaductSchema.HasDefaultValue.baseTypeKmType(
     pkg: KmName,
     baseTypeMapper: BaseTypeMapper
-): KmType = this.type.baseTypeKmType(pkg, baseTypeMapper, this)
+): KmType = this.type.baseTypeKmType(pkg, baseTypeMapper, this, false)
 
 /** return a KmType describing this TypeExpr's base (unwrapped) type */
 fun ViaductSchema.TypeExpr<*>.baseTypeKmType(
     pkg: KmName,
     baseTypeMapper: BaseTypeMapper,
     field: ViaductSchema.HasDefaultValue?,
-    isInput: Boolean = false,
+    isInput: Boolean,
 ): KmType {
     // Check if mapper wants to handle this type
     baseTypeMapper.mapBaseType(this, pkg, field, isInput)?.let { return it }
