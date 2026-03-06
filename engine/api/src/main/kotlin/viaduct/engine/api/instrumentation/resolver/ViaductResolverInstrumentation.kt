@@ -1,5 +1,6 @@
 package viaduct.engine.api.instrumentation.resolver
 
+import graphql.execution.ResultPath
 import viaduct.engine.api.CheckerMetadata
 import viaduct.engine.api.ResolverMetadata
 
@@ -80,7 +81,8 @@ interface ViaductResolverInstrumentation {
 
     data class InstrumentFetchSelectionParameters(
         val selection: String,
-        val parentTypeName: String? = null
+        val parentTypeName: String? = null,
+        val resultPath: ResultPath? = null
     )
 
     /**

@@ -1,5 +1,6 @@
 package viaduct.engine.runtime
 
+import graphql.execution.ResultPath
 import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLTypeUtil
 import kotlin.coroutines.coroutineContext
@@ -43,6 +44,7 @@ object SyncEngineObjectDataFactory {
         objectEngineResult: ObjectEngineResult,
         errorMessage: String,
         selectionSet: EngineSelectionSet? = null,
+        parentPath: ResultPath? = null,
     ): SyncProxyEngineObjectData {
         if (selectionSet == null) {
             return SyncProxyEngineObjectData(
@@ -56,7 +58,7 @@ object SyncEngineObjectDataFactory {
             "Expected ObjectEngineResultImpl, got ${objectEngineResult::class.qualifiedName}"
         }
 
-        return resolveImpl(objectEngineResult, errorMessage, selectionSet)
+        return resolveImpl(objectEngineResult, errorMessage, selectionSet, parentPath)
     }
 
     /**
@@ -72,6 +74,7 @@ object SyncEngineObjectDataFactory {
         objectEngineResult: ObjectEngineResultImpl,
         errorMessage: String,
         selectionSet: EngineSelectionSet,
+        parentPath: ResultPath? = null,
     ): SyncProxyEngineObjectData {
         val data = mutableMapOf<String, Any?>()
         val instrumentationCtx = coroutineContext[ResolverInstrumentationContext]
@@ -82,6 +85,7 @@ object SyncEngineObjectDataFactory {
 
         for (selection in selections) {
             val selectionName = selection.selectionName
+            val selectionPath = parentPath?.segment(selectionName)
 
             val engineSelection = selectionSet.resolveSelection(
                 objectEngineResult.type.name,
@@ -99,15 +103,16 @@ object SyncEngineObjectDataFactory {
             data[selectionName] = if (instrumentationCtx != null) {
                 val params = ViaductResolverInstrumentation.InstrumentFetchSelectionParameters(
                     selection = selectionName,
-                    parentTypeName = objectEngineResult.type.name
+                    parentTypeName = objectEngineResult.type.name,
+                    resultPath = selectionPath
                 )
                 instrumentationCtx.instrumentation.instrumentFetchSelection(
-                    FetchFunction { unwrap(cell, subselections, errorMessage) },
+                    FetchFunction { unwrap(cell, subselections, errorMessage, selectionPath) },
                     params,
                     instrumentationCtx.state
                 ).fetch()
             } else {
-                unwrap(cell, subselections, errorMessage)
+                unwrap(cell, subselections, errorMessage, selectionPath)
             }
         }
 
@@ -136,6 +141,7 @@ object SyncEngineObjectDataFactory {
         value: Any?,
         subselections: EngineSelectionSet?,
         errorMessage: String,
+        parentPath: ResultPath? = null,
     ): Any? {
         return when (value) {
             null -> null
@@ -143,8 +149,8 @@ object SyncEngineObjectDataFactory {
             // Lists (should) always contain `Cell`s, so the recursion here goes
             // to the `Cell` case. If any element has an error, return that error
             // as the value for the whole list (matching ProxyEngineObjectData behavior).
-            is List<*> -> value.map {
-                val v = unwrap(it, subselections, errorMessage)
+            is List<*> -> value.mapIndexed { index, it ->
+                val v = unwrap(it, subselections, errorMessage, parentPath?.segment(index))
                 if (v is Exception) return v // non-local return from unwrap
                 v
             }
@@ -156,14 +162,14 @@ object SyncEngineObjectDataFactory {
                 val nestedSelections = requireNotNull(subselections) {
                     "Expected subselections for nested ObjectEngineResultImpl"
                 }
-                resolveImpl(value, errorMessage, nestedSelections)
+                resolveImpl(value, errorMessage, nestedSelections, parentPath)
             }
 
             is FieldResolutionResult -> {
                 if (value.errors.isNotEmpty()) {
                     return FieldErrorsException(value.errors) // Store exception, don't throw
                 }
-                unwrap(value.engineResult, subselections, errorMessage)
+                unwrap(value.engineResult, subselections, errorMessage, parentPath)
             }
 
             is Cell -> {
@@ -173,7 +179,7 @@ object SyncEngineObjectDataFactory {
                 if (checkerException != null) {
                     return checkerException // Store extracted exception, don't throw
                 }
-                unwrap(cellRaw, subselections, errorMessage)
+                unwrap(cellRaw, subselections, errorMessage, parentPath)
             }
 
             // The `else` case is for non-null simple types (scalars

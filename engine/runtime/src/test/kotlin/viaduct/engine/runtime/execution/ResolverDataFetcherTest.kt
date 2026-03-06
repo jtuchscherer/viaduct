@@ -5,6 +5,7 @@ package viaduct.engine.runtime.execution
 import com.airbnb.viaduct.errors.ViaductPermissionDeniedException
 import graphql.GraphQLContext
 import graphql.execution.ExecutionStepInfo
+import graphql.execution.ResultPath
 import graphql.execution.values.InputInterceptor
 import graphql.execution.values.legacycoercing.LegacyCoercingInputInterceptor
 import graphql.language.OperationDefinition
@@ -91,6 +92,7 @@ class ResolverDataFetcherTest {
         val executionStepInfo: ExecutionStepInfo? = ExecutionStepInfo.newExecutionStepInfo()
             .type(schema.schema.getTypeAs("String"))
             .fieldContainer(testTypeObject)
+            .path(ResultPath.parse("/$testField"))
             .build()
         var resolverRan = false
         var lastReceivedObjectValue: Any? = null

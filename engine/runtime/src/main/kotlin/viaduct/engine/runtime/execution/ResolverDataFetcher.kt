@@ -1,5 +1,6 @@
 package viaduct.engine.runtime.execution
 
+import graphql.execution.ResultPath
 import graphql.language.OperationDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -145,7 +146,8 @@ class ResolverDataFetcher(
             SyncEngineObjectDataFactory.resolve(
                 engineResults.parentResult,
                 objectErrorMessage,
-                objectSelectionSet
+                objectSelectionSet,
+                parentPath = environment.executionStepInfo.path.parent
             )
         }
 
@@ -172,7 +174,8 @@ class ResolverDataFetcher(
             SyncEngineObjectDataFactory.resolve(
                 engineResults.queryResult,
                 queryErrorMessage,
-                querySelectionSet
+                querySelectionSet,
+                parentPath = ResultPath.rootPath()
             )
         }
 
