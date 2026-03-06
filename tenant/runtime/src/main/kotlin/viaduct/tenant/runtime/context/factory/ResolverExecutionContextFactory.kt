@@ -138,6 +138,8 @@ class FieldExecutionContextFactory internal constructor(
     private val objectCls: KClass<Object>,
     private val queryCls: KClass<Query>,
     private val grtConvFactory: GRTConvFactory,
+    private val graphqlTypeName: String? = null,
+    private val graphqlFieldName: String? = null,
 ) : VariablesProviderContextFactory,
     ResolverExecutionContextFactoryBase<CompositeOutput>(
         resolverBaseClass,
@@ -164,7 +166,7 @@ class FieldExecutionContextFactory internal constructor(
                 engineExecutionContextWrapper,
                 this.toSelectionSet(engineSelections) as SelectionSet<Connection<*, *>>,
                 requestContext,
-                rawArguments.toInputLikeGRT(internalContext, argumentsCls) as ConnectionArguments,
+                rawArguments.toInputLikeGRT(internalContext, argumentsCls, graphqlTypeName, graphqlFieldName) as ConnectionArguments,
                 rawObjectValue.toObjectGRT(internalContext, objectCls),
                 rawQueryValue.toObjectGRT(internalContext, queryCls),
                 syncObjectValueGetter,
@@ -178,7 +180,7 @@ class FieldExecutionContextFactory internal constructor(
                 engineExecutionContextWrapper,
                 this.toSelectionSet(engineSelections),
                 requestContext,
-                rawArguments.toInputLikeGRT(internalContext, argumentsCls),
+                rawArguments.toInputLikeGRT(internalContext, argumentsCls, graphqlTypeName, graphqlFieldName),
                 rawObjectValue.toObjectGRT(internalContext, objectCls),
                 rawQueryValue.toObjectGRT(internalContext, queryCls),
                 syncObjectValueGetter,
@@ -192,7 +194,7 @@ class FieldExecutionContextFactory internal constructor(
                 engineExecutionContextWrapper,
                 this.toSelectionSet(engineSelections),
                 requestContext,
-                rawArguments.toInputLikeGRT(internalContext, argumentsCls),
+                rawArguments.toInputLikeGRT(internalContext, argumentsCls, graphqlTypeName, graphqlFieldName),
                 rawQueryValue.toObjectGRT(internalContext, queryCls),
                 syncQueryValueGetter,
                 queryCls,
@@ -211,7 +213,7 @@ class FieldExecutionContextFactory internal constructor(
         rawArguments: Map<String, Any?>
     ): VariablesProviderContext<Arguments> {
         val ic = InternalContextImpl(engineExecutionContext.fullSchema, globalIDCodec, reflectionLoader, grtConvFactory)
-        return VariablesProviderContextImpl(ic, requestContext, rawArguments.toInputLikeGRT(ic, argumentsCls))
+        return VariablesProviderContextImpl(ic, requestContext, rawArguments.toInputLikeGRT(ic, argumentsCls, graphqlTypeName, graphqlFieldName))
     }
 
     @VisibleForTest
@@ -287,6 +289,8 @@ class FieldExecutionContextFactory internal constructor(
                 objectCls,
                 queryCls,
                 grtConvFactory,
+                graphqlTypeName = typeName,
+                graphqlFieldName = fieldName,
             )
         }
     }

@@ -121,6 +121,10 @@ class ApiTestSchemaFeatureAppTest {
     |    int: Int
     |    nested: RecursiveObject
     | }
+    |
+    | type Under_Score {
+    |   someField(stringArg: String!, intArg: Int): String
+    | }
 #END_SCHEMA
     """
 }

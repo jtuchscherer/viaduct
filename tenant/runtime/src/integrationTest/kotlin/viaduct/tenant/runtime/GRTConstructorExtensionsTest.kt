@@ -22,6 +22,7 @@ import viaduct.tenant.runtime.globalid.CreateUserInput
 import viaduct.tenant.runtime.globalid.GlobalIdFeatureAppTest
 import viaduct.tenant.runtime.globalid.Mutation_CreateUser_Arguments
 import viaduct.tenant.runtime.globalid.Query_User_Arguments
+import viaduct.tenant.runtime.globalid.Under_Score_Type_SomeField_Arguments
 import viaduct.tenant.runtime.globalid.User
 
 // The unit-tests in GRTConstructorExtensions test its contents pretty comprehensively.
@@ -96,7 +97,7 @@ class GRTConstructorExtensionsTest {
                 "email" to "john@example.com"
             )
         )
-        val args = data.toInputLikeGRT(internalContext, Mutation_CreateUser_Arguments::class)
+        val args = data.toInputLikeGRT(internalContext, Mutation_CreateUser_Arguments::class, "Mutation", "createUser")
         assertInstanceOf(Mutation_CreateUser_Arguments::class.java, args)
     }
 
@@ -105,8 +106,18 @@ class GRTConstructorExtensionsTest {
         val data = mapOf(
             "id" to User.Reflection.testGlobalId("user123")
         )
-        val args = data.toInputLikeGRT(internalContext, Query_User_Arguments::class)
+        val args = data.toInputLikeGRT(internalContext, Query_User_Arguments::class, "Query", "user")
         assertInstanceOf(Query_User_Arguments::class.java, args)
+    }
+
+    @Test
+    fun `toInputLikeGRT - success with underscore type name (Under_Score_Type_SomeField_Arguments)`() {
+        val data = mapOf(
+            "stringArg" to "hello",
+            "intArg" to 42
+        )
+        val args = data.toInputLikeGRT(internalContext, Under_Score_Type_SomeField_Arguments::class, "Under_Score_Type", "someField")
+        assertInstanceOf(Under_Score_Type_SomeField_Arguments::class.java, args)
     }
 
     @Test

@@ -46,6 +46,10 @@ class GlobalIdFeatureAppTest : FeatureAppTestBase() {
           id: ID!
           name: String!
         }
+
+        type Under_Score_Type {
+          someField(stringArg: String!, intArg: Int): String
+        }
         #END_SCHEMA
         """
 }

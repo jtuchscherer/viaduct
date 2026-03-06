@@ -43,7 +43,8 @@ internal fun GRTClassFilesBuilder.fieldArgumentsInputGen(field: ViaductSchema.Fi
         cfg.argumentTypeName(field).kmFQN(pkg),
         field.args,
         cfg.ARGUMENTS_GRT.asKmName,
-        overrideFieldNames = connectionArgsInfo.overrideFieldNames
+        overrideFieldNames = connectionArgsInfo.overrideFieldNames,
+        containingField = field,
     )
 
     // If the field returns a Connection type, add appropriate ConnectionArguments interface
@@ -54,7 +55,8 @@ private fun GRTClassFilesBuilder.makeInputClass(
     className: KmName,
     fields: Iterable<ViaductSchema.HasDefaultValue>,
     taggingInterface: KmName,
-    overrideFieldNames: Set<String> = emptySet()
+    overrideFieldNames: Set<String> = emptySet(),
+    containingField: ViaductSchema.Field? = null,
 ): CustomClassBuilder {
     val builder = kmClassFilesBuilder.customClassBuilder(
         ClassKind.CLASS,
@@ -62,7 +64,7 @@ private fun GRTClassFilesBuilder.makeInputClass(
     )
     InputClassGen(this, fields, builder, overrideFieldNames)
     builder.addSupertype(taggingInterface.asType())
-    this.inputBuilderGen(fields, builder, taggingInterface)
+    this.inputBuilderGen(fields, builder, taggingInterface, containingField)
 
     return builder
 }

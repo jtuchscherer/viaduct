@@ -158,5 +158,7 @@ private fun buildGraphqlInputObjectType(
 ): GraphQLInputObjectType =
     InputTypeFactory.argumentsInputType(
         cfg.argumentTypeName(field.containingDef.name, field.name),
+        field.containingDef.name,
+        field.name,
         schema
     )

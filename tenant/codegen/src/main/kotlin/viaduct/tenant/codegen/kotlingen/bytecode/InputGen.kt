@@ -35,13 +35,14 @@ fun KotlinGRTFilesBuilder.inputKotlinGen(
             desc.def?.let(::reflectedTypeGen),
             baseTypeMapper,
             connectionArgumentsSupertype = connectionInfo.interfaceToAdd?.let { ", ${it.asJavaName}" } ?: "",
-            overrideFieldNames = connectionInfo.overrideFieldNames
+            overrideFieldNames = connectionInfo.overrideFieldNames,
+            containingField = desc.containingField,
         )
     )
 }
 
 private interface InputModel {
-    /** Packege into which code will be generated. */
+    /** Package into which code will be generated. */
     val pkg: String
 
     /** Name of the class to be generated. */
@@ -53,8 +54,8 @@ private interface InputModel {
     /** Tagging interface for this class, either Input or Arguments */
     val taggingInterface: String
 
-    /** InputTypeFactory method name (argumentsInputType or inputInputType) */
-    val inputTypeMethod: String
+    /** Complete InputTypeFactory call expression for the Builder constructor */
+    val inputTypeCall: String
 
     /** A rendered template string that describes this types Reflection object */
     val reflection: String
@@ -125,7 +126,7 @@ private val inputSTGroup =
 
             constructor(context: ExecutionContext): this(
                 context.internal,
-                InputTypeFactory.<mdl.inputTypeMethod>("<mdl.className>", context.internal.schema),
+                <mdl.inputTypeCall>,
                 mutableMapOf()
             )
 
@@ -153,11 +154,17 @@ private class InputModelImpl(
     reflectedType: STContents?,
     baseTypeMapper: viaduct.tenant.codegen.bytecode.config.BaseTypeMapper,
     override val connectionArgumentsSupertype: String = "",
-    overrideFieldNames: Set<String> = emptySet()
+    overrideFieldNames: Set<String> = emptySet(),
+    containingField: ViaductSchema.Field? = null,
 ) : InputModel {
     override val fields: List<InputModel.FieldModel> = fieldDefs.map {
         InputModel.FieldModel(pkg, it, baseTypeMapper, isOverride = it.name in overrideFieldNames)
     }
     override val reflection: String = reflectedType?.toString() ?: ""
-    override val inputTypeMethod: String = InputTypeFactoryConfig.getFactoryMethodName(taggingInterface)
+    private val inputTypeMethod: String = InputTypeFactoryConfig.getFactoryMethodName(taggingInterface)
+    override val inputTypeCall: String = if (containingField != null) {
+        """InputTypeFactory.argumentsInputType("$className", "${containingField.containingDef.name}", "${containingField.name}", context.internal.schema)"""
+    } else {
+        """InputTypeFactory.$inputTypeMethod("$className", context.internal.schema)"""
+    }
 }
