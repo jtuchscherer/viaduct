@@ -10,8 +10,6 @@ import viaduct.gradle.common.ViaductTenantTaskBase
  * are used in the same build.
  */
 abstract class ViaductFeatureAppTenantTask : ViaductTenantTaskBase() {
-    override val featureAppTest: Boolean = true
-
     @TaskAction
     fun generateFeatureAppTenant() {
         executeTenantGeneration()

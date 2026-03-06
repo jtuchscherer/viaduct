@@ -12,6 +12,8 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.workers.WorkerExecutor
 import viaduct.gradle.shared.BuildFlags
 
@@ -45,6 +47,7 @@ abstract class ViaductSchemaTaskBase : DefaultTask() {
     abstract val includeIneligibleForTesting: Property<Boolean>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val schemaFiles: ConfigurableFileCollection
 
     @get:Classpath

@@ -57,7 +57,7 @@ abstract class DefaultSchemaPlugin : Plugin<Project> {
             )
             val processResourcesTaskName = "process${sourceSetName.replaceFirstChar { it.uppercase() }}Resources"
             project.tasks.named(processResourcesTaskName).configure {
-                dependsOn(TASK_NAME)
+                dependsOn(project.tasks.named(TASK_NAME))
             }
         }
     }

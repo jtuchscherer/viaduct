@@ -122,8 +122,7 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
             throw GradleException("Invalid package name '$packageName'. Package name must contain at least one segment (e.g., 'com.example.feature')")
         }
 
-        @Suppress("DEPRECATION")
-        val schemaDir = File(project.buildDir, "featureapp-schemas")
+        val schemaDir = project.layout.buildDirectory.dir("featureapp-schemas").get().asFile
         val schemaFile = File(schemaDir, "$featureAppName.graphql")
 
         // Create schema extraction task
@@ -149,10 +148,12 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
         val targetSourceSet = javaExtension.sourceSets.getByName(ssName)
 
         val schemaTask = configureSchemaGeneration(project, featureAppName, schemaFile, packageName, extractionTask, codegenClasspath)
-        targetSourceSet.java.srcDir(schemaTask.map { it.outputs.files })
+        targetSourceSet.java.srcDir(schemaTask.flatMap { it.generatedSrcDir })
 
         val tenantTask = configureTenantGeneration(project, featureAppName, schemaFile, packageName, schemaTask, ssName, codegenClasspath)
-        targetSourceSet.java.srcDir(tenantTask.map { it.outputs.files })
+        targetSourceSet.java.srcDir(tenantTask.flatMap { it.modernModuleSrcDir })
+        targetSourceSet.java.srcDir(tenantTask.flatMap { it.resolverSrcDir })
+        targetSourceSet.java.srcDir(tenantTask.flatMap { it.metaInfSrcDir })
     }
 
     /**
@@ -279,12 +280,15 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
         val tenantName = packageName.split(".").last()
         val tenantPackageName = packageName.split(".").dropLast(1).joinToString(".")
 
-        val schemaOutputDir = project.layout.buildDirectory.dir("generated-sources/featureapp/schema/$featureAppName").get()
+        val schemaOutputDirProvider = project.layout.buildDirectory.dir("generated-sources/featureapp/schema/$featureAppName")
 
         // Add schema generated classes directory to the target source set classpath only
         // This prevents the generated sources from leaking to consuming projects
         val implConfigName = "${sourceSetName}Implementation"
-        project.dependencies.add(implConfigName, project.files(schemaOutputDir))
+        project.dependencies.add(
+            implConfigName,
+            project.files(schemaOutputDirProvider).also { fc -> schemaTask?.let { fc.builtBy(it) } }
+        )
 
         return project.tasks.register<ViaductFeatureAppTenantTask>(
             "generate${featureAppName.capitalize()}Tenant"
@@ -294,6 +298,7 @@ abstract class ViaductFeatureAppPlugin : Plugin<Project> {
 
             this.tenantName.set(tenantName)
             this.packageNamePrefix.set(tenantPackageName)
+            this.featureAppTest.set(true)
             this.buildFlags.putAll(BuildFlags.DEFAULT)
             this.schemaFiles.from(schemaFile)
             this.tenantFromSourceNameRegex.set("(.*)")

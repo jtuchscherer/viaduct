@@ -10,11 +10,17 @@ import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 
 /**
- * A generic WorkAction that invokes a main class in a classloader-isolated context.
+ * A generic WorkAction that invokes a main class in a process-isolated context.
  *
  * This is used to run Viaduct codegen CLIs without requiring them on the plugin's
  * compile classpath. The codegen JARs are provided at execution time via the worker's
  * classpath configuration.
+ *
+ * Process isolation is used rather than classloader isolation because classLoaderIsolation
+ * creates a new ClassLoader per invocation and loads the (large) codegen JARs into the
+ * Gradle daemon's metaspace each time. With many codegen tasks this causes metaspace
+ * exhaustion. processIsolation keeps codegen in a separate
+ * JVM, so its metaspace has no effect on the daemon.
  */
 abstract class CodegenWorkAction : WorkAction<CodegenWorkAction.Params> {
     interface Params : WorkParameters {
@@ -38,7 +44,7 @@ abstract class CodegenWorkAction : WorkAction<CodegenWorkAction.Params> {
 }
 
 /**
- * Submits a codegen main class to a classloader-isolated worker and waits for completion.
+ * Submits a codegen main class to a process-isolated worker and waits for completion.
  */
 fun WorkerExecutor.runCodegen(
     classpath: ConfigurableFileCollection,

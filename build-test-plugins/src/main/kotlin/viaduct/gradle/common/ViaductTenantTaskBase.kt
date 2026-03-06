@@ -11,6 +11,8 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.workers.WorkerExecutor
 import viaduct.gradle.shared.BuildFlags
 
@@ -20,7 +22,7 @@ import viaduct.gradle.shared.BuildFlags
  */
 abstract class ViaductTenantTaskBase : DefaultTask() {
     @get:Input
-    abstract val featureAppTest: Boolean
+    abstract val featureAppTest: Property<Boolean>
 
     @get:Input
     abstract val tenantName: Property<String>
@@ -35,6 +37,7 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
     abstract val tenantFromSourceNameRegex: Property<String>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val schemaFiles: ConfigurableFileCollection
 
     @get:Classpath
@@ -119,7 +122,7 @@ abstract class ViaductTenantTaskBase : DefaultTask() {
             tenantFromSourceNameRegex.get()
         )
 
-        val finalArgs = if (featureAppTest) {
+        val finalArgs = if (featureAppTest.get()) {
             baseArgs + "--isFeatureAppTest"
         } else {
             baseArgs

@@ -12,6 +12,8 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.workers.WorkerExecutor
 import viaduct.gradle.common.CodegenWorkAction
@@ -36,6 +38,7 @@ abstract class ViaductClassDiffGRTKotlinTask : DefaultTask() {
     abstract val buildFlags: MapProperty<String, String>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val schemaFiles: ConfigurableFileCollection
 
     @get:Classpath
