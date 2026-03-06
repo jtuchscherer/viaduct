@@ -2,7 +2,6 @@ import viaduct.gradle.internal.includeNamed
 
 pluginManagement {
     includeBuild("build-logic")
-    includeBuild("build-test-plugins")
     includeBuild("gradle-plugins")
 }
 

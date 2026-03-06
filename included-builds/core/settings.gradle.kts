@@ -5,7 +5,6 @@ pluginManagement {
         gradlePluginPortal()
     }
     includeBuild("../../build-logic")
-    includeBuild("../../build-test-plugins")
 }
 
 plugins {
