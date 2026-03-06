@@ -15,6 +15,7 @@ import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ViaductSchema
 import viaduct.graphql.test.assertEquals
+import viaduct.service.api.spi.FlagManager
 import viaduct.service.api.spi.mocks.MockFlagManager
 import viaduct.tenant.runtime.execution.policycheck.resolverbases.NodeResolvers
 import viaduct.tenant.runtime.execution.policycheck.resolverbases.QueryResolvers
@@ -180,8 +181,7 @@ class PolicyCheckFeatureAppTest : FeatureAppTestBase() {
 
     @BeforeEach
     fun setupPolicyCheck() {
-        // Create MockFlagManager that disables executeAccessChecksInModstrat to enable Node-level policy checks
-        val mockFlagManager = MockFlagManager() // Empty set = no flags enabled = EXECUTE_ACCESS_CHECKS is disabled
+        val mockFlagManager = MockFlagManager.create(FlagManager.Flags.EXECUTE_ACCESS_CHECKS)
 
         // Configure the viaduct builder with policy check support
         withViaductBuilder {
