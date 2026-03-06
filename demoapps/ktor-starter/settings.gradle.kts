@@ -3,13 +3,13 @@ rootProject.name = "viaduct-ktor-starter"
 val viaductVersion: String by settings
 
 // When part of composite build, use local gradle-plugins
-// When standalone, use Maven Central (published releases) or Maven Local (SNAPSHOT development)
+// When standalone, use Maven Central (only after version is published)
 pluginManagement {
     if (gradle.parent != null) {
         includeBuild("../../gradle-plugins")
     } else {
         repositories {
-            mavenLocal()
+            if (System.getenv("USE_MAVEN_LOCAL")?.toBoolean() == true) mavenLocal()
             mavenCentral()
             gradlePluginPortal()
         }
@@ -18,7 +18,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
-        mavenLocal()
+        if (System.getenv("USE_MAVEN_LOCAL")?.toBoolean() == true) mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }

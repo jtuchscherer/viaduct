@@ -36,7 +36,6 @@ tasks.named<ShadowJar>("shadowJar") {
     exclude("kotlinx/**")
     exclude("io/kotest/**")
     exclude("org/jetbrains/**")
-    exclude("org/reactivestreams/**")
     exclude("reactor/**")
     exclude("io/projectreactor/**")
     exclude("_COROUTINE/**")

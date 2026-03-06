@@ -9,6 +9,7 @@ pluginManagement {
         includeBuild("../../gradle-plugins")
     }
     repositories {
+        if (System.getenv("USE_MAVEN_LOCAL")?.toBoolean() == true) mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -16,6 +17,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        if (System.getenv("USE_MAVEN_LOCAL")?.toBoolean() == true) mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }

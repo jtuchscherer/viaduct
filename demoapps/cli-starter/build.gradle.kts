@@ -21,6 +21,7 @@ dependencies {
 
     implementation(libs.logback.classic)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlin.reflect)
     implementation(libs.jackson.databind)
 
     implementation(libs.kotlinx.coroutines.jdk8)
