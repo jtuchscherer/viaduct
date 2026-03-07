@@ -14,11 +14,11 @@ import viaduct.engine.SchemaFactory
 import viaduct.engine.api.CheckerExecutorFactory
 import viaduct.engine.api.CheckerExecutorFactoryCreator
 import viaduct.engine.api.NoOpCheckerExecutorFactoryImpl
-import viaduct.engine.api.TemporaryBypassAccessCheck
 import viaduct.engine.api.TenantAPIBootstrapper
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
+import viaduct.engine.api.spi.TemporaryBypassAccessCheck
 import viaduct.engine.runtime.execution.TenantNameResolver
 import viaduct.engine.runtime.fragment.ExecutableFragmentParser
 import viaduct.engine.runtime.fragment.ViaductExecutableFragmentParser

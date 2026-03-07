@@ -1,4 +1,4 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
 
 import graphql.language.Field
 import io.mockk.every
