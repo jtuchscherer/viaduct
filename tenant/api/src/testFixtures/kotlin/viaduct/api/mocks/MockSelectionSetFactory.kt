@@ -49,6 +49,7 @@ class MockSelectionSetFactory(
         variables: Map<String, Any?>
     ): SelectionSet<T> {
         return if (selections.isBlank()) {
+            @Suppress("UNCHECKED_CAST")
             SelectionSet.NoSelections as SelectionSet<T>
         } else {
             MockSelectionSet(type, selections)

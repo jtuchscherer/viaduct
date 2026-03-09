@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
 @file:Suppress("ForbiddenImport", "DEPRECATION")
 
 package viaduct.engine.runtime.execution
@@ -35,6 +34,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import viaduct.apiannotations.VisibleForTest
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.graphql.graphQLExecutionInput
 import viaduct.engine.api.CheckerExecutor
@@ -57,6 +57,7 @@ import viaduct.engine.runtime.instrumentation.ChainedViaductModernInstrumentatio
 import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.service.api.spi.FlagManager
 
+@OptIn(ExperimentalCoroutinesApi::class, VisibleForTest::class)
 object ExecutionTestHelpers {
     suspend fun executeViaductModernGraphQL(
         sdl: String,
@@ -114,16 +115,29 @@ object ExecutionTestHelpers {
             fieldName: String,
             executeAccessChecksInModstrat: Boolean
         ): List<RequiredSelectionSet> {
-            val delegateResult = rssDelegate.getFieldCheckerRequiredSelectionSets(typeName, fieldName, executeAccessChecksInModstrat)
-            return delegateResult.ifEmpty { delegate.getFieldCheckerRequiredSelectionSets(typeName, fieldName, executeAccessChecksInModstrat) }
+            val delegateResult =
+                rssDelegate.getFieldCheckerRequiredSelectionSets(typeName, fieldName, executeAccessChecksInModstrat)
+            return delegateResult.ifEmpty {
+                delegate.getFieldCheckerRequiredSelectionSets(
+                    typeName,
+                    fieldName,
+                    executeAccessChecksInModstrat
+                )
+            }
         }
 
         override fun getTypeCheckerRequiredSelectionSets(
             typeName: String,
             executeAccessChecksInModstrat: Boolean
         ): List<RequiredSelectionSet> {
-            val delegateResult = rssDelegate.getTypeCheckerRequiredSelectionSets(typeName, executeAccessChecksInModstrat)
-            return delegateResult.ifEmpty { delegate.getTypeCheckerRequiredSelectionSets(typeName, executeAccessChecksInModstrat) }
+            val delegateResult =
+                rssDelegate.getTypeCheckerRequiredSelectionSets(typeName, executeAccessChecksInModstrat)
+            return delegateResult.ifEmpty {
+                delegate.getTypeCheckerRequiredSelectionSets(
+                    typeName,
+                    executeAccessChecksInModstrat
+                )
+            }
         }
     }
 
@@ -298,7 +312,7 @@ object ExecutionTestHelpers {
 
     private class ExceptionHandlerWithFuture : DataFetcherExceptionHandler {
         @OptIn(DelicateCoroutinesApi::class)
-        override fun handleException(handlerParameters: DataFetcherExceptionHandlerParameters?): CompletableFuture<DataFetcherExceptionHandlerResult?>? {
+        override fun handleException(handlerParameters: DataFetcherExceptionHandlerParameters?): CompletableFuture<DataFetcherExceptionHandlerResult?> {
             return scopedFuture {
                 SimpleDataFetcherExceptionHandler().handleException(handlerParameters).await()
             }
@@ -370,6 +384,7 @@ class DocumentCache : PreparsedDocumentProvider {
         )
 }
 
+@OptIn(VisibleForTest::class)
 object CheckerDispatchers {
     fun success(requiredSelectionSets: Map<String, RequiredSelectionSet?> = emptyMap()): CheckerDispatcher {
         val dispatcher = object : CheckerDispatcher {

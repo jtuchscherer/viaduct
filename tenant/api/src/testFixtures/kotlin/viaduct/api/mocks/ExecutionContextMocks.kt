@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalApi::class)
+
 package viaduct.api.mocks
 
 import graphql.schema.GraphQLObjectType
@@ -21,6 +23,7 @@ import viaduct.api.types.NodeCompositeOutput
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
+import viaduct.apiannotations.ExperimentalApi
 import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.NodeEngineObjectData
 import viaduct.engine.api.NodeReference
@@ -80,6 +83,7 @@ val InternalContext.executionContext: ExecutionContext
  */
 @OptIn(InternalApi::class)
 val InternalContext.resolverExecutionContext: ResolverExecutionContext<Query>
+    @Suppress("UNCHECKED_CAST")
     get() =
         this as? ResolverExecutionContext<Query> ?: MockResolverExecutionContext<Query>(this)
 
