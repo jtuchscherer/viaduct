@@ -42,7 +42,6 @@ include(":tenant:tutorials")
 // misc
 include(":docs")
 includeNamed(":viaduct-bom", projectName = "bom")
-include(":tools")
 include(":api")
 include(":runtime")
 include(":test-fixtures")
