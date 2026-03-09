@@ -324,6 +324,13 @@ class EngineSelectionSetImplTest {
     }
 
     @Test
+    fun `containsField -- untyped inline fragment inherits enclosing type condition`() {
+        val ss = mk("Node", "... on Foo { ... { int } }")
+        assertTrue(ss.containsField("Foo", "int"))
+        assertFalse(ss.containsField("Node", "int"))
+    }
+
+    @Test
     fun `containsField -- simple type projections do not change contained fields`() {
         val ss = mk("Node", "id ... on Foo { bar }")
 

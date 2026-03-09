@@ -233,7 +233,7 @@ data class EngineSelectionSetImpl(
                     is InlineFragment -> {
                         val u =
                             if (sel.typeCondition == null) {
-                                this.def
+                                type
                             } else {
                                 compositeType(sel.typeCondition.name)
                             }
