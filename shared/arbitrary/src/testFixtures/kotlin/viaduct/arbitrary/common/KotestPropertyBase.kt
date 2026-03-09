@@ -10,6 +10,8 @@ import io.kotest.property.PropertyTesting
 import io.kotest.property.RandomSource
 import io.kotest.property.checkAll
 import kotlin.random.Random
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import viaduct.apiannotations.VisibleForTest
 import viaduct.invariants.FailureCollector
 
@@ -19,11 +21,38 @@ import viaduct.invariants.FailureCollector
  * Provides a per-instance [seed] that is threaded through all property test invocations
  * via [PropTestConfig], avoiding the global mutable state of [io.kotest.property.PropertyTesting.defaultSeed].
  *
+ * To manage test performance, test suites that extend KotestPropertyBase will be run with
+ * [ExecutionMode.CONCURRENT]. This will run each test method in a separate thread, in its own
+ * instance of the test suite class.
+ * This requires opting in to concurrent junit execution in the build system of the test runner:
+ * - gradle:
+ *     Set these properties in the build.gradle.kts of the module that owns the test suite:
+ *     ```kotlin
+ *     tasks.withType<Test>().configureEach {
+ *       systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+ *       systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
+ *       systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
+ *     }
+ *     ```
+ *
+ * - bazel:
+ *      configure your java_test target with `enable_parallel_test_execution`:
+ *      ```
+ *       java_test(
+ *          name = "my-tests",
+ *          enable_parallel_test_execution = True,  #keep
+ *          ...
+ *       )
+ *      ```
+ *
  * @param seed override the testing seed. This is useful for debugging property test failures.
  * To preserve the randomness of property testing, subclasses should not permanently override
  * the seed value.
+ * @param iterations a default number of iterations to apply to [forAll], [checkAll],
+ * [forNone], etc
  */
 @VisibleForTest
+@Execution(ExecutionMode.CONCURRENT)
 abstract class KotestPropertyBase(
     val seed: Long = Random.nextLong(),
     val iterations: Int = PropertyTesting.defaultIterationCount

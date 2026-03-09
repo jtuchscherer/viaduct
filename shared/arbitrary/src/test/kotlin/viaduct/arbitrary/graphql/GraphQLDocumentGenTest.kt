@@ -157,7 +157,7 @@ class GraphQLDocumentGenTest : KotestPropertyBase(
             .viaductSchema(cfg)
             .take(iter, randomSource)
             .forEach { schema ->
-                assertAllDocumentsValid(schema, cfg)
+                assertAllDocumentsValid(schema, cfg, iter)
             }
     }
 
@@ -569,9 +569,10 @@ class GraphQLDocumentGenTest : KotestPropertyBase(
     private fun assertAllDocumentsValid(
         schema: ViaductSchema,
         cfg: Config = Config.default,
+        iter: Int = iterations
     ): Unit =
         runBlocking {
-            Arb.graphQLDocument(schema, cfg).assertAllValid(schema.schema)
+            Arb.graphQLDocument(schema, cfg).assertAllValid(schema.schema, iter)
         }
 
     private fun assertAllDocumentsValid(

@@ -4,6 +4,12 @@ plugins {
     id("conventions.kotlin-static-analysis")
 }
 
+tasks.withType<Test>().configureEach {
+    systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+    systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
+    systemProperty("junit.jupiter.execution.parallel.mode.classes.default", "concurrent")
+}
+
 dependencies {
     api(libs.graphql.java)
     api(libs.viaduct.shared.apiannotations)
