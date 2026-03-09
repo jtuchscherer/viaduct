@@ -57,6 +57,7 @@ dependencies {
     testImplementation(libs.viaduct.engine.runtime)
     testImplementation(libs.viaduct.service.runtime)
     testImplementation(libs.viaduct.shared.arbitrary)
+    testImplementation(testFixtures(libs.viaduct.shared.arbitrary))
     testImplementation(libs.io.mockk.dsl)
     testImplementation(libs.io.mockk.jvm)
     testImplementation(libs.jackson.core)
