@@ -5,13 +5,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 tasks.withType<KotlinCompile>().configureEach {
     val taskName = name.lowercase()
 
-    // Skip only integrationTest and testFixtures compilations.
-    // Everything else (main, test, jmh, etc.) will get the opt-ins.
-    val isIntegrationOrFixtures =
-        taskName.contains("integrationtest") ||
-                taskName.contains("testfixtures")
-
-    if (!isIntegrationOrFixtures) {
+    // Skip testFixtures compilations — those test the public API surface and should
+    // not get internal opt-ins automatically.
+    if (!taskName.contains("testfixtures")) {
         compilerOptions {
             optIn.add("viaduct.apiannotations.ExperimentalApi")
             optIn.add("viaduct.apiannotations.InternalApi")

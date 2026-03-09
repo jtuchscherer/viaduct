@@ -176,4 +176,4 @@ Kotlin compiler `-opt-in=...` flags act like module-wide `@OptIn`.
 Typical configuration:
 
 - **Internal Viaduct modules** opt in to `InternalApi`, `ExperimentalApi`, and `VisibleForTest` to avoid scattering `@OptIn` in the implementation.
-- **Consumer-like code** (including demo apps, `integrationTest`, and `testFixtures`) must use `@OptIn` explicitly for internal/experimental usage.
+- **Consumer-like code** (including demo apps and `testFixtures`) must use `@OptIn` explicitly for internal/experimental usage.

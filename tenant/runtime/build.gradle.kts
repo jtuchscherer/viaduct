@@ -1,14 +1,11 @@
 plugins {
     id("conventions.kotlin")
     id("conventions.kotlin-static-analysis")
-    id("conventions.integration-test")
     id("test-feature-app")
     `java-test-fixtures`
 }
 
-viaductFeatureApp {
-    sourceSetName.set("integrationTest")
-}
+viaductFeatureApp {}
 
 viaductPublishing {
     name.set("Tenant Runtime")
@@ -71,30 +68,12 @@ dependencies {
     testImplementation(libs.strikt.core)
     testImplementation(libs.micrometer.core)
 
+    testImplementation(libs.viaduct.engine.wiring)
+    testImplementation(libs.viaduct.tenant.wiring)
+    testImplementation(libs.guice)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.slf4j.api)
+
     /** Codegen classpath for test-feature-app worker isolation **/
     viaductCodegenClasspath(libs.viaduct.tenant.codegen)
-
-    /** Integration test dependencies **/
-    integrationTestImplementation(testFixtures(libs.viaduct.engine.api))
-    integrationTestImplementation(testFixtures(libs.viaduct.service.api))
-    integrationTestImplementation(testFixtures(libs.viaduct.shared.graphql))
-    integrationTestImplementation(testFixtures(libs.viaduct.tenant.api))
-    integrationTestImplementation(libs.viaduct.engine.runtime)
-    integrationTestImplementation(libs.viaduct.engine.wiring)
-    integrationTestImplementation(libs.viaduct.tenant.wiring)
-    integrationTestImplementation(libs.viaduct.service.runtime)
-    integrationTestImplementation(libs.viaduct.shared.arbitrary)
-    integrationTestImplementation(libs.guice)
-    integrationTestImplementation(libs.io.mockk.dsl)
-    integrationTestImplementation(libs.io.mockk.jvm)
-    integrationTestImplementation(libs.jackson.core)
-    integrationTestImplementation(libs.jackson.databind)
-    integrationTestImplementation(libs.jackson.module)
-    integrationTestImplementation(libs.kotest.property.jvm)
-    integrationTestImplementation(libs.kotlinx.coroutines.jdk8)
-    integrationTestImplementation(libs.kotlinx.coroutines.test)
-    integrationTestImplementation(libs.assertj.core)
-    integrationTestImplementation(libs.strikt.core)
-    integrationTestImplementation(libs.micrometer.core)
-    integrationTestImplementation(libs.slf4j.api)
 }

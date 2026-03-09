@@ -121,6 +121,23 @@ class KmClassFilesBuilder(
         classPool = ClassPool(true)
         val ctClasses = buildBytecode(classPool)
         return object : ClassLoader(getSystemClassLoader()) {
+            override fun loadClass(
+                name: String,
+                resolve: Boolean
+            ): Class<*> {
+                // Child-first: prefer in-memory bytecode over anything in the parent classloader.
+                // This prevents compiled Kotlin GRT stubs (e.g. viaduct.api.grts.*) on the test
+                // classpath from shadowing the bytecode we just generated.
+                // Must check findLoadedClass first to avoid duplicate class definition errors.
+                return synchronized(getClassLoadingLock(name)) {
+                    findLoadedClass(name) ?: try {
+                        findClass(name).also { if (resolve) resolveClass(it) }
+                    } catch (_: ClassNotFoundException) {
+                        super.loadClass(name, resolve)
+                    }
+                }
+            }
+
             override fun findClass(name: String?): Class<*> {
                 // Set `this` as the classloader, otherwise nested classes are not properly loaded
                 return ctClasses.firstOrNull { it.name == name }?.toClass(this, null)

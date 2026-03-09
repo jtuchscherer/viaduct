@@ -23,7 +23,7 @@ open class ViaductClassDiffExtension(private val project: Project) {
 
     /**
      * The source set to wire generated code into.
-     * Default: "test" — override to "integrationTest" for core module integration tests.
+     * Default: "test".
      */
     val sourceSetName: Property<String> = project.objects.property(String::class.java)
         .convention("test")

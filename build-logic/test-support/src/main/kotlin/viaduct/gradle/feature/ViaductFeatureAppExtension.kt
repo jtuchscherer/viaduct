@@ -19,7 +19,7 @@ open class ViaductFeatureAppExtension(project: Project) {
 
     /**
      * The source set that FeatureApp tests belong to.
-     * Default: "test" — override to "integrationTest" when applying inside a core module.
+     * Default: "test".
      */
     val sourceSetName: Property<String> = project.objects.property(String::class.java)
         .convention("test")
