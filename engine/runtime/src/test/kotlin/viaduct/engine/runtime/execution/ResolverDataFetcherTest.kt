@@ -19,6 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -33,6 +34,7 @@ import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.ViaductDataFetchingEnvironment
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.instrumentation.ViaductTenantNameContext
 import viaduct.engine.api.mocks.FieldUnbatchedResolverFn
 import viaduct.engine.api.mocks.MockCheckerExecutor
 import viaduct.engine.api.mocks.MockFieldUnbatchedResolverExecutor
@@ -71,7 +73,8 @@ class ResolverDataFetcherTest {
         val checkerExecutor: CheckerExecutor? = null,
         val resolveWithException: Boolean = false,
         val testType: String = "TestType",
-        val testField: String = "testField"
+        val testField: String = "testField",
+        val tenantNameResolver: TenantNameResolver = TenantNameResolver(),
     ) {
         val schema: ViaductSchema = createSchema(
             """
@@ -96,6 +99,7 @@ class ResolverDataFetcherTest {
             .build()
         var resolverRan = false
         var lastReceivedObjectValue: Any? = null
+        var capturedTenantContext: ViaductTenantNameContext? = null
         val resolverId = "$testType.$testField"
         val objectValue = EngineObjectDataBuilder.from(testTypeObject).put(testField, expectedResult).build()
         val checkerDispatcher = if (checkerExecutor == null) null else CheckerDispatcherImpl(checkerExecutor)
@@ -112,6 +116,7 @@ class ResolverDataFetcherTest {
                 unbatchedResolveFn = { _, receivedObjectValue, _, _, _ ->
                     resolverRan = true
                     lastReceivedObjectValue = receivedObjectValue
+                    capturedTenantContext = ViaductTenantNameContext.getCurrent()
                     expectedResult
                 },
             )
@@ -125,6 +130,7 @@ class ResolverDataFetcherTest {
                 FieldResolverDispatcherImpl(executor)
             },
             checkerDispatcher = checkerDispatcher,
+            tenantNameResolver = tenantNameResolver,
         )
 
         val dataFetchingEnvironment: ViaductDataFetchingEnvironment = mockk()
@@ -680,6 +686,50 @@ class ResolverDataFetcherTest {
                 ).apply {
                     val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
                     assertEquals(expectedResult, receivedResult)
+                }
+            }
+        }
+
+    @Test
+    fun `tenant name context is set during resolver execution`(): Unit =
+        runBlocking(TestCoroutineDispatcher()) {
+            withThreadLocalCoroutineContext {
+                val testTenantNameResolver = object : TenantNameResolver() {
+                    override fun resolve(
+                        typeName: String,
+                        fieldName: String
+                    ) = "test-tenant"
+                }
+                Fixture(
+                    expectedResult = "test fetched result",
+                    requiredSelectionSet = null,
+                    flagManager = allDisabledFlags,
+                    tenantNameResolver = testTenantNameResolver,
+                ).apply {
+                    resolverDataFetcher.get(dataFetchingEnvironment).join()
+                    assertEquals("test-tenant", capturedTenantContext?.tenantName)
+                }
+            }
+        }
+
+    @Test
+    fun `tenant name context does not leak after resolver execution`(): Unit =
+        runBlocking(TestCoroutineDispatcher()) {
+            withThreadLocalCoroutineContext {
+                val testTenantNameResolver = object : TenantNameResolver() {
+                    override fun resolve(
+                        typeName: String,
+                        fieldName: String
+                    ) = "test-tenant"
+                }
+                Fixture(
+                    expectedResult = "test fetched result",
+                    requiredSelectionSet = null,
+                    flagManager = allDisabledFlags,
+                    tenantNameResolver = testTenantNameResolver,
+                ).apply {
+                    resolverDataFetcher.get(dataFetchingEnvironment).join()
+                    assertNull(ViaductTenantNameContext.getCurrent())
                 }
             }
         }

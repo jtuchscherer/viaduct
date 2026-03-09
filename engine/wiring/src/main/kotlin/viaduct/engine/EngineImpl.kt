@@ -76,7 +76,8 @@ class EngineImpl(
         dispatcherRegistry,
         flagManager,
         config.resolverInstrumentation,
-        coroutineInterop
+        coroutineInterop,
+        config.tenantNameResolver
     )
 
     private val instrumentation = run {

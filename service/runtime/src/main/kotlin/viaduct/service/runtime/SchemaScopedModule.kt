@@ -15,6 +15,7 @@ import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.execution.TenantNameResolver
 import viaduct.engine.runtime.tenantloading.DispatcherRegistryFactory
 import viaduct.engine.runtime.tenantloading.ExecutorValidator
 import viaduct.service.api.SchemaId
@@ -118,9 +119,10 @@ internal class SchemaScopedModule(
     fun providesEngineFactory(
         config: EngineConfiguration,
         dispatcherRegistry: DispatcherRegistry,
+        tenantNameResolver: TenantNameResolver,
     ): EngineFactory {
         return EngineFactory(
-            config = config,
+            config = config.copy(tenantNameResolver = tenantNameResolver),
             dispatcherRegistry = dispatcherRegistry,
         )
     }

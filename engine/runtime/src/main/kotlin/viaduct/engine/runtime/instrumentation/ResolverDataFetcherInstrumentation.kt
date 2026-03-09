@@ -14,6 +14,7 @@ import viaduct.engine.runtime.FieldResolverDispatcher
 import viaduct.engine.runtime.SyncFieldResolverDispatcher
 import viaduct.engine.runtime.execution.DefaultCoroutineInterop
 import viaduct.engine.runtime.execution.ResolverDataFetcher
+import viaduct.engine.runtime.execution.TenantNameResolver
 import viaduct.engine.runtime.instrumentation.resolver.InstrumentedFieldResolverDispatcher
 import viaduct.graphql.utils.asNamedElement
 import viaduct.service.api.spi.FlagManager
@@ -29,7 +30,8 @@ class ResolverDataFetcherInstrumentation(
     private val dispatcherRegistry: DispatcherRegistry, // Modern resolvers
     private val flagManager: FlagManager,
     private val resolverInstrumentation: ViaductResolverInstrumentation = ViaductResolverInstrumentation.DEFAULT,
-    private val coroutineInterop: CoroutineInterop = DefaultCoroutineInterop
+    private val coroutineInterop: CoroutineInterop = DefaultCoroutineInterop,
+    private val tenantNameResolver: TenantNameResolver = TenantNameResolver(),
 ) : ViaductModernGJInstrumentation {
     override fun createState(parameters: InstrumentationCreateStateParameters): InstrumentationState {
         return ResolverDataFetcherState(
@@ -68,7 +70,8 @@ class ResolverDataFetcherInstrumentation(
             fieldName = fieldName,
             fieldResolverDispatcher = instrumentedDispatcher,
             checkerDispatcher = checkerDispatcher,
-            coroutineInterop = coroutineInterop
+            coroutineInterop = coroutineInterop,
+            tenantNameResolver = tenantNameResolver,
         )
     }
 

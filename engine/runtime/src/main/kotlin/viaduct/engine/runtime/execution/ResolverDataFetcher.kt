@@ -7,12 +7,14 @@ import graphql.schema.DataFetchingEnvironment
 import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData as EngineObjectDataApi
 import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.engineExecutionContext
+import viaduct.engine.api.instrumentation.ViaductTenantNameContext
 import viaduct.engine.runtime.CheckerDispatcher
 import viaduct.engine.runtime.CheckerProxyEngineObjectData
 import viaduct.engine.runtime.EngineExecutionContextExtensions.copy
@@ -28,7 +30,8 @@ class ResolverDataFetcher(
     internal val fieldName: String,
     private val fieldResolverDispatcher: FieldResolverDispatcher,
     private val checkerDispatcher: CheckerDispatcher?,
-    private val coroutineInterop: CoroutineInterop = DefaultCoroutineInterop
+    private val coroutineInterop: CoroutineInterop = DefaultCoroutineInterop,
+    private val tenantNameResolver: TenantNameResolver = TenantNameResolver(),
 ) : DataFetcher<CompletableFuture<*>> {
     companion object {
         /**
@@ -57,6 +60,13 @@ class ResolverDataFetcher(
         }
 
     private suspend fun resolve(environment: DataFetchingEnvironment): Any? {
+        val tenantName = tenantNameResolver.resolve(typeName, fieldName)
+        return withContext(ViaductTenantNameContext.asCoroutineContext(ViaductTenantNameContext(tenantName))) {
+            resolveWithTenantContext(environment)
+        }
+    }
+
+    private suspend fun resolveWithTenantContext(environment: DataFetchingEnvironment): Any? {
         val engineResults = getEngineResults(environment)
 
         val engineExecutionContext = environment.engineExecutionContext
