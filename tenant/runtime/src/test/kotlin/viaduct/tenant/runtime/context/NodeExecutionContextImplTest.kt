@@ -2,7 +2,7 @@ package viaduct.tenant.runtime.context
 
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -63,7 +63,7 @@ class NodeExecutionContextImplTest : ContextTestBase() {
 
     @Test
     fun query() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             val result = ctx.query("__typename")
             assertEquals(queryObject, result)

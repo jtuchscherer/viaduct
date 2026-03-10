@@ -5,7 +5,7 @@ import graphql.schema.idl.UnExecutableSchemaGenerator
 import java.io.File
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
 import viaduct.codegen.utils.JavaName
@@ -43,7 +43,7 @@ class SchemaDrivenTests {
 
     @Test
     fun reflectionDrivenExercisesV2() =
-        runBlockingTest {
+        runTest {
             val failures = FailureCollector()
 
             val sdl = DefaultSchemaFactory.getDefaultSDL(

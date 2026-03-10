@@ -4,7 +4,7 @@ package viaduct.tenant.runtime.context
 
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
@@ -66,28 +66,28 @@ class ConnectionFieldExecutionContextImplTest : ContextTestBase() {
 
     @Test
     fun `objectValue is correct`() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertEquals(Obj, ctx.objectValue)
         }
 
     @Test
     fun `queryValue is correct`() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertEquals(Q, ctx.queryValue)
         }
 
     @Test
     fun `arguments is correct`() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertSame(ConnArgs, ctx.arguments)
         }
 
     @Test
     fun `selections is correct`() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertEquals(SelectionSet.NoSelections, ctx.selections())
         }

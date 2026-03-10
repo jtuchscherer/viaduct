@@ -4,7 +4,7 @@ package viaduct.tenant.runtime.context
 
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -60,7 +60,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
 
     @Test
     fun properties() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertEquals(Obj, ctx.objectValue)
             assertEquals(Q, ctx.queryValue)
@@ -88,7 +88,7 @@ class FieldExecutionContextImplTest : ContextTestBase() {
 
     @Test
     fun query() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             val result = ctx.query("__typename")
             assertEquals(queryObject, result)

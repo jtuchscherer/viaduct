@@ -19,6 +19,9 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import viaduct.apiannotations.VisibleForTest
 import viaduct.dataloader.mocks.MockNextTickDispatcher
 import viaduct.engine.ViaductSchemaLoadException
@@ -196,6 +199,9 @@ open class MockFieldBatchResolverExecutor(
     ): Map<FieldResolverExecutor.Selector, Result<Any?>> = batchResolveFn(selectors, context)
 }
 
+private val testScheduler: TestCoroutineScheduler = TestCoroutineScheduler()
+private val internalDispatcher: TestDispatcher = UnconfinedTestDispatcher(testScheduler)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 fun FieldResolverExecutor.invoke(
     fullSchema: ViaductSchema,
@@ -205,7 +211,7 @@ fun FieldResolverExecutor.invoke(
     queryValue: Map<String, Any?> = emptyMap(),
     selections: EngineSelectionSet? = null,
     context: EngineExecutionContext = ContextMocks(fullSchema).engineExecutionContext,
-) = runBlocking(MockNextTickDispatcher()) {
+) = runBlocking(MockNextTickDispatcher(testScheduler, internalDispatcher)) {
     val selector = FieldResolverExecutor.Selector(
         arguments = arguments,
         objectValue = createEngineObjectData(fullSchema.schema.getObjectType(coord.first), objectValue),
@@ -223,7 +229,7 @@ fun CheckerExecutor.invoke(
     objectDataMap: Map<String, Map<String, Any?>> = emptyMap(),
     context: EngineExecutionContext = ContextMocks(fullSchema).engineExecutionContext,
     checkerType: CheckerExecutor.CheckerType = CheckerExecutor.CheckerType.FIELD
-) = runBlocking(MockNextTickDispatcher()) {
+) = runBlocking(MockNextTickDispatcher(testScheduler, internalDispatcher)) {
     val objectType = fullSchema.schema.getObjectType(coord.first)!!
     val objectMap = objectDataMap.mapValues { (_, it) -> createEngineObjectData(objectType, it) }
     execute(arguments, objectMap, context, checkerType)

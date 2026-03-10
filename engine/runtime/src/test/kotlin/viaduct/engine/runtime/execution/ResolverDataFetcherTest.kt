@@ -13,9 +13,9 @@ import io.mockk.mockk
 import java.util.Locale
 import java.util.concurrent.CompletionException
 import kotlin.test.assertEquals
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -156,7 +156,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test resolving with null objectSelectionSet`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = "test fetched result",
@@ -174,7 +174,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test resolving with existing object selection set`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = "test fetched result",
@@ -196,7 +196,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test sync value computation enabled passes SyncProxyEngineObjectData to resolver`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = "test fetched result",
@@ -236,7 +236,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test sync value computation disabled passes ProxyEngineObjectData to resolver`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = "test fetched result",
@@ -257,7 +257,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test resolving required selections with FromArgument variables -- all flag configurations`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 for (flags in allFlagSets) {
                     Fixture(
@@ -291,7 +291,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `test resolver exception propagation`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = null,
@@ -309,7 +309,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `tenant name context is set during resolver execution`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 val testTenantNameResolver = object : TenantNameResolver() {
                     override fun resolve(
@@ -331,7 +331,7 @@ class ResolverDataFetcherTest {
 
     @Test
     fun `tenant name context does not leak after resolver execution`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
+        runBlocking(Dispatchers.Default) {
             withThreadLocalCoroutineContext {
                 val testTenantNameResolver = object : TenantNameResolver() {
                     override fun resolve(

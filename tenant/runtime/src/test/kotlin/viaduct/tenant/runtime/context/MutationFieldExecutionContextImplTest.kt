@@ -4,7 +4,7 @@ package viaduct.tenant.runtime.context
 
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import viaduct.api.mocks.MockInternalContext
@@ -43,7 +43,7 @@ class MutationFieldExecutionContextImplTest : ContextTestBase() {
 
     @Test
     fun mutation() =
-        runBlockingTest {
+        runTest {
             val ctx = mk()
             assertEquals(mutationObject, ctx.mutation("__typename"))
         }
