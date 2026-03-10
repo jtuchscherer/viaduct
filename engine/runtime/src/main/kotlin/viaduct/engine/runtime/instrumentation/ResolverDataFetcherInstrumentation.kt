@@ -55,7 +55,6 @@ class ResolverDataFetcherInstrumentation(
         val fieldName = dfEnv.fieldDefinition.name
 
         val resolverDispatcher = resolverDispatcher(typeName, fieldName) ?: return dataFetcher
-        val checkerDispatcher = dispatcherRegistry.getFieldCheckerDispatcher(typeName, fieldName)
 
         val enableSync = (state as? ResolverDataFetcherState)?.enableSyncValueComputation == true
         val innerDispatcher = if (enableSync) {
@@ -69,7 +68,6 @@ class ResolverDataFetcherInstrumentation(
             typeName = typeName,
             fieldName = fieldName,
             fieldResolverDispatcher = instrumentedDispatcher,
-            checkerDispatcher = checkerDispatcher,
             coroutineInterop = coroutineInterop,
             tenantNameResolver = tenantNameResolver,
         )

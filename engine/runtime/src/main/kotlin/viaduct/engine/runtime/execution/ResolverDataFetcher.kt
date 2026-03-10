@@ -1,22 +1,16 @@
 package viaduct.engine.runtime.execution
 
 import graphql.execution.ResultPath
-import graphql.language.OperationDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import java.util.concurrent.CompletableFuture
-import kotlinx.coroutines.async
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData as EngineObjectDataApi
 import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.engineExecutionContext
 import viaduct.engine.api.instrumentation.ViaductTenantNameContext
-import viaduct.engine.runtime.CheckerDispatcher
-import viaduct.engine.runtime.CheckerProxyEngineObjectData
 import viaduct.engine.runtime.EngineExecutionContextExtensions.copy
 import viaduct.engine.runtime.EngineResultLocalContext
 import viaduct.engine.runtime.FieldResolverDispatcher
@@ -29,7 +23,6 @@ class ResolverDataFetcher(
     internal val typeName: String,
     internal val fieldName: String,
     private val fieldResolverDispatcher: FieldResolverDispatcher,
-    private val checkerDispatcher: CheckerDispatcher?,
     private val coroutineInterop: CoroutineInterop = DefaultCoroutineInterop,
     private val tenantNameResolver: TenantNameResolver = TenantNameResolver(),
 ) : DataFetcher<CompletableFuture<*>> {
@@ -75,55 +68,7 @@ class ResolverDataFetcher(
         )
 
         val engineObjectData = getFieldResolverDispatcherEOD(localExecutionContext, environment, engineResults)
-        if (localExecutionContext.executeAccessChecksInModstrat) {
-            return resolveField(environment, engineObjectData, localExecutionContext)
-        }
-
-        // Before modern access check is fully implemented, all modern fields will not be using
-        // modern execution strategy, thus we still need to execute access check here.
-        // TODO: Checker execution below will be removed from data fetcher, once modern strategy
-        //  implementation is done.
-        // --------- Execute access checks in ResolverDataFetcher ---------------
-        // If there is no checker, just resolve the field
-        if (checkerDispatcher == null) {
-            return resolveField(environment, engineObjectData, localExecutionContext)
-        }
-
-        val checkerProxyEODMap = getCheckerProxyEODMap(environment, engineResults.parentResult)
-        return when (environment.operationDefinition.operation) {
-            // for query, execute checker and resolve field in parallel
-            OperationDefinition.Operation.QUERY -> {
-                supervisorScope {
-                    val checkAsync = async {
-                        checkerDispatcher.execute(
-                            environment.arguments,
-                            checkerProxyEODMap,
-                            localExecutionContext,
-                            CheckerExecutor.CheckerType.FIELD
-                        )
-                    }
-                    runCatching {
-                        resolveField(environment, engineObjectData, localExecutionContext)
-                    }.onSuccess {
-                        val checkerResult = checkAsync.await()
-                        checkerResult.asError?.let { throw it.error }
-                    }.getOrThrow()
-                }
-            }
-            // for mutation, execute checker then resolve field synchronously
-            OperationDefinition.Operation.MUTATION -> {
-                val checkerResult = checkerDispatcher.execute(
-                    environment.arguments,
-                    checkerProxyEODMap,
-                    localExecutionContext,
-                    CheckerExecutor.CheckerType.FIELD
-                )
-                checkerResult.asError?.let { throw it.error }
-                resolveField(environment, engineObjectData, localExecutionContext)
-            }
-
-            else -> throw NotImplementedError("Unsupported operation: ${environment.operationDefinition.operation}")
-        }
+        return resolveField(environment, engineObjectData, localExecutionContext)
     }
 
     private suspend fun getFieldResolverDispatcherEOD(
@@ -212,30 +157,5 @@ class ResolverDataFetcher(
         val parentEngineResult = engineLoaderContext.parentEngineResult
         assert(parentEngineResult.type.name == typeName)
         return EngineResults(parentEngineResult, queryEngineResult)
-    }
-
-    /**
-     * Get checker proxyEOD from engine result. This supports both old and new engine.
-     * Note if `shouldUseModernExecutionStrategy(...)` returns false, it means the engine result
-     * is loaded from old engine, hence only builds proxyEOD from the first checker selection set.
-     */
-    private fun getCheckerProxyEODMap(
-        environment: DataFetchingEnvironment,
-        engineResult: ObjectEngineResult
-    ): Map<String, CheckerProxyEngineObjectData> {
-        check(checkerDispatcher != null) {
-            "Checker executor should not be null when getting checker proxyEOD map."
-        }
-        val checkerSelectionSetMap = checkerDispatcher.requiredSelectionSets
-
-        val selectionSetFactory = environment.engineExecutionContext.engineSelectionSetFactory
-        return checkerSelectionSetMap.mapValues { (_, rss) ->
-            val selectionSet = rss?.let { selectionSetFactory.engineSelectionSet(rss.selections, emptyMap()) }
-            CheckerProxyEngineObjectData(
-                engineResult,
-                "missing from checker RSS",
-                selectionSet
-            )
-        }
     }
 }

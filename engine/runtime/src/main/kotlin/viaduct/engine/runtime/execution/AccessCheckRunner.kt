@@ -157,8 +157,6 @@ class AccessCheckRunner(
         arguments: Map<String, Any?>,
         checkerType: CheckerExecutor.CheckerType
     ): Value<out CheckerResult?> {
-        // Temporary hack to enable shimmed checkers to work on modern engine.
-        // See: https://git.musta.ch/airbnb/treehouse/pull/879484 for more details
         val localExecutionContext = parameters.engineExecutionContext.copy(
             dataFetchingEnvironment = dataFetchingEnvironmentSupplier.get()
         )

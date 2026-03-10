@@ -2,13 +2,11 @@
 
 package viaduct.engine.runtime.execution
 
-import com.airbnb.viaduct.errors.ViaductPermissionDeniedException
 import graphql.GraphQLContext
 import graphql.execution.ExecutionStepInfo
 import graphql.execution.ResultPath
 import graphql.execution.values.InputInterceptor
 import graphql.execution.values.legacycoercing.LegacyCoercingInputInterceptor
-import graphql.language.OperationDefinition
 import graphql.schema.GraphQLObjectType
 import io.mockk.every
 import io.mockk.mockk
@@ -18,12 +16,10 @@ import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectDataBuilder
 import viaduct.engine.api.FieldResolverExecutor
@@ -36,10 +32,8 @@ import viaduct.engine.api.ViaductDataFetchingEnvironment
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.ViaductTenantNameContext
 import viaduct.engine.api.mocks.FieldUnbatchedResolverFn
-import viaduct.engine.api.mocks.MockCheckerExecutor
 import viaduct.engine.api.mocks.MockFieldUnbatchedResolverExecutor
 import viaduct.engine.api.select.SelectionsParser
-import viaduct.engine.runtime.CheckerDispatcherImpl
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.EngineResultLocalContext
 import viaduct.engine.runtime.FieldResolutionResult
@@ -59,7 +53,6 @@ import viaduct.service.api.spi.mocks.MockFlagManager
 @OptIn(ExperimentalCoroutinesApi::class)
 class ResolverDataFetcherTest {
     private val allDisabledFlags = MockFlagManager()
-    private val allEnabledFlags = MockFlagManager.Enabled
     private val executeAccessChecksEnabled = MockFlagManager.create(FlagManager.Flags.EXECUTE_ACCESS_CHECKS)
     private val allFlagSets = listOf(
         allDisabledFlags,
@@ -70,7 +63,6 @@ class ResolverDataFetcherTest {
         val expectedResult: String?,
         val requiredSelectionSet: RequiredSelectionSet?,
         val flagManager: FlagManager,
-        val checkerExecutor: CheckerExecutor? = null,
         val resolveWithException: Boolean = false,
         val testType: String = "TestType",
         val testField: String = "testField",
@@ -102,7 +94,6 @@ class ResolverDataFetcherTest {
         var capturedTenantContext: ViaductTenantNameContext? = null
         val resolverId = "$testType.$testField"
         val objectValue = EngineObjectDataBuilder.from(testTypeObject).put(testField, expectedResult).build()
-        val checkerDispatcher = if (checkerExecutor == null) null else CheckerDispatcherImpl(checkerExecutor)
         val executor = if (resolveWithException) {
             TestFieldUnbatchedResolverExecutor(
                 objectSelectionSet = requiredSelectionSet,
@@ -129,12 +120,10 @@ class ResolverDataFetcherTest {
             } else {
                 FieldResolverDispatcherImpl(executor)
             },
-            checkerDispatcher = checkerDispatcher,
             tenantNameResolver = tenantNameResolver,
         )
 
         val dataFetchingEnvironment: ViaductDataFetchingEnvironment = mockk()
-        val operationDefinition: OperationDefinition = mockk()
         val engineResultLocalContext = EngineResultLocalContext(
             rootEngineResult = ObjectEngineResultImpl.newForType(schema.schema.queryType),
             parentEngineResult = ObjectEngineResultImpl.newForType(testTypeObject),
@@ -158,8 +147,6 @@ class ResolverDataFetcherTest {
             // define local var to get around naming collision issue
             every { dataFetchingEnvironment.getLocalContextForType<EngineExecutionContextImpl>() } returns (engineExecutionContextImpl)
             every { dataFetchingEnvironment.getSource<Any>() } returns mockk()
-            every { dataFetchingEnvironment.operationDefinition } returns operationDefinition
-            every { operationDefinition.operation } returns OperationDefinition.Operation.QUERY
             every { dataFetchingEnvironment.graphQlContext } returns GraphQLContext.newContext()
                 .of(InputInterceptor::class.java, LegacyCoercingInputInterceptor.migratesValues())
                 .build()
@@ -303,389 +290,19 @@ class ResolverDataFetcherTest {
         }
 
     @Test
-    fun `test access check not run, in modstrat instead`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                var checkRan = false
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allEnabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> checkRan = true }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                    assertFalse(checkRan)
-                }
-            }
-        }
-
-    @Test
-    fun `test fail access check`(): Unit =
+    fun `test resolver exception propagation`(): Unit =
         runBlocking(TestCoroutineDispatcher()) {
             withThreadLocalCoroutineContext {
                 Fixture(
                     expectedResult = null,
                     requiredSelectionSet = null,
                     flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> throw ViaductPermissionDeniedException("test MockFailingCheckerExecutor") }
-                    )
-                ).apply {
-                    val e = assertThrows<CompletionException> {
-                        resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    }
-                    assertTrue(e.cause is ViaductPermissionDeniedException)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check but resolve with exception`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = null,
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> }
-                    ),
                     resolveWithException = true
                 ).apply {
                     val e = assertThrows<CompletionException> {
                         resolverDataFetcher.get(dataFetchingEnvironment).join()
                     }
                     assertTrue(e.cause is RuntimeException)
-                }
-            }
-        }
-
-    @Test
-    fun `test fail access check with resolver exception`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = null,
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> throw ViaductPermissionDeniedException("test MockFailingCheckerExecutor") }
-                    ),
-                    resolveWithException = true
-                ).apply {
-                    val e = assertThrows<CompletionException> {
-                        resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    }
-                    assertTrue(e.cause is RuntimeException)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check on mutation`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> }
-                    ),
-                    testType = "Mutation",
-                    testField = "placeholder"
-                ).apply {
-                    every { operationDefinition.operation } returns OperationDefinition.Operation.MUTATION
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test fail access check on mutation`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = null,
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> throw ViaductPermissionDeniedException("test MockFailingCheckerExecutor") }
-                    ),
-                    testType = "Mutation",
-                    testField = "placeholder"
-                ).apply {
-                    every { operationDefinition.operation } returns OperationDefinition.Operation.MUTATION
-
-                    val e = assertThrows<CompletionException> {
-                        resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    }
-                    assertTrue(e.cause is ViaductPermissionDeniedException)
-                    assertFalse(resolverRan)
-                }
-            }
-        }
-
-    @Test
-    fun `test fail access check on mutation with resolver exception`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = null,
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> throw ViaductPermissionDeniedException("test MockFailingCheckerExecutor") }
-                    ),
-                    testType = "Mutation",
-                    testField = "placeholder",
-                    resolveWithException = true
-                ).apply {
-                    every { operationDefinition.operation } returns OperationDefinition.Operation.MUTATION
-
-                    val e = assertThrows<CompletionException> {
-                        resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    }
-                    assertTrue(e.cause is ViaductPermissionDeniedException)
-                    assertFalse(resolverRan)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with no selection set in old engine`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with single selection set in old engine`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "key" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "himejiId"),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with multiple selection set in old engine`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "checker_0" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "himejiId"),
-                                emptyList(),
-                                forChecker = true
-                            ),
-                            "checker_1" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "testField"),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with selection set and resolver with selection set in old engine`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = RequiredSelectionSet(
-                        SelectionsParser.parse("TestType", "testField"),
-                        emptyList(),
-                        forChecker = false
-                    ),
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "key" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "himejiId"),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with selection set of multiple fragments and resolver with selection set in old engine`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                val checkerDocString =
-                    """
-                        fragment Main on TestType {
-                            himejiId
-                            ... TestFragment
-                        }
-                        fragment TestFragment on TestType {
-                            foo {
-                                bar
-                            }
-                        }
-                    """.trimIndent()
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = RequiredSelectionSet(
-                        SelectionsParser.parse("TestType", "testField"),
-                        emptyList(),
-                        forChecker = false
-                    ),
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "key" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", checkerDocString),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check when modstrat is enabled for all, but not execute access check in modstrat`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with single selection set, when modstrat is enabled for all, but not execute access check in modstrat`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "key" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "himejiId"),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
-                }
-            }
-        }
-
-    @Test
-    fun `test success access check with multiple selection sets, when modstrat is enabled for all, but not execute access check in modstrat`(): Unit =
-        runBlocking(TestCoroutineDispatcher()) {
-            withThreadLocalCoroutineContext {
-                Fixture(
-                    expectedResult = "test fetched result",
-                    requiredSelectionSet = null,
-                    flagManager = allDisabledFlags,
-                    checkerExecutor = MockCheckerExecutor(
-                        requiredSelectionSets = mapOf(
-                            "checker_0" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "himejiId"),
-                                emptyList(),
-                                forChecker = true
-                            ),
-                            "checker_1" to RequiredSelectionSet(
-                                SelectionsParser.parse("TestType", "testField"),
-                                emptyList(),
-                                forChecker = true
-                            )
-                        ),
-                        executeFn = { _, _ -> }
-                    )
-                ).apply {
-                    val receivedResult = resolverDataFetcher.get(dataFetchingEnvironment).join()
-                    assertEquals(expectedResult, receivedResult)
                 }
             }
         }
