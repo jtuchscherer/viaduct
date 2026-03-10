@@ -10,6 +10,7 @@ import viaduct.service.api.SchemaId
 import viaduct.service.runtime.SchemaConfiguration
 import viaduct.service.runtime.toScopeConfig
 import viaduct.tenant.runtime.bootstrap.TenantPackageFinder
+import viaduct.tenant.runtime.bootstrap.TenantPackageInfo
 import viaduct.tenant.runtime.execution.filtertest.resolverbases.QueryResolvers
 import viaduct.tenant.runtime.fixtures.FeatureAppTestBase
 
@@ -172,9 +173,9 @@ class TenantPackageFilteringFeatureAppTest : FeatureAppTestBase() {
 }
 
 class TestTenantPackageFinder(classes: Iterable<KClass<out TenantModule>>) : TenantPackageFinder {
-    private val packages = classes.map { it.java.packageName }.toSet()
+    private val packageInfos = classes.map { TenantPackageInfo(packageName = it.java.packageName) }.toSet()
 
-    override fun tenantPackages() = packages
+    override fun tenantPackages() = packageInfos
 }
 
 class Tenant1Module : TenantModule {

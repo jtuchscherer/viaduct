@@ -1,6 +1,7 @@
 package viaduct.tenant.runtime.bootstrap
 
 import com.google.common.annotations.VisibleForTesting
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.utils.slf4j.logger
 
 /**
@@ -26,12 +27,13 @@ class ViaductTenantResolverClassFinderFactory
             private val log by logger()
         }
 
-        override fun create(packageName: String): TenantResolverClassFinder = create(packageName, withNewScanner = false)
+        override fun create(packageInfo: TenantPackageInfo): TenantResolverClassFinder = create(packageInfo.packageName, packageInfo.metadata, withNewScanner = false)
 
         fun create(
             packageName: String,
-            withNewScanner: Boolean,
+            metadata: TenantModuleMetadata = TenantModuleMetadata.EMPTY,
+            withNewScanner: Boolean = false,
         ): TenantResolverClassFinder {
-            return ViaductTenantResolverClassFinder(packageName, grtPackagePrefix, withNewScanner)
+            return ViaductTenantResolverClassFinder(packageName, grtPackagePrefix, withNewScanner, metadata)
         }
     }

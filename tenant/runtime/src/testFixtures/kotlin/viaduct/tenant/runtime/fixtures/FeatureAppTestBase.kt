@@ -17,6 +17,7 @@ import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.GuiceTenantCodeInjector
+import viaduct.tenant.runtime.bootstrap.TenantPackageInfo
 import viaduct.tenant.runtime.bootstrap.ViaductTenantResolverClassFinderFactory
 
 /**
@@ -139,7 +140,7 @@ abstract class FeatureAppTestBase : AbstractFeatureAppTestBase() {
      * field returns null at query time with no indication of what went wrong.
      */
     private fun validateResolverImplementations() {
-        val classFinder = tenantResolverClassFinderFactory.create(derivedClassPackagePrefix)
+        val classFinder = tenantResolverClassFinderFactory.create(TenantPackageInfo(derivedClassPackagePrefix))
         val missingResolvers = mutableListOf<String>()
 
         // Check field resolvers (@ResolverFor base classes need a @Resolver subclass).

@@ -16,6 +16,7 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.ResolverMetadata
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.NodeExecutionContextFactory
 
@@ -28,8 +29,9 @@ class NodeBatchResolverExecutorImpl(
     private val factory: NodeExecutionContextFactory,
     private val resolverName: String,
     override val isSelective: Boolean,
+    private val tenantMetadata: TenantModuleMetadata? = null,
 ) : NodeResolverExecutor {
-    override val metadata = ResolverMetadata.forModern(resolverName)
+    override val metadata = ResolverMetadata.forModern(resolverName, tenantMetadata)
     override val isBatching = true
 
     override suspend fun resolve(

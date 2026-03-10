@@ -11,6 +11,7 @@ import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.TenantCodeInjector
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.TenantPackageFinder
+import viaduct.tenant.runtime.bootstrap.TenantPackageInfo
 import viaduct.tenant.runtime.bootstrap.TenantResolverClassFinder
 import viaduct.tenant.runtime.bootstrap.TenantResolverClassFinderFactory
 import viaduct.tenant.runtime.bootstrap.ViaductTenantModuleBootstrapper
@@ -41,16 +42,16 @@ open class ViaductTenantAPIBootstrapper
          */
         override suspend fun tenantModuleBootstrappers(): Iterable<TenantModuleBootstrapper> {
             log.info("Viaduct Modern Tenant API Bootstrapper: Creating bootstrappers for tenant modules")
-            val tenantModuleNames = tenantPackageFinder.tenantPackages()
+            val tenantPackageInfos = tenantPackageFinder.tenantPackages()
 
             // Create bootstrappers in parallel.
             return coroutineScope {
-                tenantModuleNames.map { tenantModuleName ->
+                tenantPackageInfos.map { packageInfo ->
                     async {
-                        log.info("Creating bootstrapper for tenant module: {}", tenantModuleName)
+                        log.info("Creating bootstrapper for tenant module: {}", packageInfo.packageName)
                         ViaductTenantModuleBootstrapper(
                             tenantCodeInjector,
-                            createResolverClassFinder(tenantModuleName),
+                            createResolverClassFinder(packageInfo),
                             globalIDCodec,
                             grtConvFactory,
                         )
@@ -69,7 +70,7 @@ open class ViaductTenantAPIBootstrapper
          * @return a configured [TenantResolverClassFinder] for the package
          */
         @Deprecated("Experimental, for Airbnb use only", level = DeprecationLevel.WARNING)
-        protected open fun createResolverClassFinder(packageName: String): TenantResolverClassFinder = tenantResolverClassFinderFactory.create(packageName)
+        protected open fun createResolverClassFinder(packageInfo: TenantPackageInfo): TenantResolverClassFinder = tenantResolverClassFinderFactory.create(packageInfo)
 
         /**
          * Builder for creating a ViaductTenantAPIBootstrapper instance.
@@ -123,7 +124,7 @@ open class ViaductTenantAPIBootstrapper
 
             protected fun resolvedTenantPackageFinder(): TenantPackageFinder =
                 when {
-                    tenantPackagePrefix != null -> TenantPackageFinder { setOf(tenantPackagePrefix!!) }
+                    tenantPackagePrefix != null -> TenantPackageFinder { setOf(TenantPackageInfo(tenantPackagePrefix!!)) }
                     tenantPackageFinder != null -> tenantPackageFinder!!
                     else -> ViaductTenantPackageFinder()
                 }

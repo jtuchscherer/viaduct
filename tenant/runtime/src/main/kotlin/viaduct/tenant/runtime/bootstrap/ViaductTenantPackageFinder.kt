@@ -1,6 +1,7 @@
 package viaduct.tenant.runtime.bootstrap
 
 import viaduct.api.TenantModule
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.utils.classgraph.ClassGraphScanner
 
 /**
@@ -14,12 +15,15 @@ import viaduct.utils.classgraph.ClassGraphScanner
  * to maintain backward compatibility with the original behavior.
  */
 class ViaductTenantPackageFinder : TenantPackageFinder {
-    override fun tenantPackages(): Set<String> {
+    override fun tenantPackages(): Set<TenantPackageInfo> {
         val tenantInterfaceClass = TenantModule::class.java
         val tenantModuleClasses =
             ClassGraphScanner.INSTANCE
                 .getSubTypesOf(tenantInterfaceClass, packagesFilter = setOf(TENANT_PACKAGE_PREFIX))
-        return tenantModuleClasses.map { it.packageName }.toSet()
+        return tenantModuleClasses.map { clazz ->
+            val module = clazz.getDeclaredConstructor().newInstance()
+            TenantPackageInfo(packageName = clazz.packageName, metadata = TenantModuleMetadata.fromMap(module.metadata))
+        }.toSet()
     }
 
     companion object {

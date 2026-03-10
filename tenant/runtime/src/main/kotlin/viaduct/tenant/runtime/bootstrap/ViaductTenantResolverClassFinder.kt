@@ -5,6 +5,7 @@ import viaduct.api.internal.NodeResolverFor
 import viaduct.api.internal.ObjectBase
 import viaduct.api.internal.ResolverFor
 import viaduct.api.types.Arguments
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.utils.classgraph.ClassGraphScanner
 import viaduct.utils.slf4j.logger
 
@@ -12,6 +13,7 @@ class ViaductTenantResolverClassFinder(
     private val tenantPackage: String,
     private val grtPackagePrefix: String,
     private val withNewScanner: Boolean = false,
+    private val metadata: TenantModuleMetadata = TenantModuleMetadata.EMPTY,
 ) : TenantResolverClassFinder {
     companion object {
         private val log by logger()
@@ -51,4 +53,6 @@ class ViaductTenantResolverClassFinder(
         @Suppress("UNCHECKED_CAST")
         return Class.forName("$grtPackagePrefix.$typeName").kotlin as KClass<out Arguments>
     }
+
+    override fun tenantModuleMetadata(): TenantModuleMetadata = metadata
 }

@@ -16,6 +16,7 @@ import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.TenantModuleException
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.engine.api.ViaductSchema
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.TenantCodeInjector
@@ -47,6 +48,8 @@ class ViaductTenantModuleBootstrapper(
     private val reflectionLoader = ReflectionLoaderImpl { name -> tenantResolverClassFinder.grtClassForName(name) }
 
     private val requiredSelectionSetFactory = RequiredSelectionSetFactory(globalIDCodec, reflectionLoader)
+
+    private val tenantMetadata: TenantModuleMetadata = tenantResolverClassFinder.tenantModuleMetadata()
 
     /**
      * Return a list of Pair<field-coordinate, resolver executor>s for this Viaduct tenant module.
@@ -178,7 +181,8 @@ class ViaductTenantModuleBootstrapper(
                     globalIDCodec = globalIDCodec,
                     reflectionLoader = reflectionLoader,
                     resolverContextFactory = fieldExecutionContextFactory,
-                    resolverName = resolverKClass.qualifiedName!!
+                    resolverName = resolverKClass.qualifiedName!!,
+                    tenantMetadata = tenantMetadata,
                 )
                 result.put(resolverId, resolverExecutor)?.let { extant ->
                     throw RuntimeException(
@@ -204,6 +208,7 @@ class ViaductTenantModuleBootstrapper(
                     reflectionLoader = reflectionLoader,
                     resolverContextFactory = fieldExecutionContextFactory,
                     resolverName = resolverKClass.qualifiedName!!,
+                    tenantMetadata = tenantMetadata,
                 )
                 result.put(resolverId, resolverExecutor)?.let { extant ->
                     throw RuntimeException(
@@ -303,6 +308,7 @@ class ViaductTenantModuleBootstrapper(
                         factory = resolverContextFactory,
                         resolverName = resolverKClass.qualifiedName!!,
                         isSelective = isSelective,
+                        tenantMetadata = tenantMetadata,
                     )
                 nodeResolverExecutors.put(typeName, nodeUnbatchedResolverExecutor)?.let { extant ->
                     throw TenantModuleException(
@@ -322,6 +328,7 @@ class ViaductTenantModuleBootstrapper(
                         factory = resolverContextFactory,
                         resolverName = resolverKClass.qualifiedName!!,
                         isSelective = isSelective,
+                        tenantMetadata = tenantMetadata,
                     )
                 nodeResolverExecutors.put(typeName, nodeResolverExecutor)?.let { extant ->
                     throw TenantModuleException(

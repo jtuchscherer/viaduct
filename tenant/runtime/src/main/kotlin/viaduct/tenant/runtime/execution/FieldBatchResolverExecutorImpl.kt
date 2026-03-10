@@ -17,6 +17,7 @@ import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.FieldResolverExecutor.Selector
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
+import viaduct.engine.api.TenantModuleMetadata
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.FieldExecutionContextFactory
 
@@ -36,8 +37,9 @@ class FieldBatchResolverExecutorImpl(
     private val reflectionLoader: ReflectionLoader,
     private val resolverContextFactory: FieldExecutionContextFactory,
     private val resolverName: String,
+    private val tenantMetadata: TenantModuleMetadata? = null,
 ) : FieldResolverExecutor {
-    override val metadata = ResolverMetadata.forModern(resolverName)
+    override val metadata = ResolverMetadata.forModern(resolverName, tenantMetadata)
 
     override val isBatching = true
 
