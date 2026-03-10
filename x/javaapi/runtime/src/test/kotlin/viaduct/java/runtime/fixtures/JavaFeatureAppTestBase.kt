@@ -71,14 +71,16 @@ abstract class JavaFeatureAppTestBase : AbstractFeatureAppTestBase() {
 
     // Parent package prefix covering both "resolvers" and "resolverbases" sibling packages
     // e.g., "viaduct.java.runtime.featureapp.enum_example" from "...enum_example.resolvers"
-    private val featureAppPackagePrefix: String =
-        derivedClassPackage.substringBeforeLast('.')
+    // Override in subclasses to support flat package structure (test + GRTs in same package)
+    protected open fun featureAppPackagePrefix(): String = derivedClassPackage.substringBeforeLast('.')
+
+    protected open fun grtPackagePrefix(): String = "${featureAppPackagePrefix()}.grt"
 
     // Class finder for discovering Java resolvers in the feature app's packages
     private val classFinder by lazy {
         DefaultJavaResolverClassFinder(
-            tenantPackage = featureAppPackagePrefix,
-            grtPackagePrefix = "$featureAppPackagePrefix.grt"
+            tenantPackage = featureAppPackagePrefix(),
+            grtPackagePrefix = grtPackagePrefix()
         )
     }
 

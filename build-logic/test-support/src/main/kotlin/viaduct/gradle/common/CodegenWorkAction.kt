@@ -40,6 +40,7 @@ abstract class CodegenWorkAction : WorkAction<CodegenWorkAction.Params> {
         const val SCHEMA_OBJECTS_BYTECODE = "viaduct.tenant.codegen.cli.SchemaObjectsBytecode\$Main"
         const val VIADUCT_GENERATOR = "viaduct.tenant.codegen.cli.ViaductGenerator\$Main"
         const val KOTLIN_GRTS_GENERATOR = "viaduct.tenant.codegen.cli.KotlinGRTsGenerator\$Main"
+        const val JAVA_GRTS_GENERATOR = "viaduct.x.javaapi.codegen.cli.JavaGRTsGenerator\$Main"
     }
 }
 

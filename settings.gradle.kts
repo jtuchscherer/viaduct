@@ -38,6 +38,7 @@ includeBuild("demoapps/micronaut-starter")
 includeBuild("demoapps/starwars")
 
 include(":tenant:tutorials")
+include(":x:javaapi:runtime-integration-tests")
 
 // misc
 include(":docs")

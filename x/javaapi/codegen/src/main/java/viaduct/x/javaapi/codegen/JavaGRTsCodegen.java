@@ -26,9 +26,10 @@ public class JavaGRTsCodegen {
       int inputCount,
       int interfaceCount,
       int unionCount,
+      int argumentCount,
       List<File> generatedFiles) {
     public int totalCount() {
-      return enumCount + objectCount + inputCount + interfaceCount + unionCount;
+      return enumCount + objectCount + inputCount + interfaceCount + unionCount + argumentCount;
     }
   }
 
@@ -87,12 +88,22 @@ public class JavaGRTsCodegen {
       generatedFiles.add(JavaGRTGenerator.UnionGenerator.generateToFile(model, grtOutputDir));
     }
 
+    // Generate argument types (resolver bases reference these)
+    String mutationTypeName =
+        schema.getMutationTypeDef() != null ? schema.getMutationTypeDef().getName() : null;
+    List<ArgumentModel> argumentModels =
+        parser.extractArguments(schema, grtPackage, mutationTypeName);
+    for (ArgumentModel model : argumentModels) {
+      generatedFiles.add(JavaGRTGenerator.ArgumentGenerator.generateToFile(model, grtOutputDir));
+    }
+
     return new Result(
         enumModels.size(),
         objectModels.size(),
         inputModels.size(),
         interfaceModels.size(),
         unionModels.size(),
+        argumentModels.size(),
         generatedFiles);
   }
 }
