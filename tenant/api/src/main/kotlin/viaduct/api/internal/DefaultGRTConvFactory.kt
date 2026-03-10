@@ -24,6 +24,7 @@ import viaduct.apiannotations.InternalApi
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.gj
+import viaduct.graphql.isGlobalID
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.ConvMemo
 import viaduct.mapping.graphql.IR

@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.viaduct.engine.api)
     implementation(libs.viaduct.service.api)
     api(libs.viaduct.shared.apiannotations)
+    implementation(libs.viaduct.shared.graphql)
     implementation(libs.viaduct.shared.mapping)
     implementation(libs.viaduct.shared.apiannotations)
 

@@ -14,6 +14,7 @@ import kotlin.reflect.KClass
 import viaduct.api.ViaductTenantUsageException
 import viaduct.api.globalid.GlobalID
 import viaduct.apiannotations.InternalApi
+import viaduct.graphql.isGlobalID
 import viaduct.graphql.schema.baseGraphqlScalarTypeMapping
 
 private fun graphqlScalarTypeToKotlinClass(

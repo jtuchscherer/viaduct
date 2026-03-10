@@ -2,12 +2,9 @@
 
 package viaduct.api.internal
 
-import graphql.schema.GraphQLInputObjectType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.api.mocks.MockInternalContext
@@ -16,7 +13,6 @@ import viaduct.api.testschema.E1
 import viaduct.api.testschema.Input2
 import viaduct.api.testschema.TestType
 import viaduct.engine.api.ResolvedEngineObjectData
-import viaduct.engine.api.gj
 
 class WrapUtilsTest {
     private val schema = SchemaUtils.getSchema()
@@ -76,48 +72,4 @@ class WrapUtilsTest {
             )
             assertEquals("foo", obj.getId())
         }
-
-    @Test
-    fun `isGlobalID -- true for id field of concrete Node type`() {
-        assertTrue(
-            isGlobalID(
-                field = schema.schema.getFieldDefinition(("TestUser" to "id").gj),
-                parentType = schema.schema.getObjectType("TestUser")
-            )
-        )
-    }
-
-    @Test
-    fun `isGlobalID -- ID-typed output fields`() {
-        val testUser = schema.schema.getObjectType("TestUser")
-
-        // field type is `ID!` but the field definition does not apply @idOf
-        assertFalse(
-            isGlobalID(testUser.getField("id2"), testUser)
-        )
-
-        // field type is `[ID]` and applies @idOf
-        assertTrue(
-            isGlobalID(testUser.getField("id3"), testUser)
-        )
-
-        // field type is [ID] and does not apply @idOf
-        assertFalse(
-            isGlobalID(testUser.getField("id4"), testUser)
-        )
-    }
-
-    @Test
-    fun `isGlobalID -- ID-typed input fields`() {
-        val inp = schema.schema.getTypeAs<GraphQLInputObjectType>("InputWithGlobalIDs")
-
-        // field type is `ID!`, without @idOf
-        assertFalse(isGlobalID(inp.getField("id")))
-
-        // field type is `ID!`, with @idOf
-        assertTrue(isGlobalID(inp.getField("id2")))
-
-        // field type is [[ID]!], with @idOf
-        assertTrue(isGlobalID(inp.getField("ids")))
-    }
 }

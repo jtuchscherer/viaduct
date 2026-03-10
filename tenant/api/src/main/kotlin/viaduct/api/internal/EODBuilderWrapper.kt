@@ -13,6 +13,7 @@ import viaduct.api.globalid.GlobalID
 import viaduct.engine.api.EngineObject
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineObjectDataBuilder
+import viaduct.graphql.isGlobalID
 import viaduct.service.api.spi.GlobalIDCodec
 
 /**
