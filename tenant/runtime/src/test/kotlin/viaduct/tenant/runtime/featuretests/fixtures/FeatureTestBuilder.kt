@@ -16,8 +16,6 @@ import viaduct.api.types.CompositeOutput
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Query
 import viaduct.engine.SchemaFactory
-import viaduct.engine.api.CheckerExecutor
-import viaduct.engine.api.CheckerExecutorFactory
 import viaduct.engine.api.CheckerMetadata
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineObjectData
@@ -26,6 +24,8 @@ import viaduct.engine.api.SelectionSetVariable
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.api.select.SelectionsParser
+import viaduct.engine.api.spi.CheckerExecutor
+import viaduct.engine.api.spi.CheckerExecutorFactory
 import viaduct.service.api.spi.ErrorReporter
 import viaduct.service.api.spi.FlagManager.Flags
 import viaduct.service.api.spi.GlobalIDCodec

@@ -13,11 +13,11 @@ import viaduct.api.ViaductTenantResolverException
 import viaduct.api.internal.ReflectionLoader
 import viaduct.api.wrapResolveException
 import viaduct.engine.api.EngineExecutionContext
-import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.FieldResolverExecutor.Selector
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
 import viaduct.engine.api.TenantModuleMetadata
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.FieldResolverExecutor.Selector
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.FieldExecutionContextFactory
 

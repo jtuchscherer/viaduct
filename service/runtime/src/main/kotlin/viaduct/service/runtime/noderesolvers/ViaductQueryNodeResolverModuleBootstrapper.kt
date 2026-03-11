@@ -2,13 +2,13 @@ package viaduct.service.runtime.noderesolvers
 
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineExecutionContext
-import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
-import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.NodeResolverExecutor
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 
 /**
  * ViaductNodeResolverModuleBootstrapper is responsible for defining and bootstrapping system level Query.node/s field resolvers.

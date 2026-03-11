@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import viaduct.engine.api.FieldResolverExecutor;
+import viaduct.engine.api.spi.FieldResolverExecutor;
 import viaduct.java.api.annotations.Resolver;
 import viaduct.java.runtime.featureapp.object_example.grt.Address;
 import viaduct.java.runtime.featureapp.object_example.grt.Person;

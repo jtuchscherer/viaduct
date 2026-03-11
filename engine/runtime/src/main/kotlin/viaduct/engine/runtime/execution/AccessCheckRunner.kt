@@ -6,10 +6,10 @@ import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import java.util.function.Supplier
-import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.combine
-import viaduct.engine.api.coroutines.CoroutineInterop
+import viaduct.engine.api.spi.CheckerExecutor
+import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.runtime.CheckerDispatcher
 import viaduct.engine.runtime.CheckerProxyEngineObjectData
 import viaduct.engine.runtime.EngineExecutionContextExtensions.copy

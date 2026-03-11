@@ -2,11 +2,11 @@ package viaduct.tenant.runtime.featuretests.fixtures
 
 import viaduct.api.internal.ReflectionLoader
 import viaduct.engine.api.Coordinate
-import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.TenantAPIBootstrapper
-import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.NodeResolverExecutor
+import viaduct.engine.api.spi.TenantAPIBootstrapper
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.tenant.runtime.execution.FieldUnbatchedResolverExecutorImpl

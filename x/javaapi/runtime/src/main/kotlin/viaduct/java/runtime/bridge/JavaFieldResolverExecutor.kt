@@ -4,9 +4,9 @@ import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.future.await
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
+import viaduct.engine.api.spi.FieldResolverExecutor
 import viaduct.java.api.context.FieldExecutionContext
 import viaduct.java.api.types.Arguments
 

@@ -8,9 +8,9 @@ import kotlinx.coroutines.withContext
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData as EngineObjectDataApi
 import viaduct.engine.api.ObjectEngineResult
-import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.engineExecutionContext
 import viaduct.engine.api.instrumentation.ViaductTenantNameContext
+import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.runtime.EngineExecutionContextExtensions.copy
 import viaduct.engine.runtime.EngineResultLocalContext
 import viaduct.engine.runtime.FieldResolverDispatcher

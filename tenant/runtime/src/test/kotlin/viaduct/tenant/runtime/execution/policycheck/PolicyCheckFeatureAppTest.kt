@@ -6,14 +6,14 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import viaduct.api.Resolver
-import viaduct.engine.api.CheckerExecutor
-import viaduct.engine.api.CheckerExecutorFactory
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.CheckerResultContext
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.spi.CheckerExecutor
+import viaduct.engine.api.spi.CheckerExecutorFactory
 import viaduct.graphql.test.assertEquals
 import viaduct.service.api.spi.FlagManager
 import viaduct.service.api.spi.mocks.MockFlagManager

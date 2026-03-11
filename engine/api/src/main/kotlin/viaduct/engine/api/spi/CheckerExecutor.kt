@@ -1,4 +1,10 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
+
+import viaduct.engine.api.CheckerMetadata
+import viaduct.engine.api.CheckerResult
+import viaduct.engine.api.EngineExecutionContext
+import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.RequiredSelectionSet
 
 /**
  * Executor for both tenant-written and Viaduct architect-written access checkers.

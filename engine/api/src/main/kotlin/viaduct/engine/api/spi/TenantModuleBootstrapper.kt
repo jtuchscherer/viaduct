@@ -1,4 +1,7 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
+
+import viaduct.engine.api.Coordinate
+import viaduct.engine.api.ViaductSchema
 
 /**
  * Interface for the data that a tenant API provides to the engine to bootstrap

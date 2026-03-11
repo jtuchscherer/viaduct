@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import viaduct.deferred.RequestParentJobContextElement
-import viaduct.engine.api.coroutines.CoroutineInterop
+import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.api.spi.TemporaryBypassAccessCheck
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl

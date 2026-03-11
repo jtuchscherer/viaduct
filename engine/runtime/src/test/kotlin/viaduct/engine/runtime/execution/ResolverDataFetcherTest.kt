@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectDataBuilder
-import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.FromArgumentVariable
 import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.ParsedSelections
@@ -34,6 +33,7 @@ import viaduct.engine.api.instrumentation.ViaductTenantNameContext
 import viaduct.engine.api.mocks.FieldUnbatchedResolverFn
 import viaduct.engine.api.mocks.MockFieldUnbatchedResolverExecutor
 import viaduct.engine.api.select.SelectionsParser
+import viaduct.engine.api.spi.FieldResolverExecutor
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.EngineResultLocalContext
 import viaduct.engine.runtime.FieldResolutionResult

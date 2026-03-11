@@ -37,7 +37,6 @@ import kotlinx.coroutines.runBlocking
 import viaduct.apiannotations.VisibleForTest
 import viaduct.arbitrary.common.Config
 import viaduct.arbitrary.graphql.graphQLExecutionInput
-import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.EngineExecutionContext
@@ -47,8 +46,9 @@ import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.ViaductSchema
-import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.instrumentation.ViaductModernInstrumentation
+import viaduct.engine.api.spi.CheckerExecutor
+import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.api.spi.TemporaryBypassAccessCheck
 import viaduct.engine.runtime.CheckerDispatcher
 import viaduct.engine.runtime.DispatcherRegistry
@@ -395,7 +395,7 @@ object CheckerDispatchers {
                 arguments: Map<String, Any?>,
                 objectDataMap: Map<String, EngineObjectData>,
                 context: EngineExecutionContext,
-                checkerType: viaduct.engine.api.CheckerExecutor.CheckerType
+                checkerType: viaduct.engine.api.spi.CheckerExecutor.CheckerType
             ): CheckerResult = CheckerResult.Success
         }
         dispatcher.executor = object : CheckerExecutor {

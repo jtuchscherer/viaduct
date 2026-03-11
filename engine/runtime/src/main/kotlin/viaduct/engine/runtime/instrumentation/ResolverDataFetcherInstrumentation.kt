@@ -6,9 +6,9 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.schema.DataFetcher
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.ViaductDataFetchingEnvironment
-import viaduct.engine.api.coroutines.CoroutineInterop
 import viaduct.engine.api.instrumentation.ViaductModernGJInstrumentation
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
+import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.FieldResolverDispatcher
 import viaduct.engine.runtime.SyncFieldResolverDispatcher

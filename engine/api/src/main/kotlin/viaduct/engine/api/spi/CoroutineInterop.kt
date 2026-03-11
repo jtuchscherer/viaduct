@@ -1,4 +1,4 @@
-package viaduct.engine.api.coroutines
+package viaduct.engine.api.spi
 
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.CoroutineContext
@@ -13,6 +13,7 @@ import kotlinx.coroutines.Deferred
  * This interface lets the Airbnb installations use the Airbnb-coupled implementation of `scopedFuture`,
  * while the default implementation is a small fork that takes out Airbnb-specific logic (while it lasts).
  */
+@Deprecated("For Airbnb use only, will be removed.")
 interface CoroutineInterop {
     /**
      * Enters a threadlocal coroutine context for a top-level request.

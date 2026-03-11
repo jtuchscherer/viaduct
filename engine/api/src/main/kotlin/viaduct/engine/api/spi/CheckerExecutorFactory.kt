@@ -1,4 +1,6 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
+
+import viaduct.engine.api.ViaductSchema
 
 interface CheckerExecutorFactory {
     fun checkerExecutorForField(

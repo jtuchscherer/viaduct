@@ -4,11 +4,11 @@ import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletableFuture
 import org.slf4j.LoggerFactory
-import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.TenantModuleBootstrapper
-import viaduct.engine.api.TenantModuleException
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.NodeResolverExecutor
+import viaduct.engine.api.spi.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantModuleException
 import viaduct.java.api.annotations.Resolver
 import viaduct.java.api.annotations.ResolverFor
 import viaduct.java.api.context.FieldExecutionContext

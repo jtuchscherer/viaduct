@@ -1,4 +1,4 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
 
 import viaduct.service.api.spi.TenantAPIBootstrapper as BaseTenantAPIBootstrapper
 

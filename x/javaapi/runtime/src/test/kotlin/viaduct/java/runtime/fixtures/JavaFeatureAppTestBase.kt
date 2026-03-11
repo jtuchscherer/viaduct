@@ -2,9 +2,9 @@
 
 package viaduct.java.runtime.fixtures
 
-import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.mocks.MockTenantAPIBootstrapper
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.java.runtime.bridge.DefaultJavaResolverClassFinder
 import viaduct.java.runtime.bridge.JavaModuleBootstrapper
 import viaduct.service.api.SchemaId

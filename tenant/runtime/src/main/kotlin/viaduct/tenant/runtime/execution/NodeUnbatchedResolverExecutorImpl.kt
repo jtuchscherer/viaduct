@@ -12,9 +12,9 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.NodeResolverExecutor
 import viaduct.engine.api.ResolverMetadata
 import viaduct.engine.api.TenantModuleMetadata
+import viaduct.engine.api.spi.NodeResolverExecutor
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.NodeExecutionContextFactory
 
