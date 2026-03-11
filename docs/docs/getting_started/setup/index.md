@@ -6,7 +6,7 @@ description: Set up your first Viaduct application
 
 ## Requirements
 
-- Java 17 must be on the path or available via JAVA_HOME
+- Java 17+ must be on the path or available via JAVA_HOME
 - Basic familiarity with GraphQL (see [GraphQL Foundation learning materials](https://graphql.org/learn/))
 
 ## Compatibility
