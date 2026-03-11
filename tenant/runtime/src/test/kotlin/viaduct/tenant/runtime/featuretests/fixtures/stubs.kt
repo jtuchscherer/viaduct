@@ -20,7 +20,6 @@ import viaduct.api.types.ConnectionArguments
 import viaduct.api.types.NodeObject
 import viaduct.api.types.Object
 import viaduct.api.types.Query
-import viaduct.engine.api.CheckerExecutor
 import viaduct.engine.api.CheckerMetadata
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.Coordinate
@@ -32,6 +31,7 @@ import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.SelectionSetVariable
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.MockCheckerErrorResult
+import viaduct.engine.api.spi.CheckerExecutor
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.RequiredSelectionSetFactory
 import viaduct.tenant.runtime.context.ConnectionFieldExecutionContextImpl

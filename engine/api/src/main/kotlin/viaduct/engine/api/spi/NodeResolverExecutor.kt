@@ -1,4 +1,9 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
+
+import viaduct.engine.api.EngineExecutionContext
+import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
+import viaduct.engine.api.ResolverMetadata
 
 /**
  * Executes tenant-written node resolver function.

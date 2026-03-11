@@ -1,4 +1,10 @@
-package viaduct.engine.api
+package viaduct.engine.api.spi
+
+import viaduct.engine.api.EngineExecutionContext
+import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.EngineSelectionSet
+import viaduct.engine.api.RequiredSelectionSet
+import viaduct.engine.api.ResolverMetadata
 
 /**
  * Executor for a tenant-written resolver function.

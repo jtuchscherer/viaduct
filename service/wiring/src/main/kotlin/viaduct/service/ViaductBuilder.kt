@@ -4,7 +4,7 @@ import graphql.execution.DataFetcherExceptionHandler
 import io.micrometer.core.instrument.MeterRegistry
 import viaduct.apiannotations.StableApi
 import viaduct.apiannotations.VisibleForTest
-import viaduct.engine.api.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.service.api.spi.ErrorReporter
 import viaduct.service.api.spi.FlagManager
 import viaduct.service.api.spi.GlobalIDCodec

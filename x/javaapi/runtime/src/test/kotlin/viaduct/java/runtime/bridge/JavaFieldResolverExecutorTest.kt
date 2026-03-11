@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.ExecutionAttribution
-import viaduct.engine.api.FieldResolverExecutor
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.select.SelectionsParser
+import viaduct.engine.api.spi.FieldResolverExecutor
 
 class JavaFieldResolverExecutorTest {
     @Test

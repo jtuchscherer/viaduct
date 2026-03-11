@@ -5,7 +5,7 @@ package viaduct.tenant.runtime.fixtures
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
-import viaduct.engine.api.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.service.ViaductBuilder
 import viaduct.service.api.ExecutionInput
 import viaduct.service.api.ExecutionResult

@@ -12,12 +12,12 @@ import viaduct.api.internal.NodeResolverFor
 import viaduct.api.internal.ResolverFor
 import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
-import viaduct.engine.api.FieldResolverExecutor
-import viaduct.engine.api.NodeResolverExecutor
-import viaduct.engine.api.TenantModuleBootstrapper
-import viaduct.engine.api.TenantModuleException
 import viaduct.engine.api.TenantModuleMetadata
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.api.spi.FieldResolverExecutor
+import viaduct.engine.api.spi.NodeResolverExecutor
+import viaduct.engine.api.spi.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantModuleException
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.TenantCodeInjector
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault

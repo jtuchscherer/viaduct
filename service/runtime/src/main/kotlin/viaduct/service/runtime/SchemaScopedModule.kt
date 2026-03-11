@@ -8,12 +8,12 @@ import com.google.inject.Singleton
 import javax.inject.Qualifier
 import viaduct.engine.EngineConfiguration
 import viaduct.engine.EngineFactory
-import viaduct.engine.api.CheckerExecutorFactory
-import viaduct.engine.api.CheckerExecutorFactoryCreator
 import viaduct.engine.api.RequiredSelectionSetRegistry
-import viaduct.engine.api.TenantModuleBootstrapper
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
+import viaduct.engine.api.spi.CheckerExecutorFactory
+import viaduct.engine.api.spi.CheckerExecutorFactoryCreator
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.execution.TenantNameResolver
 import viaduct.engine.runtime.tenantloading.DispatcherRegistryFactory

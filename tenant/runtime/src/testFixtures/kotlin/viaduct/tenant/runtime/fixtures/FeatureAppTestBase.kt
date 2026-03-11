@@ -13,7 +13,7 @@ import viaduct.api.reflect.Type
 import viaduct.api.types.NodeObject
 import viaduct.apiannotations.InternalApi
 import viaduct.apiannotations.VisibleForTest
-import viaduct.engine.api.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 import viaduct.tenant.runtime.bootstrap.GuiceTenantCodeInjector

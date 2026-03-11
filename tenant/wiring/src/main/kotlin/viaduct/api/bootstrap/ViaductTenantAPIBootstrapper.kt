@@ -4,8 +4,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import viaduct.api.internal.GRTConvFactory
-import viaduct.engine.api.TenantAPIBootstrapper
-import viaduct.engine.api.TenantModuleBootstrapper
+import viaduct.engine.api.spi.TenantAPIBootstrapper
+import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.TenantAPIBootstrapperBuilder
 import viaduct.service.api.spi.TenantCodeInjector
