@@ -65,7 +65,7 @@ class FieldUnbatchedResolverExecutorImpl(
             syncQueryValueGetter = selector.syncQueryValueGetter,
         )
         val resolver = mkResolver()
-        val result = wrapResolveException(resolverId) {
+        val result = wrapResolveException(resolverName) {
             resolveFn.callSuspend(resolver, ctx)
         }
         return unwrapFieldResolverResult(result, globalIDCodec)
