@@ -11,6 +11,7 @@ import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeReference
 import viaduct.engine.api.ResolverMetadata
+import viaduct.engine.api.ResolverType
 import viaduct.engine.api.TenantModuleMetadata
 import viaduct.engine.api.spi.NodeResolverExecutor
 import viaduct.errors.TenantUsageException
@@ -29,7 +30,7 @@ class NodeUnbatchedResolverExecutorImpl(
     override val isSelective: Boolean,
     private val tenantMetadata: TenantModuleMetadata? = null,
 ) : NodeResolverExecutor {
-    override val metadata = ResolverMetadata.forModern(resolverName, tenantMetadata)
+    override val metadata = ResolverMetadata.forModern(resolverName, ResolverType.NODE, tenantMetadata)
     override val isBatching = false
 
     override suspend fun resolve(

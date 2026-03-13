@@ -49,7 +49,7 @@ class ChainedResolverInstrumentationTest {
     fun `instrumentResolverExecution chains all instrumentations`() =
         runBlocking {
             val parameters = ViaductResolverInstrumentation.InstrumentExecuteResolverParameters(
-                resolverMetadata = ResolverMetadata.forModern("TestResolver")
+                resolverMetadata = ResolverMetadata.forMock("TestResolver")
             )
             val instr1ResolverExecutionCalled = AtomicBoolean(false)
             val instr2ResolverExecutionCalled = AtomicBoolean(false)
