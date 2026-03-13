@@ -1,12 +1,12 @@
 package viaduct.api.internal
 
-import viaduct.api.ViaductFrameworkException
-import viaduct.api.ViaductTenantException
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantException
 
 object ExceptionsForTesting {
-    private class TestViaductTenantException(m: String) : ViaductTenantException, Exception(m)
+    private class TestTenantException(m: String) : TenantException, Exception(m)
 
-    fun throwViaductFrameworkException(m: String): Nothing = throw ViaductFrameworkException(m)
+    fun throwFrameworkException(m: String): Nothing = throw FrameworkException(m)
 
-    fun throwViaductTenantException(m: String): Nothing = throw TestViaductTenantException(m)
+    fun throwTenantException(m: String): Nothing = throw TestTenantException(m)
 }

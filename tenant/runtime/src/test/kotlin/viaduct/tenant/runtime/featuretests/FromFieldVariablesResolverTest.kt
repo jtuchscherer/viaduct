@@ -361,7 +361,7 @@ class FromFieldVariablesResolverTest {
             }
             .resolver("Query" to "z") { true }
             .build()
-            .assertJson("{data: {x: \"ViaductTenantUsageException\"}}", "{x}")
+            .assertJson("{data: {x: \"TenantUsageException\"}}", "{x}")
 
         assertFalse(yResolved)
     }

@@ -8,16 +8,16 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import viaduct.api.FieldValue
 import viaduct.api.ResolverBase
-import viaduct.api.ViaductFrameworkException
-import viaduct.api.ViaductTenantResolverException
 import viaduct.api.internal.ReflectionLoader
-import viaduct.api.wrapResolveException
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
 import viaduct.engine.api.TenantModuleMetadata
 import viaduct.engine.api.spi.FieldResolverExecutor
 import viaduct.engine.api.spi.FieldResolverExecutor.Selector
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantResolverException
+import viaduct.errors.wrapResolveException
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.tenant.runtime.context.factory.FieldExecutionContextFactory
 
@@ -67,7 +67,7 @@ class FieldBatchResolverExecutorImpl(
             throw IllegalStateException("Unexpected return value from batchResolve function for field $resolverId: $results")
         }
         if (selectors.size != results.size) {
-            throw ViaductTenantResolverException(
+            throw TenantResolverException(
                 IllegalStateException(
                     "The batchResolve function in the field resolver for $resolverId was given a batch of size ${selectors.size} but returned ${results.size} elements"
                 ),
@@ -86,8 +86,8 @@ class FieldBatchResolverExecutorImpl(
             return Result.success(FieldUnbatchedResolverExecutorImpl.unwrapFieldResolverResult(fieldValue.get(), globalIDCodec))
         } catch (e: Exception) {
             if (e is CancellationException) currentCoroutineContext().ensureActive()
-            if (e is ViaductFrameworkException) return Result.failure(e)
-            return Result.failure(ViaductTenantResolverException(e, resolverId))
+            if (e is FrameworkException) return Result.failure(e)
+            return Result.failure(TenantResolverException(e, resolverId))
         }
     }
 }

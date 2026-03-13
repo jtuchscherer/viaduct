@@ -17,6 +17,7 @@ import viaduct.api.testschema.I1
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
 import viaduct.api.testschema.TestUser
+import viaduct.errors.TenantUsageException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ViaductObjectBuilderTest {
@@ -99,7 +100,7 @@ class ViaductObjectBuilderTest {
                 context,
                 O1::class
             )
-            val e = assertThrows<ViaductTenantUsageException> { o1Builder.put("tralala", 10) }
+            val e = assertThrows<TenantUsageException> { o1Builder.put("tralala", 10) }
             assertEquals("Field tralala not found on type O1", e.message)
         }
 

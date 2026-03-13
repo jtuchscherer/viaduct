@@ -42,6 +42,7 @@ includeNamed(":shared:viaductschema", "../..")
 includeNamed(":shared:invariants", "../..")
 includeNamed(":shared:codegen", "../..")
 includeNamed(":shared:mapping", "../..")
+includeNamed(":errors", "../..")
 includeNamed(":snipped:errors", "../..")
 
 // Serve module (development server runtime)

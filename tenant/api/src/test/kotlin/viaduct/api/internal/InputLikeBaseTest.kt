@@ -12,8 +12,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductFrameworkException
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.globalid.GlobalIDImpl
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.executionContext
@@ -29,6 +27,8 @@ import viaduct.api.testschema.O2
 import viaduct.api.testschema.O2_ArgumentedField_Arguments
 import viaduct.api.testschema.TestUser
 import viaduct.engine.api.gj
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantUsageException
 
 class InputLikeBaseTest {
     private val gqlSchema = SchemaUtils.getSchema()
@@ -55,10 +55,10 @@ class InputLikeBaseTest {
 
     @Test
     fun `test init via Builder -- throws when missing non-nullable fields without default value`() {
-        assertThrows<ViaductTenantUsageException> {
+        assertThrows<TenantUsageException> {
             Input1.Builder(executionContext).build()
         }
-        assertThrows<ViaductTenantUsageException> {
+        assertThrows<TenantUsageException> {
             Input1.Builder(executionContext).nonNullEnumFieldWithDefault(E1.A).build()
         }
     }
@@ -81,7 +81,7 @@ class InputLikeBaseTest {
         val err = assertThrows<InvocationTargetException> {
             mk<Input1>(emptyMap())
         }
-        assertTrue(err.targetException is ViaductFrameworkException)
+        assertTrue(err.targetException is FrameworkException)
     }
 
     @Test
@@ -89,7 +89,7 @@ class InputLikeBaseTest {
         val err = assertThrows<InvocationTargetException> {
             mk<Input1>(mapOf("nonNullStringField" to null))
         }
-        assertTrue(err.targetException is ViaductFrameworkException)
+        assertTrue(err.targetException is FrameworkException)
     }
 
     @Test
@@ -104,14 +104,14 @@ class InputLikeBaseTest {
                 )
             )
         }
-        assertTrue(err.targetException is ViaductFrameworkException)
+        assertTrue(err.targetException is FrameworkException)
     }
 
     @Test
     fun `test init via constructor -- throws when a non-nullable field has a null value`() {
         val m = mapOf("nonNullEnumFieldWithDefault" to null)
         val err = assertThrows<InvocationTargetException> { mk<Input1>(m) }
-        assertTrue(err.targetException is ViaductFrameworkException)
+        assertTrue(err.targetException is FrameworkException)
     }
 
     @Test
@@ -285,7 +285,7 @@ class InputLikeBaseTest {
         val input = mk<Input1>(args)
 
         assertNotNull(input)
-        assertThrows<ViaductFrameworkException> { input.listField }
+        assertThrows<FrameworkException> { input.listField }
     }
 
     @Test

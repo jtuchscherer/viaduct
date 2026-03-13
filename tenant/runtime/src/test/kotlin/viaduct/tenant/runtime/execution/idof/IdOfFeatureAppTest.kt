@@ -141,7 +141,7 @@ class IdOfFeatureAppTest : FeatureAppTestBase() {
             }
             "errors" to arrayOf(
                 {
-                    "message" to ".*viaduct.api.ViaductTenantUsageException.*"
+                    "message" to ".*viaduct.errors.TenantUsageException.*"
                     "path" to listOf("userFromArgument")
                     "extensions" to {
                         "classification" to "DataFetchingException"

@@ -4,7 +4,6 @@ import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.globalid.GlobalIDImpl
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.executionContext
@@ -13,6 +12,7 @@ import viaduct.api.testschema.E1
 import viaduct.api.testschema.O1
 import viaduct.api.testschema.O2
 import viaduct.api.testschema.TestUser
+import viaduct.errors.TenantUsageException
 
 class DynamicValueBuilderTypeCheckerTest {
     private val graphqlSchema = SchemaUtils.getSchema()
@@ -140,7 +140,7 @@ class DynamicValueBuilderTypeCheckerTest {
 
         val invalidBackingData = o2Type.getField("invalidBackingData")
         val context3 = DynamicValueBuilderTypeChecker.FieldContext(invalidBackingData, o2Type)
-        val ex = assertThrows<ViaductTenantUsageException> {
+        val ex = assertThrows<TenantUsageException> {
             checker.checkType(invalidBackingData.type, "abc", context3)
         }
         assertEquals("Backing data field invalidBackingData must have @backingData directive defined in schema. None found.", ex.message)

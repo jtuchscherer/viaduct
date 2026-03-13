@@ -11,9 +11,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductFrameworkException
-import viaduct.api.ViaductTenantException
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.executionContext
 import viaduct.api.mocks.testGlobalId
@@ -27,6 +24,9 @@ import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineObjectDataBuilder
 import viaduct.engine.api.NodeReference
 import viaduct.engine.api.UnsetFieldException
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantException
+import viaduct.errors.TenantUsageException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObjectBaseTest {
@@ -55,7 +55,7 @@ class ObjectBaseTest {
             assertEquals("hello", o1.getStringField())
             assertEquals(1, o1.getObjectField()!!.getIntField())
             assertEquals(E1.A, o1.getEnumField())
-            assertThrows<ViaductTenantUsageException> {
+            assertThrows<TenantUsageException> {
                 runBlocking {
                     o1.getObjectField()!!.getObjectField()
                 }
@@ -168,7 +168,7 @@ class ObjectBaseTest {
                         .put("stringField", 1)
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getStringField()
                 }
@@ -187,7 +187,7 @@ class ObjectBaseTest {
                         .put("intField", "hi")
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o2.getIntField()
                 }
@@ -232,7 +232,7 @@ class ObjectBaseTest {
                         .put("enumField", 1)
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getEnumField()
                 }
@@ -256,7 +256,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getEnumField()
                 }
@@ -340,7 +340,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getInterfaceField()
                 }
@@ -359,7 +359,7 @@ class ObjectBaseTest {
                         .put("interfaceField", "hi")
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getInterfaceField()
                 }
@@ -383,7 +383,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getObjectField()
                 }
@@ -411,7 +411,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getListField()
                 }
@@ -437,7 +437,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getListField()
                 }
@@ -461,7 +461,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getListFieldNonNullBaseType()
                 }
@@ -485,7 +485,7 @@ class ObjectBaseTest {
                         )
                         .build()
                 )
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     o1.getListFieldNonNullBaseType()
                 }
@@ -510,7 +510,7 @@ class ObjectBaseTest {
                         .build()
                 )
             val objectField = o1.getObjectField()!!
-            val exception = assertThrows<ViaductFrameworkException> {
+            val exception = assertThrows<FrameworkException> {
                 runBlocking {
                     objectField.getIntField()
                 }
@@ -522,9 +522,9 @@ class ObjectBaseTest {
     fun `test unwrapping - framework errors`(): Unit =
         runBlocking {
             val builder = BuggyBuilder()
-            val e1 = assertThrows<ViaductFrameworkException> { builder.intField(null) }
+            val e1 = assertThrows<FrameworkException> { builder.intField(null) }
             assertEquals("Got null builder value for non-null type Int!", e1.cause!!.message)
-            val e2 = assertThrows<ViaductFrameworkException> { builder.objectField(4) }
+            val e2 = assertThrows<FrameworkException> { builder.objectField(4) }
             assertEquals("Expected ObjectBase or EngineObjectData for builder value, got 4", e2.cause!!.message)
         }
 
@@ -595,10 +595,10 @@ class ObjectBaseTest {
             val globalId = o1.getId()
             assertEquals("O1", globalId.type.name)
             assertEquals("foo", globalId.internalID)
-            assertThrows<ViaductFrameworkException> { o1.get("thisFieldDoesNotExist", String::class) }
+            assertThrows<FrameworkException> { o1.get("thisFieldDoesNotExist", String::class) }
             assertInstanceOf(
                 UnsetFieldException::class.java,
-                assertThrows<ViaductTenantUsageException> { o1.getStringField() }.cause
+                assertThrows<TenantUsageException> { o1.getStringField() }.cause
             )
         }
 
@@ -607,22 +607,22 @@ class ObjectBaseTest {
             val o11 = O1(
                 internalContext,
                 object : NR() {
-                    override val id get() = ExceptionsForTesting.throwViaductTenantException("foo")
+                    override val id get() = ExceptionsForTesting.throwTenantException("foo")
                 }
             )
             val e11 = runCatching { o11.getId() }.exceptionOrNull()!!
-            assertInstanceOf(ViaductTenantException::class.java, e11)
+            assertInstanceOf(TenantException::class.java, e11)
             assertEquals("foo", e11.message)
 
             val o12 = O1(
                 internalContext,
                 object : NR() {
-                    override val id get() = ExceptionsForTesting.throwViaductFrameworkException("foo")
+                    override val id get() = ExceptionsForTesting.throwFrameworkException("foo")
                 }
             )
             assertEquals(
                 "foo",
-                assertThrows<ViaductFrameworkException> { o12.getId() }.message
+                assertThrows<FrameworkException> { o12.getId() }.message
             )
 
             val o13 = O1(
@@ -734,7 +734,7 @@ class ObjectBaseTest {
             }
             val testObject = TestObject(internalContext, nodeRef)
 
-            val exception = assertThrows<ViaductTenantUsageException> {
+            val exception = assertThrows<TenantUsageException> {
                 testObject.toBuilder()
             }
 

@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.globalid.GlobalIDImpl
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.executionContext
@@ -48,6 +47,7 @@ import viaduct.engine.api.engineObjectsAreEquivalent
 import viaduct.engine.api.gj
 import viaduct.engine.api.mocks.createEngineSelectionSet
 import viaduct.engine.api.select.SelectionsParser
+import viaduct.errors.TenantUsageException
 import viaduct.mapping.graphql.Conv
 import viaduct.mapping.graphql.IR
 
@@ -307,7 +307,7 @@ class DefaultGRTConvFactoryTest : KotestPropertyBase() {
                 TestType.Builder(executionContext).build(),
                 IR.Value.Object("TestType", emptyMap())
             ).let {
-                assertThrows<ViaductTenantUsageException> {
+                assertThrows<TenantUsageException> {
                     it.getId()
                 }
             }
