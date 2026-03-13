@@ -132,7 +132,11 @@ private class ObjectBuilderGenV2(
 
         return if (connectionInfo != null) {
             val edgeReflectionClass = KmName("$pkg/${connectionInfo.edgeTypeName}.${cfg.REFLECTION_NAME}").asJavaBinaryName
-            "super($1, $schemaLookup, null, $edgeReflectionClass.INSTANCE);"
+            // Cast to cfg.REFLECTED_TYPE (viaduct.api.reflect.Type) so Javassist's type-checker can match the
+            // ConnectionBuilder constructor's Type<E> parameter. Without the cast, Javassist infers the type
+            // as the placeholder class (ExampleEdge$Reflection) which doesn't declare the interface, causing
+            // "cannot find constructor" when the edge type is in a different build shard.
+            "super($1, $schemaLookup, null, (${cfg.REFLECTED_TYPE}) $edgeReflectionClass.INSTANCE);"
         } else {
             "super($contextCast, $schemaLookup, null);"
         }
@@ -161,7 +165,7 @@ private class ObjectBuilderGenV2(
         val superCall = if (connectionInfo != null) {
             val contextCast = castObjectExpression(cfg.CONNECTION_FIELD_EXECUTION_CONTEXT.asKmName.asType(), "$1")
             val edgeReflectionClass = KmName("$pkg/${connectionInfo.edgeTypeName}.${cfg.REFLECTION_NAME}").asJavaBinaryName
-            "super($contextCast, $2, $3, $edgeReflectionClass.INSTANCE);"
+            "super($contextCast, $2, $3, (${cfg.REFLECTED_TYPE}) $edgeReflectionClass.INSTANCE);"
         } else {
             "super($1, $2, $3);"
         }
