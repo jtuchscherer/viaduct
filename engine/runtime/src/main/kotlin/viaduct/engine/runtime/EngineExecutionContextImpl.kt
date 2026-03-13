@@ -13,7 +13,6 @@ import viaduct.engine.api.Engine
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.ResolveSelectionSetOptions

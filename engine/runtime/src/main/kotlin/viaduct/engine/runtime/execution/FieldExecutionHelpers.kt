@@ -33,7 +33,6 @@ import java.util.function.Supplier
 import kotlin.collections.plus
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.gj
@@ -42,6 +41,7 @@ import viaduct.engine.runtime.EngineExecutionContextExtensions.copy
 import viaduct.engine.runtime.EngineExecutionContextExtensions.dispatcherRegistry
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.EngineResultLocalContext
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ProxyEngineObjectData
 import viaduct.engine.runtime.observability.ExecutionObservabilityContext

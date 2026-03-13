@@ -34,7 +34,6 @@ import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.ParsedSelections
-import viaduct.engine.api.QueryPlanExecutionCondition
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolvedEngineObjectData
 import viaduct.engine.api.ResolverMetadata
@@ -49,6 +48,7 @@ import viaduct.engine.api.spi.NodeResolverExecutor
 import viaduct.engine.api.spi.TenantAPIBootstrapper
 import viaduct.engine.api.spi.TenantModuleBootstrapper
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.QueryPlanExecutionCondition
 import viaduct.engine.runtime.execution.DefaultCoroutineInterop
 import viaduct.engine.runtime.mocks.ContextMocks
 import viaduct.engine.runtime.mocks.createDispatcherRegistry

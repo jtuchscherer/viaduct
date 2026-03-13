@@ -19,7 +19,6 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.ExecutionInput
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.SubqueryExecutionException
@@ -31,6 +30,7 @@ import viaduct.engine.api.spi.TemporaryBypassAccessCheck
 import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.EngineExecutionContextFactory
 import viaduct.engine.runtime.EngineExecutionContextImpl
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ProxyEngineObjectData
 import viaduct.engine.runtime.context.CompositeLocalContext

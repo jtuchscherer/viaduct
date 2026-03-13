@@ -26,7 +26,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import viaduct.deferred.asDeferred
 import viaduct.engine.api.CheckerResult
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.ParentManagedValue
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.StandardResolutionValue
@@ -35,6 +34,7 @@ import viaduct.engine.runtime.Cell
 import viaduct.engine.runtime.FetchedValueWithExtensions
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.LazyEngineObjectData
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.RAW_VALUE_SLOT
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue

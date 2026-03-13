@@ -2,6 +2,7 @@ package viaduct.engine.api
 
 import graphql.language.FragmentDefinition
 import graphql.schema.GraphQLObjectType
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.service.api.spi.GlobalIDCodec
 
 /**

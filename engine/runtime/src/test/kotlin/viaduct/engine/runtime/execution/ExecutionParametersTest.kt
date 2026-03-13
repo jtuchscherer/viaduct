@@ -35,11 +35,11 @@ import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.ExecutionAttribution
-import viaduct.engine.api.QueryPlanExecutionCondition
 import viaduct.engine.api.instrumentation.ViaductModernGJInstrumentation
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
+import viaduct.engine.runtime.QueryPlanExecutionCondition
 import viaduct.engine.runtime.context.CompositeLocalContext
 import viaduct.engine.runtime.execution.ExecutionTestHelpers.createLocalContext
 import viaduct.engine.runtime.execution.ExecutionTestHelpers.createSchema

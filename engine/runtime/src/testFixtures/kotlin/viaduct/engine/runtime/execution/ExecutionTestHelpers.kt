@@ -43,7 +43,6 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
-import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.instrumentation.ViaductModernInstrumentation
@@ -52,6 +51,7 @@ import viaduct.engine.api.spi.CoroutineInterop
 import viaduct.engine.api.spi.TemporaryBypassAccessCheck
 import viaduct.engine.runtime.CheckerDispatcher
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.RequiredSelectionSetRegistry
 import viaduct.engine.runtime.context.CompositeLocalContext
 import viaduct.engine.runtime.instrumentation.ChainedViaductModernInstrumentation
 import viaduct.engine.runtime.mocks.ContextMocks

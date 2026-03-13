@@ -19,7 +19,6 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.NodeReference
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolveSelectionSetOptions
 import viaduct.engine.api.ViaductSchema
