@@ -6,6 +6,7 @@ import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolverMetadata
+import viaduct.engine.api.ResolverType
 import viaduct.engine.api.spi.FieldResolverExecutor
 import viaduct.java.api.context.FieldExecutionContext
 import viaduct.java.api.types.Arguments
@@ -40,7 +41,7 @@ class JavaFieldResolverExecutor(
     override val querySelectionSet: RequiredSelectionSet? = null,
     private val objectValueClass: Class<*>? = null,
 ) : FieldResolverExecutor {
-    override val metadata: ResolverMetadata = ResolverMetadata.forModern(resolverName)
+    override val metadata: ResolverMetadata = ResolverMetadata.forModern(resolverName, ResolverType.FIELD)
     override val isBatching: Boolean = false
 
     override suspend fun batchResolve(

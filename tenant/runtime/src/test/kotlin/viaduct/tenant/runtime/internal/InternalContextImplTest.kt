@@ -3,7 +3,6 @@ package viaduct.tenant.runtime.internal
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductFrameworkException
 import viaduct.api.context.ExecutionContext
 import viaduct.api.globalid.GlobalID
 import viaduct.api.internal.DefaultGRTConvFactory
@@ -16,6 +15,7 @@ import viaduct.api.types.NodeCompositeOutput
 import viaduct.api.types.NodeObject
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.api.mocks.MockSchema
+import viaduct.errors.FrameworkException
 import viaduct.service.api.spi.GlobalIDCodec
 import viaduct.service.api.spi.globalid.GlobalIDCodecDefault
 
@@ -37,7 +37,7 @@ class InternalContextImplTest {
     @Test
     fun `ExecutionContext_internal -- not an InternalContext`() {
         val ec = TestExecutionContext()
-        assertThrows<ViaductFrameworkException> {
+        assertThrows<FrameworkException> {
             ec.internal
         }
     }

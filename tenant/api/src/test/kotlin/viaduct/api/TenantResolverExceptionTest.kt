@@ -7,13 +7,16 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantResolverException
+import viaduct.errors.wrapResolveException
 
-class ViaductTenantResolverExceptionTest {
+class TenantResolverExceptionTest {
     @Test
     fun getResolversCallChain() {
-        val exception = ViaductTenantResolverException(
-            cause = ViaductTenantResolverException(
-                cause = ViaductTenantResolverException(
+        val exception = TenantResolverException(
+            cause = TenantResolverException(
+                cause = TenantResolverException(
                     cause = RuntimeException(),
                     resolver = "ResolverC",
                 ),
@@ -29,9 +32,9 @@ class ViaductTenantResolverExceptionTest {
     @Test
     fun testWrapFrameworkException(): Unit =
         runBlocking {
-            assertThrows<ViaductFrameworkException> {
+            assertThrows<FrameworkException> {
                 wrapResolveException("ResolverA") {
-                    throw ViaductFrameworkException("a framework exception occurred")
+                    throw FrameworkException("a framework exception occurred")
                 }
             }
         }
@@ -39,7 +42,7 @@ class ViaductTenantResolverExceptionTest {
     @Test
     fun testWrapTenantException(): Unit =
         runBlocking {
-            assertThrows<ViaductTenantResolverException> {
+            assertThrows<TenantResolverException> {
                 wrapResolveException("ResolverA") {
                     throw InvocationTargetException(RuntimeException("a tenant exception occurred"))
                 }

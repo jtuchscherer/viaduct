@@ -30,6 +30,7 @@ import viaduct.tenant.tutorial11.resolverbases.QueryResolvers
  * - Mutation resolvers can also call ctx.query() freely
  *
  * PREVIOUS: [viaduct.tenant.tutorial10.VariablesForArgumentsFeatureAppTest]
+ * NEXT: [viaduct.tenant.tutorial12.ConnectionsFeatureAppTest]
  */
 class SimpleSubqueriesFeatureAppTest : FeatureAppTestBase() {
     override var sdl = """

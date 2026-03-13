@@ -3,11 +3,11 @@ package viaduct.api.internal
 import graphql.language.Value
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLTypeUtil
-import viaduct.api.ViaductFrameworkException
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.types.InputLike
-import viaduct.api.wrapFrameworkErrors
 import viaduct.apiannotations.InternalApi
+import viaduct.errors.FrameworkException
+import viaduct.errors.TenantUsageException
+import viaduct.errors.handleTenantAPIErrors
 import viaduct.mapping.graphql.GJValueConv
 import viaduct.mapping.graphql.IR
 
@@ -26,14 +26,14 @@ abstract class InputLikeBase : InputLike {
         try {
             validateInputData(graphQLInputObjectType, inputData)
         } catch (e: IllegalStateException) {
-            throw ViaductFrameworkException("Failed to init ${graphQLInputObjectType.name} ($e)", e)
+            throw FrameworkException("Failed to init ${graphQLInputObjectType.name} ($e)", e)
         }
     }
 
     fun isPresent(fieldName: String): Boolean = inputData.containsKey(fieldName)
 
     protected fun <T> get(fieldName: String): T =
-        wrapFrameworkErrors("InputLikeBase.get failed for ${graphQLInputObjectType.name}.$fieldName") {
+        handleTenantAPIErrors("InputLikeBase.get failed for ${graphQLInputObjectType.name}.$fieldName") {
             val fieldDefinition = graphQLInputObjectType.getField(fieldName) ?: throw IllegalArgumentException(
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             )
@@ -78,7 +78,7 @@ abstract class InputLikeBase : InputLike {
         protected fun put(
             fieldName: String,
             value: Any?
-        ) = wrapFrameworkErrors("InputLikeBase.Builder.put failed for ${graphQLInputObjectType.name}.$fieldName") {
+        ) = handleTenantAPIErrors("InputLikeBase.Builder.put failed for ${graphQLInputObjectType.name}.$fieldName") {
             val field = requireNotNull(graphQLInputObjectType.getField(fieldName)) {
                 "Field $fieldName not found on type ${graphQLInputObjectType.name}"
             }
@@ -91,7 +91,7 @@ abstract class InputLikeBase : InputLike {
             try {
                 validateInputData(graphQLInputObjectType, inputData)
             } catch (e: IllegalStateException) {
-                throw ViaductTenantUsageException("Failed to build ${graphQLInputObjectType.name} ($e)", e)
+                throw TenantUsageException("Failed to build ${graphQLInputObjectType.name} ($e)", e)
             }
         }
     }

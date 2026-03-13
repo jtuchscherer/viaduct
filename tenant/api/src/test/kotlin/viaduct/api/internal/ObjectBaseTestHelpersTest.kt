@@ -7,11 +7,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import viaduct.api.ViaductTenantUsageException
 import viaduct.api.mocks.MockInternalContext
 import viaduct.api.mocks.executionContext
 import viaduct.api.schemautils.SchemaUtils
 import viaduct.api.testschema.O1
+import viaduct.errors.TenantUsageException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObjectBaseTestHelpersTest {
@@ -28,7 +28,7 @@ class ObjectBaseTestHelpersTest {
 
             assertEquals("hello", o1.getStringField("aliasedStringField"))
             // The "normal", unaliased field is not set.
-            assertThrows<ViaductTenantUsageException> {
+            assertThrows<TenantUsageException> {
                 runBlocking {
                     o1.getStringField()
                 }

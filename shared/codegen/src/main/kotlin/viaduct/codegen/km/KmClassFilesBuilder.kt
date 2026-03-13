@@ -38,16 +38,20 @@ class KmClassFilesBuilder(
         kmName: KmName,
         isInterface: Boolean = false,
         nested: List<JavaIdName> = emptyList()
-    ) {
-        externalClassWrappers.put(
-            kmName,
-            ExternalClassWrapper(
-                kmName.asJavaBinaryName,
-                isInterface,
-                nested.map { ExternalClassWrapper.Nested(it) }
-            )
+    ) = addExternalClassReferenceWithNestedSpec(kmName, isInterface, nested.map { ExternalClassWrapper.Nested(it) })
+
+    fun addExternalClassReferenceWithNestedSpec(
+        kmName: KmName,
+        isInterface: Boolean = false,
+        nested: List<ExternalClassWrapper.Nested> = emptyList()
+    ) = externalClassWrappers.put(
+        kmName,
+        ExternalClassWrapper(
+            kmName.asJavaBinaryName,
+            isInterface,
+            nested
         )
-    }
+    )
 
     private val externalClassWrappers: MutableMap<KmName, ExternalClassWrapper> = mutableMapOf()
 
@@ -58,7 +62,7 @@ class KmClassFilesBuilder(
 
     private val importedClasses = mutableSetOf<JavaName>()
 
-    // *** The public functions below are the main API. *** //
+// *** The public functions below are the main API. *** //
 
     private val classBuilders = mutableListOf<ClassBuilder>()
     private val classTrees: List<KmClassTree> by lazy {
@@ -170,6 +174,7 @@ class KmClassFilesBuilder(
                             check.isFalse(hasSuperClass, "ONLY_ONE_SUPERCLASS")
                             hasSuperClass = true
                         }
+
                         else -> {
                             val supertypeKmClass = kmClassMap[supertype.name.toString()]
                             if (supertypeKmClass == null) {
