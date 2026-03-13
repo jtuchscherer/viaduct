@@ -2,6 +2,7 @@ package viaduct.engine.api.instrumentation.resolver
 
 import graphql.execution.ResultPath
 import viaduct.engine.api.CheckerMetadata
+import viaduct.engine.api.Coordinate
 import viaduct.engine.api.ResolverMetadata
 
 /**
@@ -63,7 +64,8 @@ interface ViaductResolverInstrumentation {
     fun createInstrumentationState(parameters: CreateInstrumentationStateParameters): InstrumentationState = DEFAULT_INSTRUMENTATION_STATE
 
     data class InstrumentExecuteResolverParameters(
-        val resolverMetadata: ResolverMetadata
+        val resolverMetadata: ResolverMetadata,
+        val fieldCoordinate: Coordinate? = null,
     )
 
     /**

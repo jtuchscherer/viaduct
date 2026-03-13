@@ -62,7 +62,7 @@ class ResolverDataFetcherInstrumentation(
         } else {
             resolverDispatcher
         }
-        val instrumentedDispatcher = InstrumentedFieldResolverDispatcher(innerDispatcher, resolverInstrumentation)
+        val instrumentedDispatcher = InstrumentedFieldResolverDispatcher(innerDispatcher, resolverInstrumentation, coordinate = typeName to fieldName)
 
         return ResolverDataFetcher(
             typeName = typeName,
