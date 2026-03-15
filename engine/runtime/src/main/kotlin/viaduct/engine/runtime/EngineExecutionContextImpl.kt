@@ -13,6 +13,7 @@ import viaduct.engine.api.Engine
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
+import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.ResolutionPolicy
 import viaduct.engine.api.ResolveSelectionSetOptions
@@ -125,6 +126,7 @@ class EngineExecutionContextImpl(
         override val fragments: Map<String, FragmentDefinition> = emptyMap(),
         override val variables: Map<String, Any?> = emptyMap(),
         override val resolutionPolicy: ResolutionPolicy = ResolutionPolicy.STANDARD,
+        override val attribution: ExecutionAttribution = ExecutionAttribution.DEFAULT,
     ) : EngineExecutionContext.FieldExecutionScope
 
     override fun createNodeReference(

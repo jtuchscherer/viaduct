@@ -27,11 +27,11 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.ExecutionAttribution
@@ -264,6 +264,33 @@ class ExecutionParametersTest {
         assertEquals(ResultPath.rootPath(), result.executionStepInfo.path)
         assertEquals(queryType, result.executionStepInfo.type)
         assertEquals(childPlan.attribution, result.localContext.get<ExecutionObservabilityContext>()?.attribution)
+    }
+
+    @Test
+    fun `forChildPlan preserves child plan attribution`() {
+        val resolverAttribution = ExecutionAttribution.fromResolver("ChildResolver")
+        val childPlan = queryPlanFor(
+            type = fooType,
+            astSelectionSet = selectionSet("name"),
+            attribution = resolverAttribution
+        )
+        val fooMergedField = mergedField("foo", selectionSet("id"))
+        val fooStepInfo = executionStepInfoForField(fooMergedField)
+        val idMergedField = mergedField("id")
+        val idStepInfo = executionStepInfoForField(idMergedField, fooType, fooStepInfo)
+        val parameters = createExecutionParameters(
+            source = defaultRootValue,
+            executionStepInfo = idStepInfo,
+            queryPlan = childPlan,
+            parentEngineResult = ObjectEngineResultImpl.newForType(fooType)
+        )
+
+        val result = parameters.forChildPlan(childPlan, emptyVariables)
+
+        // The child plan's query plan should carry the resolver attribution, which
+        // flows to FieldExecutionScope.attribution via FieldExecutionHelpers
+        assertEquals(resolverAttribution, result.queryPlan.attribution)
+        assertEquals(ExecutionAttribution.Type.RESOLVER, result.queryPlan.attribution?.type)
     }
 
     @Test

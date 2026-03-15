@@ -33,6 +33,7 @@ import java.util.function.Supplier
 import kotlin.collections.plus
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
+import viaduct.engine.api.ExecutionAttribution
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.gj
@@ -154,7 +155,8 @@ object FieldExecutionHelpers {
             EngineExecutionContextImpl.FieldExecutionScopeImpl(
                 fragments = parameters.queryPlan.fragments.map.mapValues { it.value.gjDef },
                 variables = parameters.coercedVariables.toMap(),
-                resolutionPolicy = parameters.resolutionPolicy
+                resolutionPolicy = parameters.resolutionPolicy,
+                attribution = parameters.queryPlan.attribution ?: ExecutionAttribution.DEFAULT,
             )
         }
         val updatedEngineExecCtx = parameters.engineExecutionContext.copy(fieldScopeSupplier = fieldScope)
