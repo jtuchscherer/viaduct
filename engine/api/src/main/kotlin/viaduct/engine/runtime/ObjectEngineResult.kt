@@ -1,4 +1,4 @@
-package viaduct.engine.api
+package viaduct.engine.runtime
 
 import graphql.schema.GraphQLObjectType
 

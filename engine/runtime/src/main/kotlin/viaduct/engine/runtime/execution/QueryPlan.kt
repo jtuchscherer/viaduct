@@ -11,12 +11,12 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.ExecutionAttribution
-import viaduct.engine.api.QueryPlanExecutionCondition
-import viaduct.engine.api.QueryPlanExecutionCondition.Companion.ALWAYS_EXECUTE
-import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.VariablesResolver
 import viaduct.engine.api.ViaductSchema
 import viaduct.engine.runtime.DispatcherRegistry
+import viaduct.engine.runtime.QueryPlanExecutionCondition
+import viaduct.engine.runtime.QueryPlanExecutionCondition.Companion.ALWAYS_EXECUTE
+import viaduct.engine.runtime.RequiredSelectionSetRegistry
 import viaduct.engine.runtime.execution.constraints.Constraints
 
 /**

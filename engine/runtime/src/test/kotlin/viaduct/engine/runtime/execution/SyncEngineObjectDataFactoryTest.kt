@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.EngineObjectData
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.instrumentation.resolver.FetchFunction
 import viaduct.engine.api.instrumentation.resolver.ResolverInstrumentationContext
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
 import viaduct.engine.api.mocks.MockCheckerErrorResult
 import viaduct.engine.runtime.FieldErrorsException
 import viaduct.engine.runtime.FieldResolutionResult
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setCheckerValue
 import viaduct.engine.runtime.ObjectEngineResultImpl.Companion.setRawValue

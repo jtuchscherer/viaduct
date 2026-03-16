@@ -5,8 +5,8 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLUnionType
 import viaduct.engine.api.EngineSelectionSet
 import viaduct.engine.api.RequiredSelectionSet
-import viaduct.engine.api.RequiredSelectionSetRegistry
 import viaduct.engine.api.ViaductSchema
+import viaduct.engine.runtime.RequiredSelectionSetRegistry
 import viaduct.engine.runtime.select.EngineSelectionSetFactoryImpl
 import viaduct.engine.runtime.validation.Validator
 

@@ -2,6 +2,7 @@ package viaduct.engine.api
 
 import graphql.language.FragmentDefinition
 import graphql.schema.GraphQLObjectType
+import viaduct.engine.runtime.ObjectEngineResult
 import viaduct.service.api.spi.GlobalIDCodec
 
 /**
@@ -120,6 +121,12 @@ interface EngineExecutionContext {
          * - [ResolutionPolicy.PARENT_MANAGED]: Driven by [ParentManagedValue], skipping resolvers.
          */
         val resolutionPolicy: ResolutionPolicy
+
+        /**
+         * The attribution of the current execution scope, indicating what initiated this
+         * execution (e.g., a client operation, a field resolver, a policy check).
+         */
+        val attribution: ExecutionAttribution
     }
 
     /**

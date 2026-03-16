@@ -20,7 +20,6 @@ import viaduct.engine.api.CheckerResultContext
 import viaduct.engine.api.EngineExecutionContext
 import viaduct.engine.api.EngineObjectData
 import viaduct.engine.api.EngineSelectionSet
-import viaduct.engine.api.QueryPlanExecutionCondition
 import viaduct.engine.api.RequiredSelectionSet
 import viaduct.engine.api.spi.CheckerExecutor
 import viaduct.engine.runtime.CheckerDispatcherImpl
@@ -28,6 +27,7 @@ import viaduct.engine.runtime.DispatcherRegistry
 import viaduct.engine.runtime.EngineExecutionContextImpl
 import viaduct.engine.runtime.FieldResolutionResult
 import viaduct.engine.runtime.ObjectEngineResultImpl
+import viaduct.engine.runtime.QueryPlanExecutionCondition
 import viaduct.engine.runtime.Value
 import viaduct.engine.runtime.context.getLocalContextForType
 import viaduct.engine.runtime.mocks.ContextMocks

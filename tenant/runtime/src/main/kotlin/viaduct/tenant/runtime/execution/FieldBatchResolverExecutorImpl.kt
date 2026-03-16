@@ -61,7 +61,7 @@ class FieldBatchResolverExecutorImpl(
             )
         }
         val resolver = resolver.get()
-        val results = wrapResolveException(resolverId) {
+        val results = wrapResolveException(resolverName) {
             batchResolveFn.callSuspend(resolver, contexts)
         }
         if (results !is List<*>) {

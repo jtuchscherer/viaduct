@@ -3,7 +3,6 @@ package viaduct.engine.runtime
 import javax.inject.Singleton
 import viaduct.engine.api.Coordinate
 import viaduct.engine.api.RequiredSelectionSet
-import viaduct.engine.api.RequiredSelectionSetRegistry
 
 /**
  * Combined interface for all dispatcher registries.

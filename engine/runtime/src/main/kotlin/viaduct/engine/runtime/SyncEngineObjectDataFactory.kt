@@ -8,7 +8,6 @@ import viaduct.engine.api.CheckerResult
 import viaduct.engine.api.CheckerResultContext
 import viaduct.engine.api.EngineSelection
 import viaduct.engine.api.EngineSelectionSet
-import viaduct.engine.api.ObjectEngineResult
 import viaduct.engine.api.instrumentation.resolver.FetchFunction
 import viaduct.engine.api.instrumentation.resolver.ResolverInstrumentationContext
 import viaduct.engine.api.instrumentation.resolver.ViaductResolverInstrumentation
